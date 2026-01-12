@@ -143,7 +143,7 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${FLAGS_AL
 # We use Link Time Optimization (LTO) for all builds except debug builds or when -DNO_LTO is passed.
 cmake_policy(SET CMP0069 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
-option(NO_LTO "Set to TRUE to build Hyrise without Link Time Optimization (LTO). Default: FALSE" FALSE)
+option(NO_LTO "Set to TRUE to build Hyrise without Link Time Optimization (LTO). Default: FALSE" TRUE)
 if (${NO_LTO} OR ${CMAKE_BUILD_TYPE} MATCHES "Debug" OR ENABLE_ADDR_UB_LEAK_SANITIZATION OR ENABLE_THREAD_SANITIZATION)
     message(STATUS "Building without Link Time Optimization (LTO).")
 else ()
@@ -208,7 +208,7 @@ find_package(SQLite3 REQUIRED)
 # Old versions of CMake used the FindBoost module, which is deprecated because find_package can now find
 # the upstream package directly. Therefore, disable it explicitly.
 set(BOOST_MIN_VERSION "1.81.0")
-find_package(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS container date_time NO_MODULE)
+find_package(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS container date_time)
 
 add_definitions(-DBOOST_THREAD_VERSION=5)
 set(BOOST_LIBS Boost::container Boost::date_time)
