@@ -517,6 +517,8 @@ set(
     storage/lz4_segment/lz4_encoder.hpp
     storage/lz4_segment/lz4_segment_iterable.hpp
     storage/materialize.hpp
+    storage/mem_pool.cpp
+    storage/mem_pool.hpp
     storage/mvcc_data.cpp
     storage/mvcc_data.hpp
     storage/pos_lists/abstract_pos_list.cpp
