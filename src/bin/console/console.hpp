@@ -161,3 +161,5 @@ class Console : public Singleton<Console> {
 };
 
 }  // namespace hyrise
+
+std::string current_timestamp();

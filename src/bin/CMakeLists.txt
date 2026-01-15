@@ -39,6 +39,7 @@ target_link_libraries(
 add_executable(
     hyriseConsole
 
+    console/main.cpp
     console/console.cpp
     console/console.hpp
     console/pagination.cpp
