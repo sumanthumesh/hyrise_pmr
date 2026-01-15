@@ -124,9 +124,12 @@ class Console : public Singleton<Console> {
   int _print_table(const std::string& args);
   int _visualize(const std::string& input);
   int _change_runtime_setting(const std::string& input);
+  int _move2cxl(const std::string& args);
+  int _create_mem(const std::string& args);
 
   int _print_transaction_info();
   int _print_current_working_directory();
+  int _print_current_process_id();
 
   int _load_plugin(const std::string& args);
   int _unload_plugin(const std::string& input);

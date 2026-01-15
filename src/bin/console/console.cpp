@@ -170,10 +170,13 @@ Console::Console()
   register_command("visualize", std::bind(&Console::_visualize, this, std::placeholders::_1));
   register_command("txinfo", std::bind(&Console::_print_transaction_info, this));
   register_command("pwd", std::bind(&Console::_print_current_working_directory, this));
+  register_command("pid", std::bind(&Console::_print_current_process_id, this));
   register_command("setting", std::bind(&Console::_change_runtime_setting, this, std::placeholders::_1));
   register_command("load_plugin", std::bind(&Console::_load_plugin, this, std::placeholders::_1));
   register_command("unload_plugin", std::bind(&Console::_unload_plugin, this, std::placeholders::_1));
   register_command("reset", std::bind(&Console::_reset, this));
+  register_command("move2cxl", std::bind(&Console::_move2cxl, this, std::placeholders::_1));
+  register_command("create_mem", std::bind(&Console::_create_mem, this, std::placeholders::_1));
 }
 
 Console::~Console() {
@@ -955,6 +958,96 @@ int Console::_exec_script(const std::string& script_file) {
   return return_code;
 }
 
+int Console::_move2cxl(const std::string& args) {
+  const auto arguments = tokenize(args);
+
+  if (arguments.size() != 3) {
+    // clang-format off
+    out("Usage: ");
+    out("  move2cxl TABLE_NAME COLUMN_NAME POOL_NAME  Move the column to cxl memory \n");  // NOLINT(whitespace/line_length)
+
+    // clang-format on
+    return ReturnCode::Error;
+  }
+
+  // Fetch table manager
+  auto &storage_manager = Hyrise::get().storage_manager;
+  // Check if table exists
+  auto &table_name = arguments[0];
+  if (!storage_manager.has_table(table_name)){
+    std::cerr<<"Cannot find table "<<table_name<<"\n";
+    return ReturnCode::Error;
+  }
+  auto table = storage_manager.get_table(table_name);
+  auto chunk_count = table->chunk_count();
+
+  auto &column_name = arguments[1];
+  // This will throw error if column does not exist
+  auto column_id = table->column_id_by_name(column_name);
+
+  // Fetch memory pool
+  auto &pool_name = arguments[2];
+  auto &pool_manager = Hyrise::get().mem_pool_manager;
+  auto mem_pool = pool_manager.get_pool(pool_name);
+
+  // Loop over chunks
+  for (ChunkID cid = ChunkID{0}; cid < chunk_count; cid++)
+  {
+    auto chunk_ptr = table->get_chunk(cid);
+    // Fetch segments corresponding to column id
+    auto segemnt_ptr = chunk_ptr->get_segment(column_id);
+    // Need to copy segment and replace the original segment ptr with this new one
+    // Cast to correct dictionary segment first
+    auto data_type = segemnt_ptr->data_type();
+    
+    switch (data_type)
+    {
+      case hyrise::DataType::Int:{
+        auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(segemnt_ptr);
+        auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<int32_t>>(base_dict_segment_ptr);
+
+        // Copy to new dict segment ptr using the built in API
+        auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+        // Replace segment pointer
+        chunk_ptr->replace_segment(column_id,new_dict_segment_ptr);
+
+        break;
+      }
+      default:
+        std::cout<<"Should not have reached here\n";
+        return ReturnCode::Error;
+    }
+  }
+
+  return ReturnCode::Ok;
+}
+
+int Console::_create_mem(const std::string& args) {
+  const auto arguments = tokenize(args);
+
+  if (arguments.size() != 3) {
+    // clang-format off
+    out("Usage: ");
+    out("  create_mem POOL_NAME SIZE_IN_BYTES NUMA_NODE  Create memory resource for std::pmr\n");  // NOLINT(whitespace/line_length)
+
+    // clang-format on
+    return ReturnCode::Error;
+  }
+
+  // Fetch pool manager
+  auto &mem_pool_manager = Hyrise::get().mem_pool_manager;
+  
+  auto &pool_name = arguments[0];
+  auto pool_size = boost::lexical_cast<uint64_t>(arguments[1]);
+  auto numa_node = boost::lexical_cast<int>(arguments[2]);
+
+  // Create memory pool
+  mem_pool_manager.create_pool(pool_name,pool_size,numa_node);
+
+  return ReturnCode::Ok;
+}
+
 void Console::handle_signal(int sig) {
   if (sig == SIGINT) {
     auto& console = Console::get();
@@ -988,6 +1081,11 @@ int Console::_print_transaction_info() {
 
 int Console::_print_current_working_directory() {
   out(std::filesystem::current_path().string() + "\n");
+  return ReturnCode::Ok;
+}
+
+int Console::_print_current_process_id() {
+  out(std::to_string(getpid()) + "\n");
   return ReturnCode::Ok;
 }
 
