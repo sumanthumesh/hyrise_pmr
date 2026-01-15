@@ -1,0 +1,1 @@
+cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBoost_ROOT=/data2/installed/boost_1_81_0 -DBoost_NO_SYSTEM_PATHS=ON
