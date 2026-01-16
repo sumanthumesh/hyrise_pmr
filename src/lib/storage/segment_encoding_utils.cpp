@@ -106,9 +106,9 @@ SegmentEncodingSpec auto_select_segment_encoding_spec(const DataType type, const
     return SegmentEncodingSpec{EncodingType::Unencoded};
   }
 
-  if (type == DataType::Int) {
-    return SegmentEncodingSpec{EncodingType::FrameOfReference};
-  }
+//   if (type == DataType::Int) {
+//     return SegmentEncodingSpec{EncodingType::FrameOfReference};
+//   }
 
   return SegmentEncodingSpec{EncodingType::Dictionary};
 }
