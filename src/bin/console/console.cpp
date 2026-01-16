@@ -18,6 +18,7 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <boost/algorithm/string/classification.hpp>
@@ -59,6 +60,7 @@
 #include "tpch/tpch_table_generator.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
+#include "utils/debug_util.hpp"
 #include "utils/invalid_input_exception.hpp"
 #include "utils/load_table.hpp"
 #include "utils/meta_table_manager.hpp"
@@ -995,16 +997,40 @@ int Console::_move2cxl(const std::string& args) {
   {
     auto chunk_ptr = table->get_chunk(cid);
     // Fetch segments corresponding to column id
-    auto segemnt_ptr = chunk_ptr->get_segment(column_id);
+    auto segment_ptr = chunk_ptr->get_segment(column_id);
+    Assertf(segment_ptr!=nullptr,"Failed to fetch segment\n");
+    
     // Need to copy segment and replace the original segment ptr with this new one
     // Cast to correct dictionary segment first
-    auto data_type = segemnt_ptr->data_type();
-    
+    auto data_type = segment_ptr->data_type();
+    auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+    Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
+
+    // switch(abs_encoded_segment_ptr->encoding_type())
+    // {
+    //   case EncodingType::Unencoded:
+    //   {
+    //       Fail("An actual segment should never have this type");
+    //       break;
+    //   }
+    //     case EncodingType::Dictionary:
+    //   {
+    //       out("Dictionary Encoding\n");
+    //       break;
+    //   }
+    //   default:
+    //       Fail("Unknown encoding of type " + std::to_string(static_cast<std::underlying_type_t<EncodingType>>(abs_encoded_segment_ptr->encoding_type())) + "\n");
+    // }
+
     switch (data_type)
     {
       case hyrise::DataType::Int:{
-        auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(segemnt_ptr);
+        // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+        // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
+        auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
+        Assertf(base_dict_segment_ptr!=nullptr,"AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
         auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<int32_t>>(base_dict_segment_ptr);
+        Assertf(dict_segment_ptr!=nullptr,"BaseDictionarySegment to DictionarySegment conversion failed\n");
 
         // Copy to new dict segment ptr using the built in API
         auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
