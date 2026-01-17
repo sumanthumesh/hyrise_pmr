@@ -102,9 +102,11 @@ ChunkEncodingSpec auto_select_chunk_encoding_spec(const std::vector<DataType>& t
  * https://github.com/hyrise/hyrise/pull/2696#pullrequestreview-3087933111
  */
 SegmentEncodingSpec auto_select_segment_encoding_spec(const DataType type, const bool segment_values_are_unique) {
-  if (segment_values_are_unique) {
-    return SegmentEncodingSpec{EncodingType::Unencoded};
-  }
+// SUMANTHTODO: Reinstate FrameOfReference and Unencoded types here before finalizing
+
+  // if (segment_values_are_unique) {
+  //   return SegmentEncodingSpec{EncodingType::Unencoded};
+  // }
 
 //   if (type == DataType::Int) {
 //     return SegmentEncodingSpec{EncodingType::FrameOfReference};
