@@ -55,6 +55,7 @@
 #include "ssb/ssb_table_generator.hpp"
 #include "storage/chunk_encoder.hpp"
 #include "storage/encoding_type.hpp"
+#include "storage/vector_compression/fixed_width_integer/fixed_width_integer_vector.hpp"
 #include "tpcc/tpcc_table_generator.hpp"
 #include "tpcds/tpcds_table_generator.hpp"
 #include "tpch/tpch_constants.hpp"
@@ -1182,7 +1183,8 @@ int Console::_dump_addr()
                             std::cerr << "Conversion to FixedWidthIntegerVector<UnsignedIntType::uint8_t> failed" << std::endl;
                             exit(2);
                         }
-                        auto vector = attr_vec_1B_ptr->data();
+                        const auto &vector = attr_vec_1B_ptr->data();
+                        // const uint8_t* raw_ptr = vector.data(); 
                         fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(vector.data()) << "," << reinterpret_cast<uint64_t>(vector.data()) + vector.size() * sizeof(uint8_t) << "\n";
                     }
                     break;
@@ -1194,7 +1196,7 @@ int Console::_dump_addr()
                             std::cerr << "Conversion to FixedWidthIntegerVector<UnsignedIntType::uint16_t> failed" << std::endl;
                             exit(2);
                         }
-                        auto vector = attr_vec_2B_ptr->data();
+                        const auto &vector = attr_vec_2B_ptr->data();
                         fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(vector.data()) << "," << reinterpret_cast<uint64_t>(vector.data()) + vector.size() * sizeof(uint16_t) << "\n";
                     }
                     break;
@@ -1206,7 +1208,7 @@ int Console::_dump_addr()
                             std::cerr << "Conversion to FixedWidthIntegerVector<UnsignedIntType::uint132_t> failed" << std::endl;
                             exit(2);
                         }
-                        auto vector = attr_vec_4B_ptr->data();
+                        const auto &vector = attr_vec_4B_ptr->data();
                         fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(vector.data()) << "," << reinterpret_cast<uint64_t>(vector.data()) + vector.size() * sizeof(uint32_t) << "\n";
                     }
                     break;
