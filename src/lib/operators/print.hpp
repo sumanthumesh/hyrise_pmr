@@ -39,11 +39,11 @@ class Print : public AbstractReadOnlyOperator {
   // Convenience method to print the result of an SQL query
   static void print(const std::string& sql, const PrintFlags flags = PrintFlags::None, std::ostream& out = std::cout);
 
+  static std::string _segment_type(const std::shared_ptr<AbstractSegment>& segment);
  protected:
   std::vector<uint16_t> _column_string_widths(uint16_t min, uint16_t max,
                                               const std::shared_ptr<const Table>& table) const;
   static std::string _truncate_cell(const AllTypeVariant& cell, uint16_t max_width);
-  static std::string _segment_type(const std::shared_ptr<AbstractSegment>& segment);
   std::shared_ptr<const Table> _on_execute() override;
   std::shared_ptr<AbstractOperator> _on_deep_copy(
       const std::shared_ptr<AbstractOperator>& copied_left_input,
