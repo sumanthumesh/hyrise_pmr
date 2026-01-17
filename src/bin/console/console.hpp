@@ -130,6 +130,7 @@ class Console : public Singleton<Console> {
   int _print_transaction_info();
   int _print_current_working_directory();
   int _print_current_process_id();
+  int _dump_addr();
 
   int _load_plugin(const std::string& args);
   int _unload_plugin(const std::string& input);

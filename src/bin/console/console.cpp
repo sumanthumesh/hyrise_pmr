@@ -180,6 +180,7 @@ Console::Console()
   register_command("reset", std::bind(&Console::_reset, this));
   register_command("move2cxl", std::bind(&Console::_move2cxl, this, std::placeholders::_1));
   register_command("create_mem", std::bind(&Console::_create_mem, this, std::placeholders::_1));
+  register_command("dump_addr", std::bind(&Console::_dump_addr, this));
 }
 
 Console::~Console() {
@@ -1080,6 +1081,266 @@ int Console::_create_mem(const std::string& args) {
               mem_pool_manager.get_pool(pool_name)->size());
 
   return ReturnCode::Ok;
+}
+
+int Console::_dump_addr()
+{
+    // Function lists all the TPCH tables
+    // Access storate manager
+    auto &storage_manager = Hyrise::get().storage_manager;
+    // From the storage manager try to access the table pointers and print out
+    // the data if you can access them
+    //  std::vector<std::string> field_names =
+    //  storage_manager.get_table("region")->column_names(); for(std::string &s:
+    //  field_names) {
+    //    std::cout<<s<<",";
+    //  }
+    // std::cout << "\n";
+    const std::vector<std::string> &table_names = storage_manager.table_names();
+// table_names.emplace_back("customer");
+// table_names.emplace_back("orders");
+// table_names.emplace_back("lineitem");
+// table_names.emplace_back("part");
+// table_names.emplace_back("partsupp");
+// table_names.emplace_back("supplier");
+// table_names.emplace_back("nation");
+// table_names.emplace_back("region");
+
+// Data structure to keep track of uniq id associated with each column
+// #ifdef GEM5_RUN
+    std::unordered_map<size_t, std::pair<std::string, std::string>> uniq_id_table;
+// #endif
+    // std::vector<std::pair<uintptr_t, uintptr_t>> addr_ranges;
+    std::vector<std::pair<size_t,std::pair<uintptr_t, uintptr_t>>> addr_ranges;
+
+    // Print out number of segments and chunks
+    std::ostringstream counters;
+    std::ofstream f("chunks.txt");
+    for (const std::string &table_name : table_names)
+    {
+        f << "Name: " << table_name << "\n";
+        auto num_chunks = storage_manager.get_table(table_name)->chunk_count();
+        f << "Chunks: " << num_chunks << "\n";
+        auto chunk_ptr = storage_manager.get_table(table_name)->get_chunk(ChunkID{0});
+        auto col_count = chunk_ptr->column_count();
+        f << "Segments: " << col_count << "\n";
+    }
+// #ifdef GEM5_RUN
+    size_t uniq_id;
+// #endif
+
+#ifndef GEM5_RUN
+    std::ofstream fout("mem_regions.dat");
+#endif
+    // For every table print out some stuff
+    for (size_t table_id = 0; table_id < table_names.size(); table_id++)
+    // for (std::string &table_name : table_names)
+    {
+
+        std::string table_name = table_names[table_id];
+        std::vector<std::string> field_names = storage_manager.get_table(table_name)->column_names();
+
+        // std::cout << "===================\n";
+        // std::cout << "Name: " << table_name << "\n";
+        // Now print out all the segments in each table
+        // Iterate over all chunks
+        auto num_chunks = storage_manager.get_table(table_name)->chunk_count();
+        for (auto chunk_id = ChunkID{0}; chunk_id < num_chunks; chunk_id++)
+        {
+            auto chunk_ptr = storage_manager.get_table(table_name)->get_chunk(chunk_id);
+            // Iterate over all segments
+            auto col_count = chunk_ptr->column_count();
+            // std::cout << "-------------------\n";
+            // std::cout << "Rows : " << chunk_ptr->size() << "\n";
+            for (auto col_id = ColumnID{0}; col_id < col_count; col_id++)
+            {
+// #ifdef GEM5_RUN
+                uniq_id = table_id * 10000000 + col_id * 100000 + chunk_id;
+                if (uniq_id_table.find(uniq_id) == uniq_id_table.end())
+                {
+                    uniq_id_table.insert({uniq_id, std::make_pair(table_name, field_names[col_id])});
+                }
+// #endif
+                // log_to_file(field_names[col_id]);
+                // std::cout << "Chunk: " << chunk_id << "\n";
+                // std::cout << "Segmt: " << col_id << "\n";
+                auto segment_ptr = chunk_ptr->get_segment(col_id);
+                // std::cout << "Type : " << Print::_segment_type(segment_ptr) << "\n";
+                // Print the datatype for now
+                // std::cout << "Data : " << segment_ptr->data_type() << "\n";
+                if (const auto &encoded_segment = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr))
+                {
+                    // Get access to attribute vector and print out the data ranges
+                    auto attr_vector_ptr = dynamic_pointer_cast<BaseDictionarySegment>(encoded_segment)->attribute_vector();
+                    switch (attr_vector_ptr->type())
+                    {
+                    case CompressedVectorType::FixedWidthInteger1Byte:
+                    {
+                        auto attr_vec_1B_ptr = dynamic_pointer_cast<const FixedWidthIntegerVector<uint8_t>>(attr_vector_ptr);
+                        if (!attr_vec_1B_ptr)
+                        {
+                            std::cerr << "Conversion to FixedWidthIntegerVector<UnsignedIntType::uint8_t> failed" << std::endl;
+                            exit(2);
+                        }
+                        auto vector = attr_vec_1B_ptr->data();
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(vector.data()) << "," << reinterpret_cast<uint64_t>(vector.data()) + vector.size() * sizeof(uint8_t) << "\n";
+                    }
+                    break;
+                    case CompressedVectorType::FixedWidthInteger2Byte:
+                    {
+                        auto attr_vec_2B_ptr = dynamic_pointer_cast<const FixedWidthIntegerVector<uint16_t>>(attr_vector_ptr);
+                        if (!attr_vec_2B_ptr)
+                        {
+                            std::cerr << "Conversion to FixedWidthIntegerVector<UnsignedIntType::uint16_t> failed" << std::endl;
+                            exit(2);
+                        }
+                        auto vector = attr_vec_2B_ptr->data();
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(vector.data()) << "," << reinterpret_cast<uint64_t>(vector.data()) + vector.size() * sizeof(uint16_t) << "\n";
+                    }
+                    break;
+                    case CompressedVectorType::FixedWidthInteger4Byte:
+                    {
+                        auto attr_vec_4B_ptr = dynamic_pointer_cast<const FixedWidthIntegerVector<uint32_t>>(attr_vector_ptr);
+                        if (!attr_vec_4B_ptr)
+                        {
+                            std::cerr << "Conversion to FixedWidthIntegerVector<UnsignedIntType::uint132_t> failed" << std::endl;
+                            exit(2);
+                        }
+                        auto vector = attr_vec_4B_ptr->data();
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(vector.data()) << "," << reinterpret_cast<uint64_t>(vector.data()) + vector.size() * sizeof(uint32_t) << "\n";
+                    }
+                    break;
+                    default:
+                        std::cerr << "Unknown attribute vector type" << std::endl;
+                        exit(2);
+                    }
+
+                    // Get access to dictionary and print out the data ranges
+                    switch (encoded_segment->encoding_type())
+                    {
+                    case EncodingType::Unencoded:
+                    {
+                        Fail("An actual segment should never have this type");
+                    }
+                    case EncodingType::Dictionary:
+                    {
+                        switch (segment_ptr->data_type())
+                        {
+                        case detail::DataType::Null:
+                            Fail("Incorrect type");
+                            break;
+                        case detail::DataType::Int:
+                        {
+                            auto dict = std::dynamic_pointer_cast<DictionarySegment<int>>(std::dynamic_pointer_cast<BaseDictionarySegment>(encoded_segment))->dictionary();
+                            // const int32_t *T = dict->data();
+                            // std::ostringstream oss;
+                            // oss << std::dec << "-1:0x" << std::hex << reinterpret_cast<uintptr_t>(T) << ",0x" << reinterpret_cast<uintptr_t>(T + dict->size()) << "\n";
+                            // std::cout<<oss.str();
+#ifdef GEM5_RUN
+                            m5_add_mem_region(uniq_id, reinterpret_cast<uint64_t>(dict->data()), reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(int));
+#else
+                            fout<<std::dec<<uniq_id<<","<<std::hex<<reinterpret_cast<uint64_t>(dict->data())<<","<<reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(int)<<"\n";
+                            // m5_add_mem_region(uniq_id, reinterpret_cast<uint64_t>(dict->data()), reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(int));
+#endif
+                            break;
+                        }
+                        case detail::DataType::Long:
+                        {
+                            auto dict = std::dynamic_pointer_cast<DictionarySegment<long int>>(std::dynamic_pointer_cast<BaseDictionarySegment>(encoded_segment))->dictionary();
+                            // const long *T = dict->data();
+                            // std::ostringstream oss;
+                            // oss << std::dec << "-2:0x" << std::hex << reinterpret_cast<uintptr_t>(T) << ",0x" << reinterpret_cast<uintptr_t>(T + dict->size()) << "\n";
+                            // std::cout<<oss.str();
+#ifdef GEM5_RUN
+                            m5_add_mem_region(uniq_id, reinterpret_cast<uint64_t>(dict->data()), reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(long));
+#else
+                            fout<<std::dec<<uniq_id<<","<<std::hex<<reinterpret_cast<uint64_t>(dict->data())<<","<<reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(int)<<"\n";
+#endif
+                            break;
+                        }
+                        case detail::DataType::Float:
+                        {
+                            auto dict = std::dynamic_pointer_cast<DictionarySegment<float>>(std::dynamic_pointer_cast<BaseDictionarySegment>(encoded_segment))->dictionary();
+                            // const float *T = dict->data();
+                            // std::ostringstream oss;
+                            // oss << std::dec << "-3:0x" << std::hex << reinterpret_cast<uintptr_t>(T) << ",0x" << reinterpret_cast<uintptr_t>(T + dict->size()) << "\n";
+                            // std::cout<<oss.str();
+#ifdef GEM5_RUN
+                            m5_add_mem_region(uniq_id, reinterpret_cast<uint64_t>(dict->data()), reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(float));
+#else
+                            fout<<std::dec<<uniq_id<<","<<std::hex<<reinterpret_cast<uint64_t>(dict->data())<<","<<reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(int)<<"\n";
+#endif
+                            break;
+                        }
+                        case detail::DataType::Double:
+                        {
+                            auto dict = std::dynamic_pointer_cast<DictionarySegment<double>>(std::dynamic_pointer_cast<BaseDictionarySegment>(encoded_segment))->dictionary();
+                            // const double *T = dict->data();
+                            // std::ostringstream oss;
+                            // oss << std::dec << "-4:0x" << std::hex << reinterpret_cast<uintptr_t>(T) << ",0x" << reinterpret_cast<uintptr_t>(T + dict->size()) << "\n";
+                            // std::cout<<oss.str();
+#ifdef GEM5_RUN
+                            m5_add_mem_region(uniq_id, reinterpret_cast<uint64_t>(dict->data()), reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(double));
+#else
+                            fout<<std::dec<<uniq_id<<","<<std::hex<<reinterpret_cast<uint64_t>(dict->data())<<","<<reinterpret_cast<uint64_t>(dict->data()) + (dict->size() + 1) * sizeof(int)<<"\n";
+#endif
+                            break;
+                        }
+                        case detail::DataType::String:
+                        {
+                            auto dict = std::dynamic_pointer_cast<DictionarySegment<pmr_string>>(std::dynamic_pointer_cast<BaseDictionarySegment>(encoded_segment))->dictionary();
+                            // const pmr_string *T = dict->data();
+                            for (unsigned long i = 0; i < dict->size(); i++)
+                            {
+// #ifdef GEM5_RUN
+                                auto data = dict->data();
+// #endif
+                                std::ostringstream oss;
+                                // std::cout << "String " << i << "(" <<
+
+                                // data[i].size() << "): " << static_cast<const
+                                // void*>(data[i].data()) << "\n";
+                                // oss << std::dec << "-5:0x" << std::hex << reinterpret_cast<uint64_t>(data[i].data()) << ",0x" << reinterpret_cast<uint64_t>(data[i].data()) + data[i].size()+1 << "\n";
+                                // std::cout<<oss.str();
+#ifdef GEM5_RUN
+                                m5_add_mem_region(uniq_id, reinterpret_cast<uint64_t>(data[i].data()), reinterpret_cast<uint64_t>(data[i].data()) + data[i].size() + 1);
+#else
+                                fout<<std::dec<<uniq_id<<","<<std::hex<<reinterpret_cast<uint64_t>(data[i].data())<<","<<reinterpret_cast<uint64_t>(data[i].data()) + data[i].size() + 1<<"\n";
+#endif
+                            }
+                            break;
+                        }
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+                }
+                else
+                {
+                    Fail("Unknown segment type");
+                }
+            }
+            // std::cout << "-------------------\n";
+        }
+        // std::cout << "===================\n";
+    }
+
+    std::string filename = "mem_regions.csv";
+    std::ofstream ofs;
+    ofs.open(filename);
+    // // std::cout<<"###########\n";
+    for (auto &ele : uniq_id_table)
+    {
+        ofs << ele.first << ":" << ele.second.first << "," << ele.second.second << "\n";
+    }
+    ofs.close();
+    // // std::cout<<"###########\n";
+#ifdef GEM5_RUN
+    m5_mem_region_cmd(0);
+#endif
+    return ReturnCode::Ok;
 }
 
 void Console::handle_signal(int sig) {
