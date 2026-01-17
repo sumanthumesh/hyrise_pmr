@@ -27,6 +27,18 @@ public:
         }
     }
 
+    std::uintptr_t start_address() const {
+        return reinterpret_cast<std::uintptr_t>(_buffer);
+    }
+
+    std::uintptr_t end_address() const {
+        return reinterpret_cast<std::uintptr_t>(_buffer) + _size;
+    }
+
+    std::uintptr_t size() const {
+        return _size;
+    }
+
 protected:
     void* do_allocate(std::size_t bytes, std::size_t alignment) override {
         return _mono.allocate(bytes, alignment);
