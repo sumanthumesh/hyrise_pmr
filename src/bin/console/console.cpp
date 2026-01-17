@@ -3,6 +3,8 @@
 #include <setjmp.h>  // NOLINT(hicpp-deprecated-headers,modernize-deprecated-headers)
 
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
@@ -995,6 +997,10 @@ int Console::_move2cxl(const std::string& args) {
   auto &pool_manager = Hyrise::get().mem_pool_manager;
   auto mem_pool = pool_manager.get_pool(pool_name);
 
+  auto start_migration = std::chrono::system_clock::now();
+
+  size_t moved_bytes = 0;
+
   // Loop over chunks
   for (ChunkID cid = ChunkID{0}; cid < chunk_count; cid++)
   {
@@ -1003,6 +1009,8 @@ int Console::_move2cxl(const std::string& args) {
     auto segment_ptr = chunk_ptr->get_segment(column_id);
     Assertf(segment_ptr!=nullptr,"Failed to fetch segment\n");
     
+    moved_bytes += segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
+
     // Need to copy segment and replace the original segment ptr with this new one
     // Cast to correct dictionary segment first
     auto data_type = segment_ptr->data_type();
@@ -1048,6 +1056,13 @@ int Console::_move2cxl(const std::string& args) {
         return ReturnCode::Error;
     }
   }
+
+  auto end_migration = std::chrono::system_clock::now();
+
+  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_migration-start_migration);
+  // std::cout<<"Migrated "<<moved_bytes<<" in "<<duration.count()<<" ns\n";
+  std::cout<<moved_bytes<<","<<duration.count()<<","<<((double)moved_bytes*std::pow(2,-30))/((double)duration.count()*1e-9)<<"GB/s\n";
+  // std::cout << "Migration Duration: " << duration.count() << "ns\n";
 
   return ReturnCode::Ok;
 }
