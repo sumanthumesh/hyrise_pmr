@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <inttypes.h>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -1070,6 +1071,13 @@ int Console::_create_mem(const std::string& args) {
 
   // Create memory pool
   mem_pool_manager.create_pool(pool_name,pool_size,numa_node);
+
+  // Print out created pool details
+  std::printf("%s,0x%016" PRIxPTR ",0x%016" PRIxPTR ",%lu\n",
+              pool_name.c_str(),
+              reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_name)->start_address()),
+              reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_name)->end_address()),
+              mem_pool_manager.get_pool(pool_name)->size());
 
   return ReturnCode::Ok;
 }
