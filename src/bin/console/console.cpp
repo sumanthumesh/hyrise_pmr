@@ -1490,14 +1490,74 @@ int Console::_dump_addr()
                         break;
                     }
                 }
+                else if (const auto &base_value_segment_ptr = std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
+                {
+                    // Its a value segment, uncoded
+                    // Cast to correct data type and print addresses
+                    // Print out the data ranges
+                    switch (base_value_segment_ptr->data_type())
+                    {
+                    case detail::DataType::Null:
+                        Fail("Incorrect type");
+                        break;
+                    case detail::DataType::Int:
+                    {
+                        const auto &value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<int32_t>>(base_value_segment_ptr);
+                        Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<int32_t> conversion failed\n");
+                        const auto &vector = value_segment_ptr->values();
+                        const int32_t *raw_ptr = vector.data();
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(int32_t)) << "\n";
+                        break;
+                    }
+                    case detail::DataType::Long:
+                    {
+                        const auto &value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<int64_t>>(base_value_segment_ptr);
+                        Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<int64_t> conversion failed\n");
+                        const auto &vector = value_segment_ptr->values();
+                        const int64_t *raw_ptr = vector.data();
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(int64_t)) << "\n";
+                        break;
+                    }
+                    case detail::DataType::Float:
+                    {
+                        const auto &value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<float>>(base_value_segment_ptr);
+                        Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<float> conversion failed\n");
+                        const auto &vector = value_segment_ptr->values();
+                        const float *raw_ptr = vector.data();
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(float)) << "\n";
+                        break;
+                    }
+                    case detail::DataType::Double:
+                    {
+                        const auto &value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<double>>(base_value_segment_ptr);
+                        Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<double> conversion failed\n");
+                        const auto &vector = value_segment_ptr->values();
+                        const double *raw_ptr = vector.data();
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(double)) << "\n";
+                        break;
+                    }
+                    case detail::DataType::String:
+                    {
+                        const auto &value_segment_ptr = std::dynamic_pointer_cast<ValueSegment<pmr_string>>(base_value_segment_ptr);
+                        Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<pmr_string> conversion failed\n");
+                        const auto &vector = value_segment_ptr->values();
+                        for (auto &s : vector)
+                        {
+                            const char *raw_ptr = s.data();
+                            fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + s.size() + 1) << "\n";
+                        }
+                        break;
+                    }
+                    }
+                }
                 else
                 {
                     Fail("Unknown segment type");
                 }
+                // std::cout << "-------------------\n";
             }
-            // std::cout << "-------------------\n";
+            // std::cout << "===================\n";
         }
-        // std::cout << "===================\n";
     }
 
     std::string filename = "mem_regions.csv";
