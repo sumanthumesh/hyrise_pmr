@@ -134,6 +134,7 @@ class Console : public Singleton<Console>
     int _change_runtime_setting(const std::string &input);
     int _move2cxl(const std::string &args);
     int _create_mem(const std::string &args);
+    int _hshell(const std::string &args);
 
     int _print_transaction_info();
     int _print_current_working_directory();

@@ -191,6 +191,7 @@ Console::Console()
     register_command("reset", std::bind(&Console::_reset, this));
     register_command("move2cxl", std::bind(&Console::_move2cxl, this, std::placeholders::_1));
     register_command("create_mem", std::bind(&Console::_create_mem, this, std::placeholders::_1));
+    register_command("hsh", std::bind(&Console::_hshell, this, std::placeholders::_1));
     register_command("dump_addr", std::bind(&Console::_dump_addr, this));
 }
 
@@ -1389,6 +1390,60 @@ int Console::_create_mem(const std::string &args)
                 reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_name)->start_address()),
                 reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_name)->end_address()),
                 mem_pool_manager.get_pool(pool_name)->size());
+
+    return ReturnCode::Ok;
+}
+
+int Console::_hshell(const std::string &args)
+{
+    const auto arguments = tokenize(args);
+
+    auto &cmd = arguments[0];
+    if (cmd == "size")
+    {
+        if (arguments.size() != 3)
+        {
+            out("Usage: ");
+            out("  hshell size TABLE_NAME COLUMN_NAME  Size of the column in bytes\n");
+            return ReturnCode::Error;
+        }
+        
+        // Fetch table manager
+        auto &storage_manager = Hyrise::get().storage_manager;
+        // Check if table exists
+        auto &table_name = arguments[1];
+        if (!storage_manager.has_table(table_name))
+        {
+            std::cerr << "Cannot find table " << table_name << "\n";
+            return ReturnCode::Error;
+        }
+
+        
+        size_t column_size = 0;
+        
+        auto table = storage_manager.get_table(table_name);
+        auto &column_name = arguments[2];
+        auto column_id = table->column_id_by_name(column_name);
+        auto chunk_count = table->chunk_count();
+
+        // Loop over chunks
+        for (ChunkID cid = ChunkID{0}; cid < chunk_count; cid++)
+        {
+            auto chunk_ptr = table->get_chunk(cid);
+            // Fetch segments corresponding to column id
+            auto segment_ptr = chunk_ptr->get_segment(column_id);
+            Assertf(segment_ptr != nullptr, "Failed to fetch segment\n");
+
+            column_size += segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
+        }
+
+        std::cout << column_size << "B\n";
+    }
+    else
+    {
+        out("Error: Unknown hshell command\n");
+        return ReturnCode::Error;
+    }
 
     return ReturnCode::Ok;
 }
