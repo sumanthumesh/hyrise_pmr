@@ -1242,6 +1242,40 @@ int Console::_move2cxl(const std::string &args)
 
                 break;
             }
+            case hyrise::DataType::String:
+            {
+                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
+                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
+                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<pmr_string>>(base_dict_segment_ptr);
+                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
+
+                // Handle attribute vector
+                // Get the attribute vector
+                const auto attribute_vector_ptr = dict_segment_ptr->attribute_vector();
+                Assertf(attribute_vector_ptr != nullptr, "Could not fetch attribute vector\n");
+                // Copy the attribute vector
+                auto unique_attr_ptr = attribute_vector_ptr->copy_using_memory_resource(*mem_pool);
+                // Turn it into shared_ptr<const BaseCompressedVector>
+                std::shared_ptr<const BaseCompressedVector> new_attribute_vector_ptr{std::move(unique_attr_ptr)};
+
+                // Handle dictionary
+                std::pmr::memory_resource *mr = mem_pool.get();
+                auto new_dict_ptr = std::make_shared<pmr_vector<pmr_string>>(mr);
+                // For each string in the original dictionary, create a new pmr_string and place in new dictionary instead of original
+                for (auto &original_str : *dict_segment_ptr->dictionary())
+                {
+                    pmr_string new_str{original_str, mr};
+                    new_dict_ptr->push_back(std::move(new_str));
+                }
+
+                // Now that we have both new attribute vector and dictionary, create a new segment
+                auto new_dict_segment_ptr = std::make_shared<DictionarySegment<pmr_string>>(new_dict_ptr, new_attribute_vector_ptr);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
+
+                break;
+            }
             default:
                 std::cout << "Should not have reached here\n";
                 return ReturnCode::Error;
