@@ -8,7 +8,8 @@
 #include "tpch/tpch_constants.hpp"
 #include "tpch/tpch_table_generator.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 // Generates the JCC-H data by calling JCC-H's dbgen binary. See jcch_benchmark.cpp for details.
 // This uses multiple inheritance from TPCHTableGenerator (for the sort order, indexes, and constraints) and from
@@ -17,26 +18,27 @@ namespace hyrise {
 // substitution principle. However, it makes reusing the TPC-H definitions much easier.
 class JCCHTableGenerator : virtual public AbstractTableGenerator,
                            private TPCHTableGenerator,
-                           private FileBasedTableGenerator {
- public:
-  // Convenience constructor for creating a JCCHTableGenerator without a benchmarking context.
-  explicit JCCHTableGenerator(const std::string& dbgen_path, const std::string& data_path, float scale_factor,
-                              ClusteringConfiguration clustering_configuration,
-                              ChunkOffset chunk_size = Chunk::DEFAULT_SIZE);
+                           private FileBasedTableGenerator
+{
+  public:
+    // Convenience constructor for creating a JCCHTableGenerator without a benchmarking context.
+    explicit JCCHTableGenerator(const std::string &dbgen_path, const std::string &data_path, float scale_factor,
+                                ClusteringConfiguration clustering_configuration,
+                                ChunkOffset chunk_size = Chunk::DEFAULT_SIZE);
 
-  // Constructor for creating a JCCHTableGenerator in a benchmark.
-  explicit JCCHTableGenerator(const std::string& dbgen_path, const std::string& data_path, float scale_factor,
-                              ClusteringConfiguration clustering_configuration,
-                              const std::shared_ptr<BenchmarkConfig>& benchmark_config);
+    // Constructor for creating a JCCHTableGenerator in a benchmark.
+    explicit JCCHTableGenerator(const std::string &dbgen_path, const std::string &data_path, float scale_factor,
+                                ClusteringConfiguration clustering_configuration,
+                                const std::shared_ptr<BenchmarkConfig> &benchmark_config);
 
-  std::unordered_map<std::string, BenchmarkTableInfo> generate() override;
+    std::unordered_map<std::string, BenchmarkTableInfo> generate() override;
 
- protected:
-  void _add_constraints(std::unordered_map<std::string, BenchmarkTableInfo>& table_info_by_name) const override;
-  using TPCHTableGenerator::_indexes_by_table;
-  using TPCHTableGenerator::_sort_order_by_table;
+  protected:
+    void _add_constraints(std::unordered_map<std::string, BenchmarkTableInfo> &table_info_by_name) const override;
+    using TPCHTableGenerator::_indexes_by_table;
+    using TPCHTableGenerator::_sort_order_by_table;
 
-  std::string _dbgen_path;
+    std::string _dbgen_path;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

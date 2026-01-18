@@ -7,7 +7,8 @@
 #include "storage/encoding_type.hpp"
 #include "storage/vector_compression/vector_compression.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractEncodedSegment;
 class BaseSegmentEncoder;
@@ -22,7 +23,7 @@ std::unique_ptr<BaseSegmentEncoder> create_encoder(EncodingType encoding_type);
 /**
  * @return the segment encoding spec for the given segment.
  */
-SegmentEncodingSpec get_segment_encoding_spec(const std::shared_ptr<const AbstractSegment>& segment);
+SegmentEncodingSpec get_segment_encoding_spec(const std::shared_ptr<const AbstractSegment> &segment);
 
 /**
  * @brief Returns the vector compression type for a given compressed vector type.
@@ -36,9 +37,9 @@ VectorCompressionType parent_vector_compression_type(const CompressedVectorType 
  * For more details, see #2696. This PR includes a comparison of different encoding strategies:
  * https://github.com/hyrise/hyrise/pull/2696#pullrequestreview-3087933111
  */
-ChunkEncodingSpec auto_select_chunk_encoding_spec(const std::vector<DataType>& types,
-                                                  const std::vector<ColumnID>& unique_columns);
+ChunkEncodingSpec auto_select_chunk_encoding_spec(const std::vector<DataType> &types,
+                                                  const std::vector<ColumnID> &unique_columns);
 SegmentEncodingSpec auto_select_segment_encoding_spec(const DataType type,
                                                       const bool segment_values_are_unique = false);
 
-}  // namespace hyrise
+} // namespace hyrise

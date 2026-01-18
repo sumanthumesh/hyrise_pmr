@@ -8,7 +8,8 @@
 #include "storage/segment_iterables/segment_positions.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * @brief base class of all iterators used by iterables
@@ -41,16 +42,19 @@ namespace hyrise {
  */
 template <typename Derived, typename Value>
 class AbstractSegmentIterator
-    : public boost::iterator_facade<Derived, Value, boost::random_access_traversal_tag, Value, std::ptrdiff_t> {};
+    : public boost::iterator_facade<Derived, Value, boost::random_access_traversal_tag, Value, std::ptrdiff_t>
+{
+};
 
 /**
  * Mapping between chunk offset into a reference segment and
  * its dereferenced counter part, i.e., a reference into the
  * referenced value or dictionary segment.
  */
-struct ChunkOffsetMapping {
-  ChunkOffset offset_in_poslist;           // chunk offset in reference segment
-  ChunkOffset offset_in_referenced_chunk;  // chunk offset in referenced segment
+struct ChunkOffsetMapping
+{
+    ChunkOffset offset_in_poslist;          // chunk offset in reference segment
+    ChunkOffset offset_in_referenced_chunk; // chunk offset in referenced segment
 };
 
 /**
@@ -63,45 +67,52 @@ struct ChunkOffsetMapping {
  */
 
 template <typename Derived, typename Value, typename PosListIteratorType>
-class AbstractPointAccessSegmentIterator : public AbstractSegmentIterator<Derived, Value> {
- public:
-  explicit AbstractPointAccessSegmentIterator(PosListIteratorType position_filter_begin,
-                                              PosListIteratorType position_filter_it)
-      : _position_filter_begin{std::move(position_filter_begin)}, _position_filter_it{std::move(position_filter_it)} {}
+class AbstractPointAccessSegmentIterator : public AbstractSegmentIterator<Derived, Value>
+{
+  public:
+    explicit AbstractPointAccessSegmentIterator(PosListIteratorType position_filter_begin,
+                                                PosListIteratorType position_filter_it)
+        : _position_filter_begin{std::move(position_filter_begin)}, _position_filter_it{std::move(position_filter_it)} {}
 
- protected:
-  const ChunkOffsetMapping chunk_offsets() const {
-    DebugAssert(_position_filter_it->chunk_offset != INVALID_CHUNK_OFFSET,
-                "Invalid ChunkOffset, calling code should handle null values");
-    return {static_cast<ChunkOffset>(_position_filter_it - _position_filter_begin), _position_filter_it->chunk_offset};
-  }
+  protected:
+    const ChunkOffsetMapping chunk_offsets() const
+    {
+        DebugAssert(_position_filter_it->chunk_offset != INVALID_CHUNK_OFFSET,
+                    "Invalid ChunkOffset, calling code should handle null values");
+        return {static_cast<ChunkOffset>(_position_filter_it - _position_filter_begin), _position_filter_it->chunk_offset};
+    }
 
- private:
-  friend class boost::iterator_core_access;  // grants the boost::iterator_facade access to the private interface
+  private:
+    friend class boost::iterator_core_access; // grants the boost::iterator_facade access to the private interface
 
-  void increment() {
-    ++_position_filter_it;
-  }
+    void increment()
+    {
+        ++_position_filter_it;
+    }
 
-  void decrement() {
-    --_position_filter_it;
-  }
+    void decrement()
+    {
+        --_position_filter_it;
+    }
 
-  void advance(std::ptrdiff_t n) {
-    _position_filter_it += n;
-  }
+    void advance(std::ptrdiff_t n)
+    {
+        _position_filter_it += n;
+    }
 
-  bool equal(const AbstractPointAccessSegmentIterator& other) const {
-    return (_position_filter_it == other._position_filter_it);
-  }
+    bool equal(const AbstractPointAccessSegmentIterator &other) const
+    {
+        return (_position_filter_it == other._position_filter_it);
+    }
 
-  std::ptrdiff_t distance_to(const AbstractPointAccessSegmentIterator& other) const {
-    return other._position_filter_it - _position_filter_it;
-  }
+    std::ptrdiff_t distance_to(const AbstractPointAccessSegmentIterator &other) const
+    {
+        return other._position_filter_it - _position_filter_it;
+    }
 
- private:
-  PosListIteratorType _position_filter_begin;
-  PosListIteratorType _position_filter_it;
+  private:
+    PosListIteratorType _position_filter_begin;
+    PosListIteratorType _position_filter_it;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

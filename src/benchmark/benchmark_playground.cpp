@@ -4,7 +4,8 @@
 
 #include "micro_benchmark_basic_fixture.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Welcome to the benchmark playground. Here, you can quickly compare two
@@ -32,69 +33,80 @@ namespace hyrise {
 
 using ValueT = int32_t;
 
-class BenchmarkPlaygroundFixture : public MicroBenchmarkBasicFixture {
- public:
-  void SetUp(::benchmark::State& state) override {
-    MicroBenchmarkBasicFixture::SetUp(state);
+class BenchmarkPlaygroundFixture : public MicroBenchmarkBasicFixture
+{
+  public:
+    void SetUp(::benchmark::State &state) override
+    {
+        MicroBenchmarkBasicFixture::SetUp(state);
 
-    _clear_cache();
+        _clear_cache();
 
-    // Fill the vector with 1M values in the pattern 0, 1, 2, 3, 0, 1, 2, 3, ...
-    // The "TableScan" will scan for one value (2), so it will select 25%.
-    _vec.resize(1'000'000);
-    std::generate(_vec.begin(), _vec.end(), []() {
+        // Fill the vector with 1M values in the pattern 0, 1, 2, 3, 0, 1, 2, 3, ...
+        // The "TableScan" will scan for one value (2), so it will select 25%.
+        _vec.resize(1'000'000);
+        std::generate(_vec.begin(), _vec.end(), []()
+                      {
       static ValueT value = 0;
       value = (value + 1) % 4;
-      return value;
-    });
-  }
+      return value; });
+    }
 
-  void TearDown(::benchmark::State& state) override {
-    MicroBenchmarkBasicFixture::TearDown(state);
-  }
+    void TearDown(::benchmark::State &state) override
+    {
+        MicroBenchmarkBasicFixture::TearDown(state);
+    }
 
- protected:
-  std::vector<ValueT> _vec;
+  protected:
+    std::vector<ValueT> _vec;
 };
 
 /**
  * Reference implementation, growing the vector on demand
  */
-BENCHMARK_F(BenchmarkPlaygroundFixture, BM_Playground_Reference)(benchmark::State& state) {
-  // Add some benchmark-specific setup here
+BENCHMARK_F(BenchmarkPlaygroundFixture, BM_Playground_Reference)(benchmark::State &state)
+{
+    // Add some benchmark-specific setup here
 
-  for (auto _ : state) {
-    auto result = std::vector<size_t>{};
-    benchmark::DoNotOptimize(result.data());  // Do not optimize out the vector
-    const auto size = _vec.size();
-    for (auto index = size_t{0}; index < size; ++index) {
-      if (_vec[index] == 2) {
-        result.push_back(index);
-        benchmark::ClobberMemory();  // Force that record to be written to memory
-      }
+    for (auto _ : state)
+    {
+        auto result = std::vector<size_t>{};
+        benchmark::DoNotOptimize(result.data()); // Do not optimize out the vector
+        const auto size = _vec.size();
+        for (auto index = size_t{0}; index < size; ++index)
+        {
+            if (_vec[index] == 2)
+            {
+                result.push_back(index);
+                benchmark::ClobberMemory(); // Force that record to be written to memory
+            }
+        }
     }
-  }
 }
 
 /**
  * Alternative implementation, pre-allocating the vector
  */
-BENCHMARK_F(BenchmarkPlaygroundFixture, BM_Playground_PreAllocate)(benchmark::State& state) {
-  // Add some benchmark-specific setup here
+BENCHMARK_F(BenchmarkPlaygroundFixture, BM_Playground_PreAllocate)(benchmark::State &state)
+{
+    // Add some benchmark-specific setup here
 
-  for (auto _ : state) {
-    std::vector<size_t> result;
-    benchmark::DoNotOptimize(result.data());  // Do not optimize out the vector
-    // pre-allocate result vector
-    result.reserve(250'000);
-    const auto size = _vec.size();
-    for (auto index = size_t{0}; index < size; ++index) {
-      if (_vec[index] == 2) {
-        result.push_back(index);
-        benchmark::ClobberMemory();  // Force that record to be written to memory
-      }
+    for (auto _ : state)
+    {
+        std::vector<size_t> result;
+        benchmark::DoNotOptimize(result.data()); // Do not optimize out the vector
+        // pre-allocate result vector
+        result.reserve(250'000);
+        const auto size = _vec.size();
+        for (auto index = size_t{0}; index < size; ++index)
+        {
+            if (_vec[index] == 2)
+            {
+                result.push_back(index);
+                benchmark::ClobberMemory(); // Force that record to be written to memory
+            }
+        }
     }
-  }
 }
 
-}  // namespace hyrise
+} // namespace hyrise

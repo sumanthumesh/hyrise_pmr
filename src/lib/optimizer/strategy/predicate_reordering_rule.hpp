@@ -6,7 +6,8 @@
 #include "abstract_rule.hpp"
 #include "logical_query_plan/abstract_lqp_node.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * This optimizer rule finds chains of adjacent PredicateNodes and sorts them based on the expected cost. This cost is
@@ -30,19 +31,20 @@ namespace hyrise {
  *     semi-join reducer (few tuples) that has a small right input. The penalty factor and the large input outweigh the
  *     cardinality reduction and the scan suffers from large output writing.
  */
-class PredicateReorderingRule : public AbstractRule {
- public:
-  std::string name() const override;
+class PredicateReorderingRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
-  // Using a fixed penalty for joins is not optimal. However, penalizing their execution overhead by some means turned
-  // out to be a good idea. We keep it simple and use a constant factor, which is derived experimentally. This might be
-  // subject to change in the future if we chose different join implementations, but works reasonably well for now.
-  // TODO(anyone): Revisit if we substantially change join execution.
-  constexpr static auto JOIN_PENALTY = Cost{1.5};
+    // Using a fixed penalty for joins is not optimal. However, penalizing their execution overhead by some means turned
+    // out to be a good idea. We keep it simple and use a constant factor, which is derived experimentally. This might be
+    // subject to change in the future if we chose different join implementations, but works reasonably well for now.
+    // TODO(anyone): Revisit if we substantially change join execution.
+    constexpr static auto JOIN_PENALTY = Cost{1.5};
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

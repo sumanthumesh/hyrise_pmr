@@ -7,7 +7,8 @@
 
 #include "join_graph_edge.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class JoinGraph;
 
@@ -53,40 +54,41 @@ using CsgCmpPair = std::pair<JoinGraphVertexSet, JoinGraphVertexSet>;
  *          -> a subgraph for which **all possible subdivisions have been enumerated before**. This fact is essential
  *              for dynamic programming to work.
  */
-class EnumerateCcp final {
- public:
-  EnumerateCcp(const size_t num_vertices, const std::vector<std::pair<size_t, size_t>>& edges);
+class EnumerateCcp final
+{
+  public:
+    EnumerateCcp(const size_t num_vertices, const std::vector<std::pair<size_t, size_t>> &edges);
 
-  // Corresponds to EnumerateCsg in the paper.
-  std::vector<CsgCmpPair> operator()();
+    // Corresponds to EnumerateCsg in the paper.
+    std::vector<CsgCmpPair> operator()();
 
- private:
-  // Corresponds to EnumerateCsgRec in the paper.
-  void _enumerate_csg_recursive(std::vector<JoinGraphVertexSet>& csgs, const JoinGraphVertexSet& vertex_set,
-                                const JoinGraphVertexSet& exclusion_set);
+  private:
+    // Corresponds to EnumerateCsgRec in the paper.
+    void _enumerate_csg_recursive(std::vector<JoinGraphVertexSet> &csgs, const JoinGraphVertexSet &vertex_set,
+                                  const JoinGraphVertexSet &exclusion_set);
 
-  // Corresponds to EnumerateCmp in the paper. Includes the change from Meister et al.'s errata to the original paper
-  // (http://www.vldb.org/pvldb/vol11/p1069-meister.pdf).
-  void _enumerate_cmp(const JoinGraphVertexSet& primary_vertex_set);
+    // Corresponds to EnumerateCmp in the paper. Includes the change from Meister et al.'s errata to the original paper
+    // (http://www.vldb.org/pvldb/vol11/p1069-meister.pdf).
+    void _enumerate_cmp(const JoinGraphVertexSet &primary_vertex_set);
 
-  // Corresponds to B_i(V) in the paper.
-  JoinGraphVertexSet _exclusion_set(const size_t vertex_idx) const;
+    // Corresponds to B_i(V) in the paper.
+    JoinGraphVertexSet _exclusion_set(const size_t vertex_idx) const;
 
-  // Corresponds to N(S) in the paper.
-  JoinGraphVertexSet _neighborhood(const JoinGraphVertexSet& vertex_set, const JoinGraphVertexSet& exclusion_set) const;
+    // Corresponds to N(S) in the paper.
+    JoinGraphVertexSet _neighborhood(const JoinGraphVertexSet &vertex_set, const JoinGraphVertexSet &exclusion_set) const;
 
-  JoinGraphVertexSet _single_vertex_neighborhood(const size_t vertex_idx) const;
+    JoinGraphVertexSet _single_vertex_neighborhood(const size_t vertex_idx) const;
 
-  // Corresponds to subset-first subset enumeration in the paper.
-  std::vector<JoinGraphVertexSet> _non_empty_subsets(const JoinGraphVertexSet& vertex_set) const;
+    // Corresponds to subset-first subset enumeration in the paper.
+    std::vector<JoinGraphVertexSet> _non_empty_subsets(const JoinGraphVertexSet &vertex_set) const;
 
-  const size_t _num_vertices;
-  const std::vector<std::pair<size_t, size_t>>& _edges;
+    const size_t _num_vertices;
+    const std::vector<std::pair<size_t, size_t>> &_edges;
 
-  std::vector<std::pair<JoinGraphVertexSet, JoinGraphVertexSet>> _csg_cmp_pairs;
+    std::vector<std::pair<JoinGraphVertexSet, JoinGraphVertexSet>> _csg_cmp_pairs;
 
-  // Lookup table
-  std::vector<JoinGraphVertexSet> _vertex_neighborhoods;
+    // Lookup table
+    std::vector<JoinGraphVertexSet> _vertex_neighborhoods;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

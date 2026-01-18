@@ -8,7 +8,8 @@
 #include "operators/abstract_read_only_operator.hpp"
 #include "storage/pos_lists/row_id_pos_list.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * ## Purpose
@@ -69,60 +70,62 @@ namespace hyrise {
  *    RowID{1, 1}
  *
  */
-class UnionPositions : public AbstractReadOnlyOperator {
- public:
-  UnionPositions(const std::shared_ptr<const AbstractOperator>& left,
-                 const std::shared_ptr<const AbstractOperator>& right);
+class UnionPositions : public AbstractReadOnlyOperator
+{
+  public:
+    UnionPositions(const std::shared_ptr<const AbstractOperator> &left,
+                   const std::shared_ptr<const AbstractOperator> &right);
 
-  const std::string& name() const override;
+    const std::string &name() const override;
 
- private:
-  // See docs at the top of the .cpp file.
-  using ReferenceMatrix = std::vector<RowIDPosList>;
-  using VirtualPosList = std::vector<size_t>;
+  private:
+    // See docs at the top of the .cpp file.
+    using ReferenceMatrix = std::vector<RowIDPosList>;
+    using VirtualPosList = std::vector<size_t>;
 
-  /**
-   * Comparator for performing the sort() of a virtual pos list. Needs to know about the ReferenceMatrix that the
-   * VirtualPosList references and is thus dubbed a "Context".
-   */
-  struct VirtualPosListCmpContext {
-    ReferenceMatrix& reference_matrix;
-    bool operator()(size_t left, size_t right) const;
-  };
+    /**
+     * Comparator for performing the sort() of a virtual pos list. Needs to know about the ReferenceMatrix that the
+     * VirtualPosList references and is thus dubbed a "Context".
+     */
+    struct VirtualPosListCmpContext
+    {
+        ReferenceMatrix &reference_matrix;
+        bool operator()(size_t left, size_t right) const;
+    };
 
-  std::shared_ptr<const Table> _on_execute() override;
+    std::shared_ptr<const Table> _on_execute() override;
 
-  std::shared_ptr<AbstractOperator> _on_deep_copy(
-      const std::shared_ptr<AbstractOperator>& copied_left_input,
-      const std::shared_ptr<AbstractOperator>& copied_right_input,
-      std::unordered_map<const AbstractOperator*, std::shared_ptr<AbstractOperator>>& /*copied_ops*/) const override;
-  void _on_set_parameters(const std::unordered_map<ParameterID, AllTypeVariant>& parameters) override;
+    std::shared_ptr<AbstractOperator> _on_deep_copy(
+        const std::shared_ptr<AbstractOperator> &copied_left_input,
+        const std::shared_ptr<AbstractOperator> &copied_right_input,
+        std::unordered_map<const AbstractOperator *, std::shared_ptr<AbstractOperator>> & /*copied_ops*/) const override;
+    void _on_set_parameters(const std::unordered_map<ParameterID, AllTypeVariant> &parameters) override;
 
-  void _on_cleanup() override;
+    void _on_cleanup() override;
 
-  /**
-   * Validates the input AND initializes some utility data it uses (_column_cluster_offsets, _referenced_tables,
-   * _referenced_column_ids).
-   *
-   * We cannot really split this up into one validate and one prepare step, since some of the validation depends on
-   * the utility data being initialized.
-   *
-   * @returns the result table of the operator if one or both of the inputs was empty and we do not actually need to
-   *    execute the operator. nullptr otherwise.
-   */
-  std::shared_ptr<const Table> _prepare_operator();
+    /**
+     * Validates the input AND initializes some utility data it uses (_column_cluster_offsets, _referenced_tables,
+     * _referenced_column_ids).
+     *
+     * We cannot really split this up into one validate and one prepare step, since some of the validation depends on
+     * the utility data being initialized.
+     *
+     * @returns the result table of the operator if one or both of the inputs was empty and we do not actually need to
+     *    execute the operator. nullptr otherwise.
+     */
+    std::shared_ptr<const Table> _prepare_operator();
 
-  UnionPositions::ReferenceMatrix _build_reference_matrix(const std::shared_ptr<const Table>& input_table) const;
-  static bool _compare_reference_matrix_rows(const ReferenceMatrix& left_matrix, size_t left_row_idx,
-                                             const ReferenceMatrix& right_matrix, size_t right_row_idx);
+    UnionPositions::ReferenceMatrix _build_reference_matrix(const std::shared_ptr<const Table> &input_table) const;
+    static bool _compare_reference_matrix_rows(const ReferenceMatrix &left_matrix, size_t left_row_idx,
+                                               const ReferenceMatrix &right_matrix, size_t right_row_idx);
 
-  // See the "About ColumnClusters" doc in the .cpp file.
-  std::vector<ColumnID> _column_cluster_offsets;
+    // See the "About ColumnClusters" doc in the .cpp file.
+    std::vector<ColumnID> _column_cluster_offsets;
 
-  // For each ColumnCluster, the table its pos_list references.
-  std::vector<std::shared_ptr<const Table>> _referenced_tables;
+    // For each ColumnCluster, the table its pos_list references.
+    std::vector<std::shared_ptr<const Table>> _referenced_tables;
 
-  // For each column_idx in the input tables, specifies the referenced column in the referenced table.
-  std::vector<ColumnID> _referenced_column_ids;
+    // For each column_idx in the input tables, specifies the referenced column in the referenced table.
+    std::vector<ColumnID> _referenced_column_ids;
 };
-}  // namespace hyrise
+} // namespace hyrise

@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <map>
 
-namespace {
+namespace
+{
 
 /**
  * TPC-H 1
@@ -35,7 +36,7 @@ namespace {
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_1 =
+const char *const tpch_query_1 =
     R"(SELECT l_returnflag, l_linestatus, SUM(l_quantity) as sum_qty, SUM(l_extendedprice) as sum_base_price,
       SUM(l_extendedprice*(1-l_discount)) as sum_disc_price,
       SUM(l_extendedprice*(1-l_discount)*(1+l_tax)) as sum_charge, AVG(l_quantity) as avg_qty,
@@ -75,7 +76,7 @@ const char* const tpch_query_1 =
  *
  * The limit is not part of the printed query but hidden in the specification text.
  */
-const char* const tpch_query_2 =
+const char *const tpch_query_2 =
     R"(SELECT s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment
        FROM part, supplier, partsupp, nation, region
        WHERE p_partkey = ps_partkey AND s_suppkey = ps_suppkey AND p_size = ? AND p_type like ? AND
@@ -99,7 +100,7 @@ const char* const tpch_query_2 =
  *
  * The limit is not part of the printed query but hidden in the specification text.
  */
-const char* const tpch_query_3 =
+const char *const tpch_query_3 =
     R"(SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) as revenue, o_orderdate, o_shippriority
       FROM customer, orders, lineitem
       WHERE c_mktsegment = ? AND c_custkey = o_custkey AND l_orderkey = o_orderkey
@@ -135,7 +136,7 @@ const char* const tpch_query_3 =
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_4 =
+const char *const tpch_query_4 =
     R"(SELECT o_orderpriority, count(*) as order_count FROM orders WHERE o_orderdate >= ? AND
     o_orderdate < ? AND exists (
     SELECT * FROM lineitem WHERE l_orderkey = o_orderkey AND l_commitdate < l_receiptdate)
@@ -176,7 +177,7 @@ const char* const tpch_query_4 =
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_5 =
+const char *const tpch_query_5 =
     R"(SELECT n_name, SUM(l_extendedprice * (1 - l_discount)) as revenue
       FROM customer, orders, lineitem, supplier, nation, region
       WHERE c_custkey = o_custkey AND l_orderkey = o_orderkey AND l_suppkey = s_suppkey AND c_nationkey = s_nationkey
@@ -203,7 +204,7 @@ const char* const tpch_query_5 =
  *    a. Add a small offset ".06 + 0.01001" to include records with a l_discount of "0.07"
  */
 
-const char* const tpch_query_6 =
+const char *const tpch_query_6 =
     R"(SELECT sum(l_extendedprice*l_discount) AS revenue
       FROM lineitem
       WHERE l_shipdate >= ? AND l_shipdate < ?
@@ -244,7 +245,7 @@ const char* const tpch_query_6 =
  *  2. SQLite does not support extract
  *    a. Use SUBSTR instead (because our date columns are strings AND SQLite doesn't support EXTRACT)
  */
-const char* const tpch_query_7 =
+const char *const tpch_query_7 =
     R"(SELECT
           supp_nation,
           cust_nation,
@@ -325,7 +326,7 @@ const char* const tpch_query_7 =
  *  2. Extract is not supported
  *    a. Use SUBSTR instead (because our date columns are strings AND SQLite doesn't support EXTRACT)
  */
-const char* const tpch_query_8 =
+const char *const tpch_query_8 =
     R"(SELECT o_year, SUM(case when nation = ? then volume else 0 end) / SUM(volume) as mkt_share
      FROM (SELECT SUBSTR(o_orderdate, 1, 4) as o_year, l_extendedprice * (1-l_discount) as volume,
      n2.n_name as nation FROM part, supplier, lineitem, orders, customer, nation n1, nation n2, region
@@ -365,7 +366,7 @@ const char* const tpch_query_8 =
  *  1. Extract is not supported
  *    a. Use SUBSTR instead
  */
-const char* const tpch_query_9 =
+const char *const tpch_query_9 =
     R"(SELECT nation, o_year, SUM(amount) as sum_profit FROM (SELECT n_name as nation, SUBSTR(o_orderdate, 1, 4) as o_year,
       l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount
       FROM part, supplier, lineitem, partsupp, orders, nation WHERE s_suppkey = l_suppkey
@@ -418,7 +419,7 @@ const char* const tpch_query_9 =
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_10 =
+const char *const tpch_query_10 =
     R"(SELECT c_custkey, c_name, SUM(l_extendedprice * (1 - l_discount)) as revenue, c_acctbal, n_name, c_address,
       c_phone, c_comment
       FROM customer, orders, lineitem, nation
@@ -451,7 +452,7 @@ const char* const tpch_query_10 =
  *    )
  * ORDER BY value DESC;
  */
-const char* const tpch_query_11 =
+const char *const tpch_query_11 =
     R"(SELECT ps_partkey, SUM(ps_supplycost * ps_availqty) as value FROM partsupp, supplier, nation
       WHERE ps_suppkey = s_suppkey AND s_nationkey = n_nationkey AND n_name = ?
       GROUP BY ps_partkey having SUM(ps_supplycost * ps_availqty) > (
@@ -491,7 +492,7 @@ const char* const tpch_query_11 =
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_12 =
+const char *const tpch_query_12 =
     R"(SELECT l_shipmode, SUM(case when o_orderpriority ='1-URGENT' or o_orderpriority ='2-HIGH' then 1 else 0 end)
       as high_line_count, SUM(case when o_orderpriority <> '1-URGENT' AND
       o_orderpriority <> '2-HIGH' then 1 else 0 end) as low_line_count FROM orders, lineitem
@@ -520,7 +521,7 @@ const char* const tpch_query_12 =
  *  1. Subselect column aliases are moved into subselect because SQLite does not support aliases at the original position
  */
 
-const char* const tpch_query_13 =
+const char *const tpch_query_13 =
     R"(SELECT c_count, count(*) as custdist FROM (SELECT c_custkey, count(o_orderkey) AS c_count
       FROM customer left outer join orders on c_custkey = o_custkey AND o_comment not like ?
       GROUP BY c_custkey) as c_orders GROUP BY c_count ORDER BY custdist DESC, c_count DESC;)";
@@ -546,7 +547,7 @@ const char* const tpch_query_13 =
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_14 =
+const char *const tpch_query_14 =
     R"(SELECT 100.00 * SUM(case when p_type like 'PROMO%' then l_extendedprice*(1-l_discount) else 0 end)
       / SUM(l_extendedprice * (1 - l_discount)) as promo_revenue FROM lineitem, part WHERE l_partkey = p_partkey
       AND l_shipdate >= ? AND l_shipdate < ?;)";
@@ -582,7 +583,7 @@ const char* const tpch_query_14 =
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_15 =
+const char *const tpch_query_15 =
     R"(create view revenue_view (supplier_no, total_revenue) as SELECT l_suppkey,
       SUM(l_extendedprice * (1 - l_discount)) FROM lineitem WHERE l_shipdate >= '1996-01-01'
       AND l_shipdate < '1996-04-01' GROUP BY l_suppkey;
@@ -613,7 +614,7 @@ const char* const tpch_query_15 =
  * GROUP BY p_brand, p_type, p_size
  * ORDER BY supplier_cnt DESC, p_brand, p_type, p_size;
  */
-const char* const tpch_query_16 =
+const char *const tpch_query_16 =
     R"(SELECT p_brand, p_type, p_size, count(distinct ps_suppkey) as supplier_cnt
       FROM partsupp, part WHERE p_partkey = ps_partkey AND p_brand <> ?
       AND p_type not like ? AND p_size in (?, ?, ?, ?, ?, ?, ?, ?)
@@ -637,7 +638,7 @@ const char* const tpch_query_16 =
  *        WHERE l_partkey = p_partkey
  *    );
  */
-const char* const tpch_query_17 =
+const char *const tpch_query_17 =
     R"(SELECT SUM(l_extendedprice) / 7.0 as avg_yearly FROM lineitem, part WHERE p_partkey = l_partkey
       AND p_brand = ? AND p_container = ? AND l_quantity < (SELECT 0.2 * avg(l_quantity)
       FROM lineitem WHERE l_partkey = p_partkey);)";
@@ -664,7 +665,7 @@ const char* const tpch_query_17 =
  *
  * The limit is not part of the printed query but hidden in the specification text.
  */
-const char* const tpch_query_18 =
+const char *const tpch_query_18 =
     R"(SELECT c_name, c_custkey, o_orderkey, o_orderdate, o_totalprice, SUM(l_quantity)
       FROM customer, orders, lineitem WHERE o_orderkey in (SELECT l_orderkey FROM lineitem
       GROUP BY l_orderkey having SUM(l_quantity) > ?) AND c_custkey = o_custkey AND o_orderkey = l_orderkey
@@ -707,7 +708,7 @@ const char* const tpch_query_18 =
  *        AND l_shipinstruct = 'DELIVER IN PERSON'
  *    );
  */
-const char* const tpch_query_19 =
+const char *const tpch_query_19 =
 
     R"(SELECT SUM(l_extendedprice * (1 - l_discount) ) as revenue FROM lineitem, part WHERE (( p_partkey = l_partkey AND
       p_brand = ? AND p_container in ( 'SM CASE', 'SM BOX', 'SM PACK', 'SM PKG') AND l_quantity >= ? AND l_quantity
@@ -753,7 +754,7 @@ const char* const tpch_query_19 =
  *    a. use strings as data type for now
  *    b. pre-calculate date operation
  */
-const char* const tpch_query_20 =
+const char *const tpch_query_20 =
     R"(SELECT s_name, s_address FROM supplier, nation WHERE s_suppkey in (SELECT ps_suppkey FROM partsupp
       WHERE ps_partkey in (SELECT p_partkey FROM part WHERE p_name like ?) AND ps_availqty >
       (SELECT 0.5 * SUM(l_quantity) FROM lineitem WHERE l_partkey = ps_partkey AND l_suppkey = ps_suppkey AND
@@ -800,7 +801,7 @@ const char* const tpch_query_20 =
  *    b. pre-calculate date operation
 
  */
-const char* const tpch_query_21 =
+const char *const tpch_query_21 =
     R"(SELECT s_name, count(*) as numwait FROM supplier, lineitem l1, orders, nation WHERE s_suppkey = l1.l_suppkey
       AND o_orderkey = l1.l_orderkey AND o_orderstatus = 'F' AND l1.l_receiptdate > l1.l_commitdate AND exists
       (SELECT * FROM lineitem l2 WHERE l2.l_orderkey = l1.l_orderkey AND l2.l_suppkey <> l1.l_suppkey) AND not exists
@@ -851,7 +852,7 @@ const char* const tpch_query_21 =
  * Changes:
  *  1. Renamed SUBSTRING to SUBSTR because SQLite does not support the former
  */
-const char* const tpch_query_22 =
+const char *const tpch_query_22 =
     R"(SELECT
          cntrycode, COUNT(*) AS numcust, SUM(c_acctbal) AS totacctbal
        FROM
@@ -873,15 +874,12 @@ const char* const tpch_query_22 =
        GROUP BY cntrycode
        ORDER BY cntrycode;)";
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-const std::map<size_t, const char*> tpch_queries = {
-    {1, tpch_query_1},   {2, tpch_query_2},   {3, tpch_query_3},   {4, tpch_query_4},   {5, tpch_query_5},
-    {6, tpch_query_6},   {7, tpch_query_7},   {8, tpch_query_8},   {9, tpch_query_9},   {10, tpch_query_10},
-    {11, tpch_query_11}, {12, tpch_query_12}, {13, tpch_query_13}, {14, tpch_query_14}, {15, tpch_query_15},
-    {16, tpch_query_16}, {17, tpch_query_17}, {18, tpch_query_18}, {19, tpch_query_19}, {20, tpch_query_20},
-    {21, tpch_query_21}, {22, tpch_query_22}};
+const std::map<size_t, const char *> tpch_queries = {
+    {1, tpch_query_1}, {2, tpch_query_2}, {3, tpch_query_3}, {4, tpch_query_4}, {5, tpch_query_5}, {6, tpch_query_6}, {7, tpch_query_7}, {8, tpch_query_8}, {9, tpch_query_9}, {10, tpch_query_10}, {11, tpch_query_11}, {12, tpch_query_12}, {13, tpch_query_13}, {14, tpch_query_14}, {15, tpch_query_15}, {16, tpch_query_16}, {17, tpch_query_17}, {18, tpch_query_18}, {19, tpch_query_19}, {20, tpch_query_20}, {21, tpch_query_21}, {22, tpch_query_22}};
 
-}  // namespace hyrise
+} // namespace hyrise

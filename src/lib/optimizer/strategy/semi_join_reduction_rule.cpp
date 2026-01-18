@@ -17,31 +17,36 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::string SemiJoinReductionRule::name() const {
-  static const auto name = std::string{"SemiJoinReductionRule"};
-  return name;
+std::string SemiJoinReductionRule::name() const
+{
+    static const auto name = std::string{"SemiJoinReductionRule"};
+    return name;
 }
 
-void SemiJoinReductionRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                                              OptimizationContext& optimization_context) const {
-  Assert(lqp_root->type == LQPNodeType::Root, "Rule needs root to hold onto.");
+void SemiJoinReductionRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                                              OptimizationContext &optimization_context) const
+{
+    Assert(lqp_root->type == LQPNodeType::Root, "Rule needs root to hold onto.");
 
-  // Adding semi joins inside visit_lqp might lead to endless recursions. Thus, we use visit_lqp to identify the
-  // reductions that we want to add to the plan, write them into semi_join_reductions and actually add them after
-  // visit_lqp.
-  auto semi_join_reductions =
-      std::vector<std::tuple<std::shared_ptr<JoinNode>, LQPInputSide, std::shared_ptr<JoinNode>>>{};
+    // Adding semi joins inside visit_lqp might lead to endless recursions. Thus, we use visit_lqp to identify the
+    // reductions that we want to add to the plan, write them into semi_join_reductions and actually add them after
+    // visit_lqp.
+    auto semi_join_reductions =
+        std::vector<std::tuple<std::shared_ptr<JoinNode>, LQPInputSide, std::shared_ptr<JoinNode>>>{};
 
-  const auto opposite_side = [](const auto side) {
-    return side == LQPInputSide::Left ? LQPInputSide::Right : LQPInputSide::Left;
-  };
+    const auto opposite_side = [](const auto side)
+    {
+        return side == LQPInputSide::Left ? LQPInputSide::Right : LQPInputSide::Left;
+    };
 
-  const auto estimator = optimization_context.cost_estimator->cardinality_estimator->new_instance();
-  estimator->guarantee_bottom_up_construction(lqp_root);
+    const auto estimator = optimization_context.cost_estimator->cardinality_estimator->new_instance();
+    estimator->guarantee_bottom_up_construction(lqp_root);
 
-  visit_lqp(lqp_root, [&](const auto& node) {
+    visit_lqp(lqp_root, [&](const auto &node)
+              {
     if (node->type != LQPNodeType::Join) {
       return LQPVisitation::VisitInputs;
     }
@@ -163,11 +168,11 @@ void SemiJoinReductionRule::_apply_to_plan_without_subqueries(const std::shared_
       }
     }
 
-    return LQPVisitation::VisitInputs;
-  });
+    return LQPVisitation::VisitInputs; });
 
-  for (const auto& [join_node, side_of_join, semi_join_reduction_node] : semi_join_reductions) {
-    lqp_insert_node(join_node, side_of_join, semi_join_reduction_node, AllowRightInput::Yes);
-  }
+    for (const auto &[join_node, side_of_join, semi_join_reduction_node] : semi_join_reductions)
+    {
+        lqp_insert_node(join_node, side_of_join, semi_join_reduction_node, AllowRightInput::Yes);
+    }
 }
-}  // namespace hyrise
+} // namespace hyrise

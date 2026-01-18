@@ -8,7 +8,8 @@
 #include "storage/index/abstract_chunk_index.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractSegment;
 class ARTNode;
@@ -29,68 +30,70 @@ class BaseDictionarySegment;
  * Find more information about this in our wiki: https://github.com/hyrise/hyrise/wiki/ART
  *
  */
-class AdaptiveRadixTreeIndex : public AbstractChunkIndex {
-  friend class AdaptiveRadixTreeIndexTest;
+class AdaptiveRadixTreeIndex : public AbstractChunkIndex
+{
+    friend class AdaptiveRadixTreeIndexTest;
 
-  friend class AdaptiveRadixTreeIndexTest_BulkInsert_Test;
+    friend class AdaptiveRadixTreeIndexTest_BulkInsert_Test;
 
-  friend class AdaptiveRadixTreeIndexTest_BinaryComparableFromChunkOffset_Test;
+    friend class AdaptiveRadixTreeIndexTest_BinaryComparableFromChunkOffset_Test;
 
- public:
-  /**
-   * Predicts the memory consumption in bytes of creating this index.
-   * See AbstractChunkIndex::estimate_memory_consumption()
-   */
-  static size_t estimate_memory_consumption(ChunkOffset /*row_count*/, ChunkOffset /*distinct_count*/,
-                                            uint32_t /*value_bytes*/);
+  public:
+    /**
+     * Predicts the memory consumption in bytes of creating this index.
+     * See AbstractChunkIndex::estimate_memory_consumption()
+     */
+    static size_t estimate_memory_consumption(ChunkOffset /*row_count*/, ChunkOffset /*distinct_count*/,
+                                              uint32_t /*value_bytes*/);
 
-  explicit AdaptiveRadixTreeIndex(const std::vector<std::shared_ptr<const AbstractSegment>>& segments_to_index);
+    explicit AdaptiveRadixTreeIndex(const std::vector<std::shared_ptr<const AbstractSegment>> &segments_to_index);
 
-  AdaptiveRadixTreeIndex(AdaptiveRadixTreeIndex&&) = default;
+    AdaptiveRadixTreeIndex(AdaptiveRadixTreeIndex &&) = default;
 
-  /**
-   *All keys in the ART have to be binary comparable in the sense that if the most significant differing bit between
-   *BinaryComparable a and BinaryComparable b is greater for a <=> a > b.
-   *This is true for unsigned values (like the ValueID), but signed values, chars and strings have to be transformed
-   *in order to fulfill this property. The BinaryComparable class works as a common interface for those values.
-   *The ART compares keys byte-wise, therefore we save the bytes of a BinaryComparable in a vector.
-   */
+    /**
+     *All keys in the ART have to be binary comparable in the sense that if the most significant differing bit between
+     *BinaryComparable a and BinaryComparable b is greater for a <=> a > b.
+     *This is true for unsigned values (like the ValueID), but signed values, chars and strings have to be transformed
+     *in order to fulfill this property. The BinaryComparable class works as a common interface for those values.
+     *The ART compares keys byte-wise, therefore we save the bytes of a BinaryComparable in a vector.
+     */
 
-  class BinaryComparable {
-   public:
-    explicit BinaryComparable(ValueID value);
+    class BinaryComparable
+    {
+      public:
+        explicit BinaryComparable(ValueID value);
 
-    size_t size() const;
+        size_t size() const;
 
-    uint8_t operator[](size_t position) const;
+        uint8_t operator[](size_t position) const;
 
-   private:
-    std::vector<uint8_t> _parts;
-  };
+      private:
+        std::vector<uint8_t> _parts;
+    };
 
- private:
-  Iterator _lower_bound(const std::vector<AllTypeVariant>& values) const final;
+  private:
+    Iterator _lower_bound(const std::vector<AllTypeVariant> &values) const final;
 
-  Iterator _upper_bound(const std::vector<AllTypeVariant>& values) const final;
+    Iterator _upper_bound(const std::vector<AllTypeVariant> &values) const final;
 
-  Iterator _cbegin() const final;
+    Iterator _cbegin() const final;
 
-  Iterator _cend() const final;
+    Iterator _cend() const final;
 
-  std::shared_ptr<ARTNode> _bulk_insert(const std::vector<std::pair<BinaryComparable, ChunkOffset>>& values);
+    std::shared_ptr<ARTNode> _bulk_insert(const std::vector<std::pair<BinaryComparable, ChunkOffset>> &values);
 
-  std::shared_ptr<ARTNode> _bulk_insert(const std::vector<std::pair<BinaryComparable, ChunkOffset>>& values,
-                                        size_t depth, Iterator& it);
+    std::shared_ptr<ARTNode> _bulk_insert(const std::vector<std::pair<BinaryComparable, ChunkOffset>> &values,
+                                          size_t depth, Iterator &it);
 
-  std::vector<std::shared_ptr<const AbstractSegment>> _get_indexed_segments() const final;
+    std::vector<std::shared_ptr<const AbstractSegment>> _get_indexed_segments() const final;
 
-  size_t _memory_consumption() const final;
+    size_t _memory_consumption() const final;
 
-  const std::shared_ptr<const BaseDictionarySegment> _indexed_segment;
-  std::vector<ChunkOffset> _chunk_offsets;
-  std::shared_ptr<ARTNode> _root;
+    const std::shared_ptr<const BaseDictionarySegment> _indexed_segment;
+    std::vector<ChunkOffset> _chunk_offsets;
+    std::shared_ptr<ARTNode> _root;
 };
 
-bool operator==(const AdaptiveRadixTreeIndex::BinaryComparable& left,
-                const AdaptiveRadixTreeIndex::BinaryComparable& right);
-}  // namespace hyrise
+bool operator==(const AdaptiveRadixTreeIndex::BinaryComparable &left,
+                const AdaptiveRadixTreeIndex::BinaryComparable &right);
+} // namespace hyrise

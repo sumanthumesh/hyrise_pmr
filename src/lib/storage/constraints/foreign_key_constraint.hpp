@@ -4,11 +4,12 @@
 #include <unordered_set>
 #include <vector>
 
-#include <oneapi/tbb/concurrent_unordered_set.h>  // NOLINT(build/include_order): cpplint identifies TBB as C system headers.
+#include <oneapi/tbb/concurrent_unordered_set.h> // NOLINT(build/include_order): cpplint identifies TBB as C system headers.
 
 #include "abstract_table_constraint.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Table;
 
@@ -29,39 +30,42 @@ class Table;
  * Foreign key constraints are translated to inclusion dependencies (INDs) in the LQP. An inclusion dependency states
  * that all values for a combination of attributes are also present in a combination of attributes of another table.
  */
-class ForeignKeyConstraint final : public AbstractTableConstraint {
- public:
-  ForeignKeyConstraint(std::vector<ColumnID>&& foreign_key_columns, const std::shared_ptr<Table>& foreign_key_table,
-                       std::vector<ColumnID>&& primary_key_columns, const std::shared_ptr<Table>& primary_key_table);
-  ForeignKeyConstraint() = delete;
+class ForeignKeyConstraint final : public AbstractTableConstraint
+{
+  public:
+    ForeignKeyConstraint(std::vector<ColumnID> &&foreign_key_columns, const std::shared_ptr<Table> &foreign_key_table,
+                         std::vector<ColumnID> &&primary_key_columns, const std::shared_ptr<Table> &primary_key_table);
+    ForeignKeyConstraint() = delete;
 
-  const std::vector<ColumnID>& foreign_key_columns() const;
-  std::shared_ptr<Table> foreign_key_table() const;
+    const std::vector<ColumnID> &foreign_key_columns() const;
+    std::shared_ptr<Table> foreign_key_table() const;
 
-  const std::vector<ColumnID>& primary_key_columns() const;
-  std::shared_ptr<Table> primary_key_table() const;
+    const std::vector<ColumnID> &primary_key_columns() const;
+    std::shared_ptr<Table> primary_key_table() const;
 
-  size_t hash() const override;
+    size_t hash() const override;
 
- protected:
-  bool _on_equals(const AbstractTableConstraint& table_constraint) const override;
+  protected:
+    bool _on_equals(const AbstractTableConstraint &table_constraint) const override;
 
-  std::vector<ColumnID> _foreign_key_columns;
-  std::weak_ptr<Table> _foreign_key_table;
+    std::vector<ColumnID> _foreign_key_columns;
+    std::weak_ptr<Table> _foreign_key_table;
 
-  std::vector<ColumnID> _primary_key_columns;
-  std::weak_ptr<Table> _primary_key_table;
+    std::vector<ColumnID> _primary_key_columns;
+    std::weak_ptr<Table> _primary_key_table;
 };
 
 using ForeignKeyConstraints = tbb::concurrent_unordered_set<ForeignKeyConstraint>;
 
-}  // namespace hyrise
+} // namespace hyrise
 
-namespace std {
+namespace std
+{
 
 template <>
-struct hash<hyrise::ForeignKeyConstraint> {
-  size_t operator()(const hyrise::ForeignKeyConstraint& foreign_key_constraint) const;
+struct hash<hyrise::ForeignKeyConstraint>
+{
+    size_t operator()(const hyrise::ForeignKeyConstraint &foreign_key_constraint) const;
 };
 
-}  // namespace std
+} // namespace std

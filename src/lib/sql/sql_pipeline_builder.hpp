@@ -8,7 +8,8 @@
 #include "sql_pipeline_statement.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Optimizer;
 
@@ -32,31 +33,32 @@ class Optimizer;
  * SQLPipeline[Statement] doc for these classes. In short, SQLPipeline is for queries with multiple statements,
  * SQLPipelineStatement for single statement queries.
  */
-class SQLPipelineBuilder final {
- public:
-  explicit SQLPipelineBuilder(const std::string& sql);
+class SQLPipelineBuilder final
+{
+  public:
+    explicit SQLPipelineBuilder(const std::string &sql);
 
-  SQLPipelineBuilder& with_mvcc(const UseMvcc use_mvcc);
-  SQLPipelineBuilder& with_optimizer(const std::shared_ptr<Optimizer>& optimizer);
-  SQLPipelineBuilder& with_transaction_context(const std::shared_ptr<TransactionContext>& transaction_context);
-  SQLPipelineBuilder& with_pqp_cache(const std::shared_ptr<SQLPhysicalPlanCache>& pqp_cache);
-  SQLPipelineBuilder& with_lqp_cache(const std::shared_ptr<SQLLogicalPlanCache>& lqp_cache);
+    SQLPipelineBuilder &with_mvcc(const UseMvcc use_mvcc);
+    SQLPipelineBuilder &with_optimizer(const std::shared_ptr<Optimizer> &optimizer);
+    SQLPipelineBuilder &with_transaction_context(const std::shared_ptr<TransactionContext> &transaction_context);
+    SQLPipelineBuilder &with_pqp_cache(const std::shared_ptr<SQLPhysicalPlanCache> &pqp_cache);
+    SQLPipelineBuilder &with_lqp_cache(const std::shared_ptr<SQLLogicalPlanCache> &lqp_cache);
 
-  /**
-   * Short for with_mvcc(UseMvcc::No)
-   */
-  SQLPipelineBuilder& disable_mvcc();
+    /**
+     * Short for with_mvcc(UseMvcc::No)
+     */
+    SQLPipelineBuilder &disable_mvcc();
 
-  SQLPipeline create_pipeline() const;
+    SQLPipeline create_pipeline() const;
 
- private:
-  const std::string _sql;
+  private:
+    const std::string _sql;
 
-  UseMvcc _use_mvcc{UseMvcc::Yes};
-  std::shared_ptr<TransactionContext> _transaction_context;
-  std::shared_ptr<Optimizer> _optimizer;
-  std::shared_ptr<SQLPhysicalPlanCache> _pqp_cache;
-  std::shared_ptr<SQLLogicalPlanCache> _lqp_cache;
+    UseMvcc _use_mvcc{UseMvcc::Yes};
+    std::shared_ptr<TransactionContext> _transaction_context;
+    std::shared_ptr<Optimizer> _optimizer;
+    std::shared_ptr<SQLPhysicalPlanCache> _pqp_cache;
+    std::shared_ptr<SQLLogicalPlanCache> _lqp_cache;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

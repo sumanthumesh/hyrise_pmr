@@ -8,7 +8,8 @@
 #include "storage/index/table_index_statistics.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractLQPNode;
 class PredicateNode;
@@ -25,13 +26,14 @@ class PredicateNode;
  * Currently, only GroupKeyIndexes are supported.
  */
 
-class IndexScanRule : public AbstractRule {
- public:
-  std::string name() const override;
+class IndexScanRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

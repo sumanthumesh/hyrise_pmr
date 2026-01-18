@@ -9,7 +9,8 @@
 
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractExpression;
 
@@ -28,17 +29,18 @@ using JoinGraphVertexSet = boost::dynamic_bitset<>;
  * from all vertices in vertex_set and no columns from vertices not in vertex_set. If the predicate wouldn't, then it
  * would belong to another edge.
  */
-struct JoinGraphEdge final {
- public:
-  // Doesn't check that the predicates actually only reference the vertex_set, since it has no knowledge of
-  // LQPNode -> vertex index mapping. Thus, the caller has to ensure validity.
-  explicit JoinGraphEdge(const JoinGraphVertexSet& init_vertex_set,
-                         const std::vector<std::shared_ptr<AbstractExpression>>& init_predicates = {});
+struct JoinGraphEdge final
+{
+  public:
+    // Doesn't check that the predicates actually only reference the vertex_set, since it has no knowledge of
+    // LQPNode -> vertex index mapping. Thus, the caller has to ensure validity.
+    explicit JoinGraphEdge(const JoinGraphVertexSet &init_vertex_set,
+                           const std::vector<std::shared_ptr<AbstractExpression>> &init_predicates = {});
 
-  JoinGraphVertexSet vertex_set;
-  std::vector<std::shared_ptr<AbstractExpression>> predicates;
+    JoinGraphVertexSet vertex_set;
+    std::vector<std::shared_ptr<AbstractExpression>> predicates;
 };
 
-std::ostream& operator<<(std::ostream& stream, const JoinGraphEdge& join_graph_edge);
+std::ostream &operator<<(std::ostream &stream, const JoinGraphEdge &join_graph_edge);
 
-}  // namespace hyrise
+} // namespace hyrise

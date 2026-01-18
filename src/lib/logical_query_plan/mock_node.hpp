@@ -13,7 +13,8 @@
 #include "storage/constraints/table_order_constraint.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class LQPColumnExpression;
 class TableStatistics;
@@ -25,66 +26,67 @@ class TableStatistics;
  * It is useful in tests (e.g. general LQP tests, optimizer tests that just rely on statistics and not actual data) and
  * the playground
  */
-class MockNode : public EnableMakeForLQPNode<MockNode>, public AbstractLQPNode {
- public:
-  using ColumnDefinitions = std::vector<std::pair<DataType, std::string>>;
+class MockNode : public EnableMakeForLQPNode<MockNode>, public AbstractLQPNode
+{
+  public:
+    using ColumnDefinitions = std::vector<std::pair<DataType, std::string>>;
 
-  explicit MockNode(const ColumnDefinitions& column_definitions, const std::optional<std::string>& init_name = {});
+    explicit MockNode(const ColumnDefinitions &column_definitions, const std::optional<std::string> &init_name = {});
 
-  std::shared_ptr<LQPColumnExpression> get_column(const std::string& column_name) const;
+    std::shared_ptr<LQPColumnExpression> get_column(const std::string &column_name) const;
 
-  const ColumnDefinitions& column_definitions() const;
+    const ColumnDefinitions &column_definitions() const;
 
-  std::vector<std::shared_ptr<AbstractExpression>> output_expressions() const override;
-  bool is_column_nullable(const ColumnID column_id) const override;
+    std::vector<std::shared_ptr<AbstractExpression>> output_expressions() const override;
+    bool is_column_nullable(const ColumnID column_id) const override;
 
-  // Generates UCCs from table's key constraints and drops UCCs that include pruned columns.
-  UniqueColumnCombinations unique_column_combinations() const override;
+    // Generates UCCs from table's key constraints and drops UCCs that include pruned columns.
+    UniqueColumnCombinations unique_column_combinations() const override;
 
-  // Returns stored ODs and pays respect to pruned columns.
-  OrderDependencies order_dependencies() const override;
+    // Returns stored ODs and pays respect to pruned columns.
+    OrderDependencies order_dependencies() const override;
 
-  /**
-   * @defgroup ColumnIDs to be pruned from the mocked Table.
-   * Vector passed to `set_pruned_column_ids()` needs to be sorted and unique
-   * @{
-   */
-  void set_pruned_column_ids(const std::vector<ColumnID>& pruned_column_ids);
-  const std::vector<ColumnID>& pruned_column_ids() const;
-  /** @} */
+    /**
+     * @defgroup ColumnIDs to be pruned from the mocked Table.
+     * Vector passed to `set_pruned_column_ids()` needs to be sorted and unique
+     * @{
+     */
+    void set_pruned_column_ids(const std::vector<ColumnID> &pruned_column_ids);
+    const std::vector<ColumnID> &pruned_column_ids() const;
+    /** @} */
 
-  std::string description(const DescriptionMode mode = DescriptionMode::Short) const override;
+    std::string description(const DescriptionMode mode = DescriptionMode::Short) const override;
 
-  const std::shared_ptr<TableStatistics>& table_statistics() const;
-  void set_table_statistics(const std::shared_ptr<TableStatistics>& table_statistics);
+    const std::shared_ptr<TableStatistics> &table_statistics() const;
+    void set_table_statistics(const std::shared_ptr<TableStatistics> &table_statistics);
 
-  // Pure container functionality: MockNode does not use key constraints internally.
-  void set_key_constraints(const TableKeyConstraints& key_constraints);
-  const TableKeyConstraints& key_constraints() const;
+    // Pure container functionality: MockNode does not use key constraints internally.
+    void set_key_constraints(const TableKeyConstraints &key_constraints);
+    const TableKeyConstraints &key_constraints() const;
 
-  void set_non_trivial_functional_dependencies(const FunctionalDependencies& fds);
-  // Returns the specified set of non-trivial FDs.
-  FunctionalDependencies non_trivial_functional_dependencies() const override;
+    void set_non_trivial_functional_dependencies(const FunctionalDependencies &fds);
+    // Returns the specified set of non-trivial FDs.
+    FunctionalDependencies non_trivial_functional_dependencies() const override;
 
-  void set_order_constraints(const TableOrderConstraints& order_constraints);
+    void set_order_constraints(const TableOrderConstraints &order_constraints);
 
-  std::optional<std::string> name;
+    std::optional<std::string> name;
 
- protected:
-  size_t _on_shallow_hash() const override;
-  std::shared_ptr<AbstractLQPNode> _on_shallow_copy(LQPNodeMapping& /*node_mapping*/) const override;
-  bool _on_shallow_equals(const AbstractLQPNode& rhs, const LQPNodeMapping& /*node_mapping*/) const override;
+  protected:
+    size_t _on_shallow_hash() const override;
+    std::shared_ptr<AbstractLQPNode> _on_shallow_copy(LQPNodeMapping & /*node_mapping*/) const override;
+    bool _on_shallow_equals(const AbstractLQPNode &rhs, const LQPNodeMapping & /*node_mapping*/) const override;
 
- private:
-  mutable std::optional<std::vector<std::shared_ptr<AbstractExpression>>> _output_expressions;
+  private:
+    mutable std::optional<std::vector<std::shared_ptr<AbstractExpression>>> _output_expressions;
 
-  // Constructor args to keep around for deep_copy()
-  ColumnDefinitions _column_definitions;
-  std::shared_ptr<TableStatistics> _table_statistics;
-  std::vector<ColumnID> _pruned_column_ids;
-  FunctionalDependencies _functional_dependencies;
-  TableKeyConstraints _table_key_constraints;
-  TableOrderConstraints _order_constraints;
+    // Constructor args to keep around for deep_copy()
+    ColumnDefinitions _column_definitions;
+    std::shared_ptr<TableStatistics> _table_statistics;
+    std::vector<ColumnID> _pruned_column_ids;
+    FunctionalDependencies _functional_dependencies;
+    TableKeyConstraints _table_key_constraints;
+    TableOrderConstraints _order_constraints;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -6,7 +6,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractLQPNode;
 
@@ -14,15 +15,16 @@ class AbstractLQPNode;
  * A SQL View represented by an LQP.
  * When used in an SQL query, the SQLTranslator hooks a copy of this LQP into the LQP it creates
  */
-class LQPView {
- public:
-  LQPView(const std::shared_ptr<AbstractLQPNode>& lqp, std::unordered_map<ColumnID, std::string> column_names);
+class LQPView
+{
+  public:
+    LQPView(const std::shared_ptr<AbstractLQPNode> &lqp, std::unordered_map<ColumnID, std::string> column_names);
 
-  std::shared_ptr<LQPView> deep_copy() const;
-  bool deep_equals(const LQPView& other) const;
+    std::shared_ptr<LQPView> deep_copy() const;
+    bool deep_equals(const LQPView &other) const;
 
-  const std::shared_ptr<AbstractLQPNode> lqp;
-  const std::unordered_map<ColumnID, std::string> column_names;
+    const std::shared_ptr<AbstractLQPNode> lqp;
+    const std::unordered_map<ColumnID, std::string> column_names;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -11,64 +11,74 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 TransactionManager::TransactionManager()
     : _next_transaction_id{INITIAL_TRANSACTION_ID},
       _last_commit_id{INITIAL_COMMIT_ID},
       _last_commit_context{std::make_shared<CommitContext>(INITIAL_COMMIT_ID)} {}
 
-TransactionManager::~TransactionManager() {
-  Assert(_active_snapshot_commit_ids.empty(),
-         "Some transactions do not seem to have finished yet as they are still registered as active.");
+TransactionManager::~TransactionManager()
+{
+    Assert(_active_snapshot_commit_ids.empty(),
+           "Some transactions do not seem to have finished yet as they are still registered as active.");
 }
 
-TransactionManager& TransactionManager::operator=(TransactionManager&& transaction_manager) noexcept {
-  _next_transaction_id = transaction_manager._next_transaction_id.load();
-  _last_commit_id = transaction_manager._last_commit_id.load();
-  _last_commit_context = transaction_manager._last_commit_context;
-  _active_snapshot_commit_ids = transaction_manager._active_snapshot_commit_ids;
-  return *this;
+TransactionManager &TransactionManager::operator=(TransactionManager &&transaction_manager) noexcept
+{
+    _next_transaction_id = transaction_manager._next_transaction_id.load();
+    _last_commit_id = transaction_manager._last_commit_id.load();
+    _last_commit_context = transaction_manager._last_commit_context;
+    _active_snapshot_commit_ids = transaction_manager._active_snapshot_commit_ids;
+    return *this;
 }
 
-CommitID TransactionManager::last_commit_id() const {
-  return _last_commit_id;
+CommitID TransactionManager::last_commit_id() const
+{
+    return _last_commit_id;
 }
 
-std::shared_ptr<TransactionContext> TransactionManager::new_transaction_context(const AutoCommit auto_commit) {
-  const CommitID snapshot_commit_id = _last_commit_id;
-  return std::make_shared<TransactionContext>(TransactionID{_next_transaction_id++}, snapshot_commit_id, auto_commit);
+std::shared_ptr<TransactionContext> TransactionManager::new_transaction_context(const AutoCommit auto_commit)
+{
+    const CommitID snapshot_commit_id = _last_commit_id;
+    return std::make_shared<TransactionContext>(TransactionID{_next_transaction_id++}, snapshot_commit_id, auto_commit);
 }
 
-void TransactionManager::_register_transaction(const CommitID snapshot_commit_id) {
-  const auto lock = std::lock_guard<std::mutex>{_active_snapshot_commit_ids_mutex};
-  _active_snapshot_commit_ids.insert(snapshot_commit_id);
+void TransactionManager::_register_transaction(const CommitID snapshot_commit_id)
+{
+    const auto lock = std::lock_guard<std::mutex>{_active_snapshot_commit_ids_mutex};
+    _active_snapshot_commit_ids.insert(snapshot_commit_id);
 }
 
-void TransactionManager::_deregister_transaction(const CommitID snapshot_commit_id) {
-  const auto lock = std::lock_guard<std::mutex>{_active_snapshot_commit_ids_mutex};
+void TransactionManager::_deregister_transaction(const CommitID snapshot_commit_id)
+{
+    const auto lock = std::lock_guard<std::mutex>{_active_snapshot_commit_ids_mutex};
 
-  auto it = std::ranges::find(_active_snapshot_commit_ids, snapshot_commit_id);
+    auto it = std::ranges::find(_active_snapshot_commit_ids, snapshot_commit_id);
 
-  if (it != _active_snapshot_commit_ids.end()) {
-    _active_snapshot_commit_ids.erase(it);
-    return;
-  }
+    if (it != _active_snapshot_commit_ids.end())
+    {
+        _active_snapshot_commit_ids.erase(it);
+        return;
+    }
 
-  Assert(
-      it == _active_snapshot_commit_ids.end(),
-      "Could not find snapshot_commit_id in TransactionManager's _active_snapshot_commit_ids. Therefore, the removal "
-      "failed and the function should not have been called.");
+    Assert(
+        it == _active_snapshot_commit_ids.end(),
+        "Could not find snapshot_commit_id in TransactionManager's _active_snapshot_commit_ids. Therefore, the removal "
+        "failed and the function should not have been called.");
 }
 
-std::optional<CommitID> TransactionManager::get_lowest_active_snapshot_commit_id() const {
-  const auto lock = std::lock_guard<std::mutex>{_active_snapshot_commit_ids_mutex};
+std::optional<CommitID> TransactionManager::get_lowest_active_snapshot_commit_id() const
+{
+    const auto lock = std::lock_guard<std::mutex>{_active_snapshot_commit_ids_mutex};
 
-  if (_active_snapshot_commit_ids.empty()) {
-    return std::nullopt;
-  }
+    if (_active_snapshot_commit_ids.empty())
+    {
+        return std::nullopt;
+    }
 
-  return std::ranges::min(_active_snapshot_commit_ids);
+    return std::ranges::min(_active_snapshot_commit_ids);
 }
 
 /**
@@ -82,54 +92,62 @@ std::optional<CommitID> TransactionManager::get_lowest_active_snapshot_commit_id
  * is done, _last_commit_context will point to a commit context with no successor and they will be able to leave this
  * loop.
  */
-std::shared_ptr<CommitContext> TransactionManager::_new_commit_context() {
-  auto current_context = std::atomic_load(&_last_commit_context);
-  auto next_context = std::shared_ptr<CommitContext>();
+std::shared_ptr<CommitContext> TransactionManager::_new_commit_context()
+{
+    auto current_context = std::atomic_load(&_last_commit_context);
+    auto next_context = std::shared_ptr<CommitContext>();
 
-  auto success = false;
-  while (!success) {
-    while (current_context->has_next()) {
-      current_context = std::atomic_load(&_last_commit_context);
+    auto success = false;
+    while (!success)
+    {
+        while (current_context->has_next())
+        {
+            current_context = std::atomic_load(&_last_commit_context);
+        }
+
+        next_context = std::make_shared<CommitContext>(CommitID{current_context->commit_id() + 1});
+
+        success = current_context->try_set_next(next_context);
+
+        if (!success)
+        {
+            continue;
+        }
+
+        /**
+         * Only one thread at a time can ever reach this code since only one thread succeeds to set _last_commit_context’s
+         * successor.
+         */
+        success = std::atomic_compare_exchange_strong(&_last_commit_context, &current_context, next_context);
+
+        Assert(success, "Invariant violated.");
     }
 
-    next_context = std::make_shared<CommitContext>(CommitID{current_context->commit_id() + 1});
-
-    success = current_context->try_set_next(next_context);
-
-    if (!success) {
-      continue;
-    }
-
-    /**
-     * Only one thread at a time can ever reach this code since only one thread succeeds to set _last_commit_context’s
-     * successor.
-     */
-    success = std::atomic_compare_exchange_strong(&_last_commit_context, &current_context, next_context);
-
-    Assert(success, "Invariant violated.");
-  }
-
-  return next_context;
+    return next_context;
 }
 
-void TransactionManager::_try_increment_last_commit_id(const std::shared_ptr<CommitContext>& context) {
-  auto current_context = context;
+void TransactionManager::_try_increment_last_commit_id(const std::shared_ptr<CommitContext> &context)
+{
+    auto current_context = context;
 
-  while (current_context->is_pending()) {
-    auto expected_last_commit_id = CommitID{current_context->commit_id() - 1};
+    while (current_context->is_pending())
+    {
+        auto expected_last_commit_id = CommitID{current_context->commit_id() - 1};
 
-    if (!_last_commit_id.compare_exchange_strong(expected_last_commit_id, current_context->commit_id())) {
-      return;
+        if (!_last_commit_id.compare_exchange_strong(expected_last_commit_id, current_context->commit_id()))
+        {
+            return;
+        }
+
+        current_context->fire_callback();
+
+        if (!current_context->has_next())
+        {
+            return;
+        }
+
+        current_context = current_context->next();
     }
-
-    current_context->fire_callback();
-
-    if (!current_context->has_next()) {
-      return;
-    }
-
-    current_context = current_context->next();
-  }
 }
 
-}  // namespace hyrise
+} // namespace hyrise

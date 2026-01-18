@@ -8,7 +8,8 @@
 #include "logical_query_plan/predicate_node.hpp"
 #include "logical_query_plan/union_node.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * The PredicateSplitUpRule might have rewritten disjunctions into complex predicate/union chains. If no rule between
@@ -19,19 +20,20 @@ namespace hyrise {
  *
  * Example: TPC-DS query 41 benefits from this rule because the PredicateSplitUpRule creates a huge LQP.
  */
-class PredicateMergeRule : public AbstractRule {
- public:
-  std::string name() const override;
+class PredicateMergeRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
-  size_t minimum_union_count{4};
+    size_t minimum_union_count{4};
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 
- private:
-  void _merge_disjunction(const std::shared_ptr<UnionNode>& union_node) const;
-  void _merge_conjunction(const std::shared_ptr<PredicateNode>& predicate_node) const;
+  private:
+    void _merge_disjunction(const std::shared_ptr<UnionNode> &union_node) const;
+    void _merge_conjunction(const std::shared_ptr<PredicateNode> &predicate_node) const;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

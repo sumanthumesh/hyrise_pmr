@@ -7,7 +7,8 @@
 
 #include "abstract_expression.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractLQPNode;
 
@@ -24,29 +25,30 @@ class AbstractLQPNode;
  * Within the wrapped LQP, the parameter_expressions will be referenced using these ParameterIDs. This avoids pointers
  * from the wrapped LQP into the outer LQP (which would be a nightmare to maintain in deep_copy()).
  */
-class LQPSubqueryExpression : public AbstractExpression {
- public:
-  LQPSubqueryExpression(const std::shared_ptr<AbstractLQPNode>& init_lqp, const std::vector<ParameterID>& parameter_ids,
-                        const std::vector<std::shared_ptr<AbstractExpression>>& init_parameter_expressions);
+class LQPSubqueryExpression : public AbstractExpression
+{
+  public:
+    LQPSubqueryExpression(const std::shared_ptr<AbstractLQPNode> &init_lqp, const std::vector<ParameterID> &parameter_ids,
+                          const std::vector<std::shared_ptr<AbstractExpression>> &init_parameter_expressions);
 
-  std::shared_ptr<AbstractExpression> _on_deep_copy(
-      std::unordered_map<const AbstractOperator*, std::shared_ptr<AbstractOperator>>& /*copied_ops*/) const override;
-  std::string description(const DescriptionMode mode) const override;
-  DataType data_type() const override;
+    std::shared_ptr<AbstractExpression> _on_deep_copy(
+        std::unordered_map<const AbstractOperator *, std::shared_ptr<AbstractOperator>> & /*copied_ops*/) const override;
+    std::string description(const DescriptionMode mode) const override;
+    DataType data_type() const override;
 
-  // Returns whether this query is correlated, i.e., uses external parameters.
-  bool is_correlated() const;
+    // Returns whether this query is correlated, i.e., uses external parameters.
+    bool is_correlated() const;
 
-  size_t parameter_count() const;
-  std::shared_ptr<AbstractExpression> parameter_expression(const size_t parameter_idx) const;
+    size_t parameter_count() const;
+    std::shared_ptr<AbstractExpression> parameter_expression(const size_t parameter_idx) const;
 
-  std::shared_ptr<AbstractLQPNode> lqp;
-  const std::vector<ParameterID> parameter_ids;
+    std::shared_ptr<AbstractLQPNode> lqp;
+    const std::vector<ParameterID> parameter_ids;
 
- protected:
-  bool _shallow_equals(const AbstractExpression& expression) const override;
-  size_t _shallow_hash() const override;
-  bool _on_is_nullable_on_lqp(const AbstractLQPNode& /*node*/) const override;
+  protected:
+    bool _shallow_equals(const AbstractExpression &expression) const override;
+    size_t _shallow_hash() const override;
+    bool _on_is_nullable_on_lqp(const AbstractLQPNode & /*node*/) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

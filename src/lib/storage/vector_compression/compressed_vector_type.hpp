@@ -13,7 +13,8 @@
 #include "utils/assert.hpp"
 #include "utils/enum_constant.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 namespace hana = boost::hana;
 
@@ -25,14 +26,15 @@ namespace hana = boost::hana;
  * different vector types (one, two, or four bytes)
  * depending on the range of the values in the vector.
  */
-enum class CompressedVectorType : uint8_t {
-  BitPacking,
-  FixedWidthInteger1Byte,
-  FixedWidthInteger2Byte,
-  FixedWidthInteger4Byte,  // uncompressed
+enum class CompressedVectorType : uint8_t
+{
+    BitPacking,
+    FixedWidthInteger1Byte,
+    FixedWidthInteger2Byte,
+    FixedWidthInteger4Byte, // uncompressed
 };
 
-std::ostream& operator<<(std::ostream& stream, const CompressedVectorType compressed_vector_type);
+std::ostream &operator<<(std::ostream &stream, const CompressedVectorType compressed_vector_type);
 
 template <typename T>
 class FixedWidthIntegerVector;
@@ -58,20 +60,21 @@ constexpr auto compressed_vector_for_type = hana::make_map(
  * Effectively a reverse lookup in compressed_vector_for_type
  */
 template <typename CompressedVectorT>
-CompressedVectorType get_compressed_vector_type() {
-  auto compression_type = std::optional<CompressedVectorType>{};
+CompressedVectorType get_compressed_vector_type()
+{
+    auto compression_type = std::optional<CompressedVectorType>{};
 
-  hana::fold(compressed_vector_for_type, false, [&](auto match_found, auto pair) {
+    hana::fold(compressed_vector_for_type, false, [&](auto match_found, auto pair)
+               {
     if (!match_found && (hana::second(pair) == hana::type_c<CompressedVectorT>)) {
       compression_type = hana::value(hana::first(pair));
       return true;
     }
 
-    return match_found;
-  });
+    return match_found; });
 
-  Assert(compression_type, "CompressedVectorType not added to compressed_vector_for_type");
-  return *compression_type;
+    Assert(compression_type, "CompressedVectorType not added to compressed_vector_for_type");
+    return *compression_type;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

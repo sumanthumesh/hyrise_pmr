@@ -10,39 +10,43 @@
 #include "storage/table.hpp"
 #include "typed_operator_base_test.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class TableScanBetweenTest : public TypedOperatorBaseTest {
- protected:
-  std::shared_ptr<AbstractOperator> _data_table_wrapper;
+class TableScanBetweenTest : public TypedOperatorBaseTest
+{
+  protected:
+    std::shared_ptr<AbstractOperator> _data_table_wrapper;
 
-  void SetUp() override {
-    // For the test, we create a table with the data type that is to be scanned as the first column and a control int
-    // in the second column:
-    //
-    // a<DataType>  b<int>
-    // 10.25         0
-    // 12.25         1
-    // 14.25 / NULL  2       (each third row is nulled if the table is marked as nullable and no ordering is expected)
-    // 16.25         3
-    // ...
-    // 30.25         10
-    //
-    // If the table is sorted, NULL values are added up front or to the back.
-    //
-    // As the first column is TYPE CASTED, it contains 10 for an int column, the string "10.25" for a string column etc.
-    // We chose .25 because that can be exactly expressed in a float.
+    void SetUp() override
+    {
+        // For the test, we create a table with the data type that is to be scanned as the first column and a control int
+        // in the second column:
+        //
+        // a<DataType>  b<int>
+        // 10.25         0
+        // 12.25         1
+        // 14.25 / NULL  2       (each third row is nulled if the table is marked as nullable and no ordering is expected)
+        // 16.25         3
+        // ...
+        // 30.25         10
+        //
+        // If the table is sorted, NULL values are added up front or to the back.
+        //
+        // As the first column is TYPE CASTED, it contains 10 for an int column, the string "10.25" for a string column etc.
+        // We chose .25 because that can be exactly expressed in a float.
 
-    const auto& [data_type, encoding, sort_mode, nullable] = GetParam();
+        const auto &[data_type, encoding, sort_mode, nullable] = GetParam();
 
-    const bool descending = sort_mode == SortMode::DescendingNullsFirst;
-    const int number_of_nulls = nullable && sort_mode ? 3 : 0;
+        const bool descending = sort_mode == SortMode::DescendingNullsFirst;
+        const int number_of_nulls = nullable && sort_mode ? 3 : 0;
 
-    auto column_definitions = TableColumnDefinitions{{"a", data_type, nullable}, {"b", DataType::Int, nullable}};
+        auto column_definitions = TableColumnDefinitions{{"a", data_type, nullable}, {"b", DataType::Int, nullable}};
 
-    const auto data_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{6});
+        const auto data_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{6});
 
-    resolve_data_type(data_type, [&, nullable, sort_mode](const auto type) {
+        resolve_data_type(data_type, [&, nullable, sort_mode](const auto type)
+                          {
       using Type = typename decltype(type)::type;
       if (nullable) {
         for (int i = 0; i < number_of_nulls; ++i) {
@@ -66,47 +70,51 @@ class TableScanBetweenTest : public TypedOperatorBaseTest {
             data_table->append({static_cast<Type>(double_value), i + number_of_nulls});
           }
         }
-      }
-    });
+      } });
 
-    data_table->last_chunk()->set_immutable();
+        data_table->last_chunk()->set_immutable();
 
-    if (sort_mode) {
-      for (ChunkID chunk_id{0}; chunk_id < data_table->chunk_count(); ++chunk_id) {
-        data_table->get_chunk(chunk_id)->set_individually_sorted_by(SortColumnDefinition(ColumnID{0}, *sort_mode));
-      }
+        if (sort_mode)
+        {
+            for (ChunkID chunk_id{0}; chunk_id < data_table->chunk_count(); ++chunk_id)
+            {
+                data_table->get_chunk(chunk_id)->set_individually_sorted_by(SortColumnDefinition(ColumnID{0}, *sort_mode));
+            }
+        }
+
+        // We have two full chunks and one open chunk, we only encode the full chunks
+        for (auto chunk_id = ChunkID{0}; chunk_id < 2; ++chunk_id)
+        {
+            ChunkEncoder::encode_chunk(data_table->get_chunk(chunk_id), {data_type, DataType::Int},
+                                       {SegmentEncodingSpec{encoding}, SegmentEncodingSpec{EncodingType::Unencoded}});
+        }
+
+        _data_table_wrapper = std::make_shared<TableWrapper>(data_table);
+        _data_table_wrapper->never_clear_output();
+        _data_table_wrapper->execute();
     }
 
-    // We have two full chunks and one open chunk, we only encode the full chunks
-    for (auto chunk_id = ChunkID{0}; chunk_id < 2; ++chunk_id) {
-      ChunkEncoder::encode_chunk(data_table->get_chunk(chunk_id), {data_type, DataType::Int},
-                                 {SegmentEncodingSpec{encoding}, SegmentEncodingSpec{EncodingType::Unencoded}});
-    }
-
-    _data_table_wrapper = std::make_shared<TableWrapper>(data_table);
-    _data_table_wrapper->never_clear_output();
-    _data_table_wrapper->execute();
-  }
-
-  // This is a helper function, which runs a between table scan on the data defined in SetUp above.
-  // It takes the boundaries and the expected result index positions from the given tests parameter.
-  // To test all functionality, it is also necessary to consider the left/right inclusiveness. It cannot be done
-  // automatically, because the results differ depending on the chosen inclusiveness.
-  // Standard SQL only supports double-inclusiveness, therefore this is the default.
-  // a sample tests structure looks like this:
-  // std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
-  //    {12.25, 16.25, {1, 2, 3}},
-  //    {12.0, 16.25, {1, 2, 3}},
-  //    {12.0, 16.75, {1, 2, 3}},
-  // }
-  void _test_between_scan(std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>& tests,
-                          PredicateCondition predicate_condition) {
-    const auto& [data_type, encoding, sort_mode, nullable] = GetParam();
-    const bool ascending = sort_mode == SortMode::AscendingNullsFirst;
-    const bool descending = sort_mode == SortMode::DescendingNullsFirst;
-    const int number_of_nulls = nullable && sort_mode ? 3 : 0;
-    std::ignore = encoding;
-    resolve_data_type(data_type, [&, nullable](const auto data_type_t) {
+    // This is a helper function, which runs a between table scan on the data defined in SetUp above.
+    // It takes the boundaries and the expected result index positions from the given tests parameter.
+    // To test all functionality, it is also necessary to consider the left/right inclusiveness. It cannot be done
+    // automatically, because the results differ depending on the chosen inclusiveness.
+    // Standard SQL only supports double-inclusiveness, therefore this is the default.
+    // a sample tests structure looks like this:
+    // std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
+    //    {12.25, 16.25, {1, 2, 3}},
+    //    {12.0, 16.25, {1, 2, 3}},
+    //    {12.0, 16.75, {1, 2, 3}},
+    // }
+    void _test_between_scan(std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>> &tests,
+                            PredicateCondition predicate_condition)
+    {
+        const auto &[data_type, encoding, sort_mode, nullable] = GetParam();
+        const bool ascending = sort_mode == SortMode::AscendingNullsFirst;
+        const bool descending = sort_mode == SortMode::DescendingNullsFirst;
+        const int number_of_nulls = nullable && sort_mode ? 3 : 0;
+        std::ignore = encoding;
+        resolve_data_type(data_type, [&, nullable](const auto data_type_t)
+                          {
       using ColumnDataType = typename decltype(data_type_t)::type;
 
       for (const auto& [left, right, expected_with_null] : tests) {
@@ -179,63 +187,66 @@ class TableScanBetweenTest : public TypedOperatorBaseTest {
         }
 
         ASSERT_EQ(result_ints, expected);
-      }
-    });
-  }
+      } });
+    }
 };
 
-TEST_P(TableScanBetweenTest, Inclusive) {
-  auto inclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
-      {12.25, 16.25, {1, 2, 3}},                          // Both boundaries exact match
-      {12.0, 16.25, {1, 2, 3}},                           // Left boundary open match
-      {12.25, 16.75, {1, 2, 3}},                          // Right boundary open match
-      {12.0, 16.75, {1, 2, 3}},                           // Both boundaries open match
-      {0.0, 16.75, {0, 1, 2, 3}},                         // Left boundary before first value
-      {16.0, 50.75, {3, 4, 5, 6, 7, 8, 9, 10}},           // Right boundary after last value
-      {13.0, 16.25, {2, 3}},                              // Left boundary after first value
-      {12.25, 15.0, {1, 2}},                              // Right boundary before last value
-      {0.25, 50.75, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},  // Matching all values
-      {0.25, 0.75, {}},                                   // Matching no value
-  };
+TEST_P(TableScanBetweenTest, Inclusive)
+{
+    auto inclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
+        {12.25, 16.25, {1, 2, 3}},                         // Both boundaries exact match
+        {12.0, 16.25, {1, 2, 3}},                          // Left boundary open match
+        {12.25, 16.75, {1, 2, 3}},                         // Right boundary open match
+        {12.0, 16.75, {1, 2, 3}},                          // Both boundaries open match
+        {0.0, 16.75, {0, 1, 2, 3}},                        // Left boundary before first value
+        {16.0, 50.75, {3, 4, 5, 6, 7, 8, 9, 10}},          // Right boundary after last value
+        {13.0, 16.25, {2, 3}},                             // Left boundary after first value
+        {12.25, 15.0, {1, 2}},                             // Right boundary before last value
+        {0.25, 50.75, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}}, // Matching all values
+        {0.25, 0.75, {}},                                  // Matching no value
+    };
 
-  _test_between_scan(inclusive_tests, PredicateCondition::BetweenInclusive);
+    _test_between_scan(inclusive_tests, PredicateCondition::BetweenInclusive);
 }
 
-TEST_P(TableScanBetweenTest, LowerExclusive) {
-  auto left_exclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
-      {11.0, 16.25, {1, 2, 3}},  // Left boundary open match
-      {12.25, 16.25, {2, 3}},    // Both boundaries exact match
-      {13.0, 16.25, {2, 3}},     // Left boundary inner value
-  };
+TEST_P(TableScanBetweenTest, LowerExclusive)
+{
+    auto left_exclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
+        {11.0, 16.25, {1, 2, 3}}, // Left boundary open match
+        {12.25, 16.25, {2, 3}},   // Both boundaries exact match
+        {13.0, 16.25, {2, 3}},    // Left boundary inner value
+    };
 
-  _test_between_scan(left_exclusive_tests, PredicateCondition::BetweenLowerExclusive);
+    _test_between_scan(left_exclusive_tests, PredicateCondition::BetweenLowerExclusive);
 }
 
-TEST_P(TableScanBetweenTest, UpperExclusive) {
-  auto right_exclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
-      {12.25, 17.0, {1, 2, 3}},  // Right boundary open match
-      {12.25, 16.25, {1, 2}},    // Both boundaries exact match
-      {12.25, 15.0, {1, 2}},     // Right boundary inner value
-  };
+TEST_P(TableScanBetweenTest, UpperExclusive)
+{
+    auto right_exclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
+        {12.25, 17.0, {1, 2, 3}}, // Right boundary open match
+        {12.25, 16.25, {1, 2}},   // Both boundaries exact match
+        {12.25, 15.0, {1, 2}},    // Right boundary inner value
+    };
 
-  _test_between_scan(right_exclusive_tests, PredicateCondition::BetweenUpperExclusive);
+    _test_between_scan(right_exclusive_tests, PredicateCondition::BetweenUpperExclusive);
 }
 
-TEST_P(TableScanBetweenTest, Exclusive) {
-  auto exclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
-      {12.25, 16.25, {2}},      // Both boundaries exact match
-      {11.0, 16.25, {1, 2}},    // Left boundary open match
-      {12.25, 17.0, {2, 3}},    // Right boundary open match
-      {11.0, 17.0, {1, 2, 3}},  // Both boundaries open match
-      {13.0, 16.25, {2}},       // Left boundary inner value
-      {12.25, 15.0, {2}},       // Right boundary inner value
-      {13.0, 15.0, {2}},        // Both boundaries inner value
-  };
+TEST_P(TableScanBetweenTest, Exclusive)
+{
+    auto exclusive_tests = std::vector<std::tuple<AllTypeVariant, AllTypeVariant, std::vector<int>>>{
+        {12.25, 16.25, {2}},     // Both boundaries exact match
+        {11.0, 16.25, {1, 2}},   // Left boundary open match
+        {12.25, 17.0, {2, 3}},   // Right boundary open match
+        {11.0, 17.0, {1, 2, 3}}, // Both boundaries open match
+        {13.0, 16.25, {2}},      // Left boundary inner value
+        {12.25, 15.0, {2}},      // Right boundary inner value
+        {13.0, 15.0, {2}},       // Both boundaries inner value
+    };
 
-  _test_between_scan(exclusive_tests, PredicateCondition::BetweenExclusive);
+    _test_between_scan(exclusive_tests, PredicateCondition::BetweenExclusive);
 }
 
 INSTANTIATE_TEST_SUITE_P(TableScanBetweenTestInstances, TableScanBetweenTest, testing::ValuesIn(create_test_params()),
                          TypedOperatorBaseTest::format);
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -5,23 +5,25 @@
 
 #include "abstract_non_query_node.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Node type to represent insertion of rows into a table.
  */
-class InsertNode : public EnableMakeForLQPNode<InsertNode>, public AbstractNonQueryNode {
- public:
-  explicit InsertNode(const std::string& init_table_name);
+class InsertNode : public EnableMakeForLQPNode<InsertNode>, public AbstractNonQueryNode
+{
+  public:
+    explicit InsertNode(const std::string &init_table_name);
 
-  std::string description(const DescriptionMode mode = DescriptionMode::Short) const override;
+    std::string description(const DescriptionMode mode = DescriptionMode::Short) const override;
 
-  const std::string table_name;
+    const std::string table_name;
 
- protected:
-  size_t _on_shallow_hash() const override;
-  std::shared_ptr<AbstractLQPNode> _on_shallow_copy(LQPNodeMapping& /*node_mapping*/) const override;
-  bool _on_shallow_equals(const AbstractLQPNode& rhs, const LQPNodeMapping& /*node_mapping*/) const override;
+  protected:
+    size_t _on_shallow_hash() const override;
+    std::shared_ptr<AbstractLQPNode> _on_shallow_copy(LQPNodeMapping & /*node_mapping*/) const override;
+    bool _on_shallow_equals(const AbstractLQPNode &rhs, const LQPNodeMapping & /*node_mapping*/) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

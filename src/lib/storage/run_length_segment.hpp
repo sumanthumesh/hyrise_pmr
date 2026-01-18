@@ -5,7 +5,8 @@
 #include "abstract_encoded_segment.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class BaseCompressedVector;
 
@@ -40,60 +41,63 @@ class BaseCompressedVector;
  *  end positions:   2 4 7 8
  */
 template <typename T>
-class RunLengthSegment : public AbstractEncodedSegment {
- public:
-  explicit RunLengthSegment(const std::shared_ptr<const pmr_vector<T>>& values,
-                            const std::shared_ptr<const pmr_vector<bool>>& null_values,
-                            const std::shared_ptr<const pmr_vector<ChunkOffset>>& end_positions);
+class RunLengthSegment : public AbstractEncodedSegment
+{
+  public:
+    explicit RunLengthSegment(const std::shared_ptr<const pmr_vector<T>> &values,
+                              const std::shared_ptr<const pmr_vector<bool>> &null_values,
+                              const std::shared_ptr<const pmr_vector<ChunkOffset>> &end_positions);
 
-  std::shared_ptr<const pmr_vector<T>> values() const;
-  std::shared_ptr<const pmr_vector<bool>> null_values() const;
-  std::shared_ptr<const pmr_vector<ChunkOffset>> end_positions() const;
+    std::shared_ptr<const pmr_vector<T>> values() const;
+    std::shared_ptr<const pmr_vector<bool>> null_values() const;
+    std::shared_ptr<const pmr_vector<ChunkOffset>> end_positions() const;
 
-  /**
-   * @defgroup AbstractSegment interface
-   * @{
-   */
+    /**
+     * @defgroup AbstractSegment interface
+     * @{
+     */
 
-  AllTypeVariant operator[](const ChunkOffset chunk_offset) const final;
+    AllTypeVariant operator[](const ChunkOffset chunk_offset) const final;
 
-  std::optional<T> get_typed_value(const ChunkOffset chunk_offset) const {
-    // performance critical - not in cpp to help with inlining
-    const auto end_position_it = std::lower_bound(_end_positions->cbegin(), _end_positions->cend(), chunk_offset);
-    const auto index = std::distance(_end_positions->cbegin(), end_position_it);
+    std::optional<T> get_typed_value(const ChunkOffset chunk_offset) const
+    {
+        // performance critical - not in cpp to help with inlining
+        const auto end_position_it = std::lower_bound(_end_positions->cbegin(), _end_positions->cend(), chunk_offset);
+        const auto index = std::distance(_end_positions->cbegin(), end_position_it);
 
-    const auto is_null = (*_null_values)[index];
-    if (is_null) {
-      return std::nullopt;
+        const auto is_null = (*_null_values)[index];
+        if (is_null)
+        {
+            return std::nullopt;
+        }
+
+        return (*_values)[index];
     }
 
-    return (*_values)[index];
-  }
+    ChunkOffset size() const final;
 
-  ChunkOffset size() const final;
+    std::shared_ptr<AbstractSegment> copy_using_memory_resource(MemoryResource &memory_resource) const final;
 
-  std::shared_ptr<AbstractSegment> copy_using_memory_resource(MemoryResource& memory_resource) const final;
+    size_t memory_usage(const MemoryUsageCalculationMode mode) const final;
 
-  size_t memory_usage(const MemoryUsageCalculationMode mode) const final;
+    /**@}*/
 
-  /**@}*/
+    /**
+     * @defgroup AbstractEncodedSegment interface
+     * @{
+     */
 
-  /**
-   * @defgroup AbstractEncodedSegment interface
-   * @{
-   */
+    EncodingType encoding_type() const final;
+    std::optional<CompressedVectorType> compressed_vector_type() const final;
 
-  EncodingType encoding_type() const final;
-  std::optional<CompressedVectorType> compressed_vector_type() const final;
+    /**@}*/
 
-  /**@}*/
-
- protected:
-  const std::shared_ptr<const pmr_vector<T>> _values;
-  const std::shared_ptr<const pmr_vector<bool>> _null_values;
-  const std::shared_ptr<const pmr_vector<ChunkOffset>> _end_positions;
+  protected:
+    const std::shared_ptr<const pmr_vector<T>> _values;
+    const std::shared_ptr<const pmr_vector<bool>> _null_values;
+    const std::shared_ptr<const pmr_vector<ChunkOffset>> _end_positions;
 };
 
 EXPLICITLY_DECLARE_DATA_TYPES(RunLengthSegment);
 
-}  // namespace hyrise
+} // namespace hyrise

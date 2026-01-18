@@ -20,36 +20,44 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-ColumnLikeTableScanImpl::ColumnLikeTableScanImpl(const std::shared_ptr<const Table>& in_table, const ColumnID column_id,
+ColumnLikeTableScanImpl::ColumnLikeTableScanImpl(const std::shared_ptr<const Table> &in_table, const ColumnID column_id,
                                                  const PredicateCondition init_predicate_condition,
-                                                 const pmr_string& pattern)
+                                                 const pmr_string &pattern)
     : AbstractDereferencedColumnTableScanImpl{in_table, column_id, init_predicate_condition},
       _matcher{pattern, init_predicate_condition} {}
 
-std::string ColumnLikeTableScanImpl::description() const {
-  return "ColumnLike";
+std::string ColumnLikeTableScanImpl::description() const
+{
+    return "ColumnLike";
 }
 
 void ColumnLikeTableScanImpl::_scan_non_reference_segment(
-    const AbstractSegment& segment, const ChunkID chunk_id, RowIDPosList& matches,
-    const std::shared_ptr<const AbstractPosList>& position_filter) {
-  // For dictionary segments where the number of unique values is not higher than the number of (potentially filtered)
-  // input rows, use an optimized implementation.
-  if (const auto* dictionary_segment = dynamic_cast<const BaseDictionarySegment*>(&segment);
-      dictionary_segment &&
-      (!position_filter || dictionary_segment->unique_values_count() <= position_filter->size())) {
-    _scan_dictionary_segment(*dictionary_segment, chunk_id, matches, position_filter);
-  } else {
-    _scan_generic_segment(segment, chunk_id, matches, position_filter);
-  }
+    const AbstractSegment &segment, const ChunkID chunk_id, RowIDPosList &matches,
+    const std::shared_ptr<const AbstractPosList> &position_filter)
+{
+    // For dictionary segments where the number of unique values is not higher than the number of (potentially filtered)
+    // input rows, use an optimized implementation.
+    if (const auto *dictionary_segment = dynamic_cast<const BaseDictionarySegment *>(&segment);
+        dictionary_segment &&
+        (!position_filter || dictionary_segment->unique_values_count() <= position_filter->size()))
+    {
+        _scan_dictionary_segment(*dictionary_segment, chunk_id, matches, position_filter);
+    }
+    else
+    {
+        _scan_generic_segment(segment, chunk_id, matches, position_filter);
+    }
 }
 
 void ColumnLikeTableScanImpl::_scan_generic_segment(
-    const AbstractSegment& segment, const ChunkID chunk_id, RowIDPosList& matches,
-    const std::shared_ptr<const AbstractPosList>& position_filter) const {
-  segment_with_iterators_filtered(segment, position_filter, [&](const auto& iter, [[maybe_unused]] const auto& end) {
+    const AbstractSegment &segment, const ChunkID chunk_id, RowIDPosList &matches,
+    const std::shared_ptr<const AbstractPosList> &position_filter) const
+{
+    segment_with_iterators_filtered(segment, position_filter, [&](const auto &iter, [[maybe_unused]] const auto &end)
+                                    {
     // Don't instantiate this for ReferenceSegments to save compile time as ReferenceSegments are handled
     // via position_filter
     if constexpr (!is_reference_segment_iterable_v<typename std::decay_t<decltype(iter)>::IterableType>) {
@@ -67,75 +75,81 @@ void ColumnLikeTableScanImpl::_scan_generic_segment(
       }
     } else {
       Fail("ReferenceSegments have their own code paths and should be handled there.");
-    }
-  });
+    } });
 }
 
-void ColumnLikeTableScanImpl::_scan_dictionary_segment(const BaseDictionarySegment& segment, const ChunkID chunk_id,
-                                                       RowIDPosList& matches,
-                                                       const std::shared_ptr<const AbstractPosList>& position_filter) {
-  // First, build a bitmap containing 1s/0s for matching/non-matching dictionary values. Second, iterate over the
-  // attribute vector and check against the bitmap. If too many input rows have already been removed (are not part of
-  // position_filter), this optimization is detrimental. See caller for that case.
-  auto result = std::pair<size_t, std::vector<bool>>{};
+void ColumnLikeTableScanImpl::_scan_dictionary_segment(const BaseDictionarySegment &segment, const ChunkID chunk_id,
+                                                       RowIDPosList &matches,
+                                                       const std::shared_ptr<const AbstractPosList> &position_filter)
+{
+    // First, build a bitmap containing 1s/0s for matching/non-matching dictionary values. Second, iterate over the
+    // attribute vector and check against the bitmap. If too many input rows have already been removed (are not part of
+    // position_filter), this optimization is detrimental. See caller for that case.
+    auto result = std::pair<size_t, std::vector<bool>>{};
 
-  if (segment.encoding_type() == EncodingType::Dictionary) {
-    const auto& typed_segment = static_cast<const DictionarySegment<pmr_string>&>(segment);
-    result = _find_matches_in_dictionary(*typed_segment.dictionary());
-  } else {
-    const auto& typed_segment = static_cast<const FixedStringDictionarySegment<pmr_string>&>(segment);
-    result = _find_matches_in_dictionary(*typed_segment.fixed_string_dictionary());
-  }
+    if (segment.encoding_type() == EncodingType::Dictionary)
+    {
+        const auto &typed_segment = static_cast<const DictionarySegment<pmr_string> &>(segment);
+        result = _find_matches_in_dictionary(*typed_segment.dictionary());
+    }
+    else
+    {
+        const auto &typed_segment = static_cast<const FixedStringDictionarySegment<pmr_string> &>(segment);
+        result = _find_matches_in_dictionary(*typed_segment.fixed_string_dictionary());
+    }
 
-  const auto match_count = result.first;
-  const auto& dictionary_matches = result.second;
+    const auto match_count = result.first;
+    const auto &dictionary_matches = result.second;
 
-  auto attribute_vector_iterable = create_iterable_from_attribute_vector(segment);
+    auto attribute_vector_iterable = create_iterable_from_attribute_vector(segment);
 
-  // LIKE matches all rows, but we still need to check for NULL.
-  if (match_count == dictionary_matches.size()) {
-    attribute_vector_iterable.with_iterators(position_filter, [&](const auto& iter, const auto& end) {
+    // LIKE matches all rows, but we still need to check for NULL.
+    if (match_count == dictionary_matches.size())
+    {
+        attribute_vector_iterable.with_iterators(position_filter, [&](const auto &iter, const auto &end)
+                                                 {
       static const auto always_true = [](const auto&) {
         return true;
       };
-      _scan_with_iterators<true>(always_true, iter, end, chunk_id, matches);
-    });
+      _scan_with_iterators<true>(always_true, iter, end, chunk_id, matches); });
 
-    return;
-  }
+        return;
+    }
 
-  // LIKE matches no rows.
-  if (match_count == 0) {
-    ++num_chunks_with_early_out;
-    return;
-  }
+    // LIKE matches no rows.
+    if (match_count == 0)
+    {
+        ++num_chunks_with_early_out;
+        return;
+    }
 
-  const auto dictionary_lookup = [&dictionary_matches](const auto& position) {
-    return dictionary_matches[position.value()];
-  };
+    const auto dictionary_lookup = [&dictionary_matches](const auto &position)
+    {
+        return dictionary_matches[position.value()];
+    };
 
-  attribute_vector_iterable.with_iterators(position_filter, [&](const auto& iter, const auto& end) {
-    _scan_with_iterators<true>(dictionary_lookup, iter, end, chunk_id, matches);
-  });
+    attribute_vector_iterable.with_iterators(position_filter, [&](const auto &iter, const auto &end)
+                                             { _scan_with_iterators<true>(dictionary_lookup, iter, end, chunk_id, matches); });
 }
 
 template <typename D>
-std::pair<size_t, std::vector<bool>> ColumnLikeTableScanImpl::_find_matches_in_dictionary(const D& dictionary) const {
-  auto match_count = size_t{0};
-  const auto dictionary_size = dictionary.size();
-  auto dictionary_matches = std::vector<bool>(dictionary_size);
-  auto offset = ChunkOffset{0};
+std::pair<size_t, std::vector<bool>> ColumnLikeTableScanImpl::_find_matches_in_dictionary(const D &dictionary) const
+{
+    auto match_count = size_t{0};
+    const auto dictionary_size = dictionary.size();
+    auto dictionary_matches = std::vector<bool>(dictionary_size);
+    auto offset = ChunkOffset{0};
 
-  _matcher.resolve([&](const auto& matcher) {
+    _matcher.resolve([&](const auto &matcher)
+                     {
     for (const auto& value : dictionary) {
       const auto matches = matcher(value);
       match_count += static_cast<size_t>(matches);
       dictionary_matches[offset] = matches;
       ++offset;
-    }
-  });
+    } });
 
-  return {match_count, std::move(dictionary_matches)};
+    return {match_count, std::move(dictionary_matches)};
 }
 
-}  // namespace hyrise
+} // namespace hyrise

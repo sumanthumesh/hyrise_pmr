@@ -18,50 +18,55 @@
 #include "utils/assert.hpp"
 #include "utils/performance_warning.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-ColumnVsColumnTableScanImpl::ColumnVsColumnTableScanImpl(const std::shared_ptr<const Table>& in_table,
+ColumnVsColumnTableScanImpl::ColumnVsColumnTableScanImpl(const std::shared_ptr<const Table> &in_table,
                                                          const ColumnID left_column_id,
-                                                         const PredicateCondition& predicate_condition,
+                                                         const PredicateCondition &predicate_condition,
                                                          const ColumnID right_column_id)
     : _in_table(in_table),
       _left_column_id(left_column_id),
       _predicate_condition(predicate_condition),
       _right_column_id{right_column_id} {}
 
-std::string ColumnVsColumnTableScanImpl::description() const {
-  return "ColumnVsColumn";
+std::string ColumnVsColumnTableScanImpl::description() const
+{
+    return "ColumnVsColumn";
 }
 
-std::shared_ptr<RowIDPosList> ColumnVsColumnTableScanImpl::scan_chunk(ChunkID chunk_id) {
-  const auto chunk = _in_table->get_chunk(chunk_id);
-  const auto left_segment = chunk->get_segment(_left_column_id);
-  const auto right_segment = chunk->get_segment(_right_column_id);
+std::shared_ptr<RowIDPosList> ColumnVsColumnTableScanImpl::scan_chunk(ChunkID chunk_id)
+{
+    const auto chunk = _in_table->get_chunk(chunk_id);
+    const auto left_segment = chunk->get_segment(_left_column_id);
+    const auto right_segment = chunk->get_segment(_right_column_id);
 
-  auto result = std::shared_ptr<RowIDPosList>{};
+    auto result = std::shared_ptr<RowIDPosList>{};
 
-  /**
-   * Reducing the compile time:
-   *
-   * If the left and the right segment and/or data type are not the same, we erase the segment iterable types EVEN for
-   * the release build. For example, ValueSegment<int> == ValueSegment<float> will be erased. So will ValueSegment<int>
-   * == DictionarySegment<int>.
-   *
-   * We use type erasure here because we currently do not actively use comparisons between, e.g., a ValueSegment and a
-   * DictionarySegment. While it is supported, it is not executed, so we don't want the compiler to spend time
-   * instantiating unused templates. Whenever the types of the iterables is removed, we also erase the comparator
-   * lambda (in `_typed_scan_chunk`) by wrapping it into an std::function. All of this brought the compile time of
-   * this translation unit down significantly. This is only really relevant for the release build - in the debug build,
-   * iterables are always erased. The comparator type is being erased in the debug build as well.
-   */
+    /**
+     * Reducing the compile time:
+     *
+     * If the left and the right segment and/or data type are not the same, we erase the segment iterable types EVEN for
+     * the release build. For example, ValueSegment<int> == ValueSegment<float> will be erased. So will ValueSegment<int>
+     * == DictionarySegment<int>.
+     *
+     * We use type erasure here because we currently do not actively use comparisons between, e.g., a ValueSegment and a
+     * DictionarySegment. While it is supported, it is not executed, so we don't want the compiler to spend time
+     * instantiating unused templates. Whenever the types of the iterables is removed, we also erase the comparator
+     * lambda (in `_typed_scan_chunk`) by wrapping it into an std::function. All of this brought the compile time of
+     * this translation unit down significantly. This is only really relevant for the release build - in the debug build,
+     * iterables are always erased. The comparator type is being erased in the debug build as well.
+     */
 
-  /**
-   * FAST PATH
-   * ...in which the SegmentType does not get erased in Release builds. DataTypes and SegmentTypes have to be the same.
-   * In the case of ReferenceSegments, the used ReferenceSegmentIterator has to be the same (see below).
-   */
-  if (left_segment->data_type() == right_segment->data_type()) {
-    resolve_data_and_segment_type(*left_segment, [&](auto data_type_t, auto& left_typed_segment) {
+    /**
+     * FAST PATH
+     * ...in which the SegmentType does not get erased in Release builds. DataTypes and SegmentTypes have to be the same.
+     * In the case of ReferenceSegments, the used ReferenceSegmentIterator has to be the same (see below).
+     */
+    if (left_segment->data_type() == right_segment->data_type())
+    {
+        resolve_data_and_segment_type(*left_segment, [&](auto data_type_t, auto &left_typed_segment)
+                                      {
       using ColumnDataType = typename decltype(data_type_t)::type;
       using SegmentType = std::decay_t<decltype(left_typed_segment)>;
 
@@ -90,21 +95,22 @@ std::shared_ptr<RowIDPosList> ColumnVsColumnTableScanImpl::scan_chunk(ChunkID ch
               chunk_id, create_iterable_from_segment<ColumnDataType>(left_typed_segment),
               create_iterable_from_segment<ColumnDataType>(*right_typed_segment));
         }
-      }
-    });
+      } });
 
-    // `result` will still be nullptr if the SegmentTypes were not the same - if that's the case we have to take the
-    // "slow" path further down to perform the scan
-    if (result) {
-      return result;
+        // `result` will still be nullptr if the SegmentTypes were not the same - if that's the case we have to take the
+        // "slow" path further down to perform the scan
+        if (result)
+        {
+            return result;
+        }
     }
-  }
 
-  /**
-   * SLOW PATH
-   * ...in which the left and right segment iterables are erased into AnySegmentIterables<T>
-   */
-  resolve_data_type(left_segment->data_type(), [&](const auto left_data_type) {
+    /**
+     * SLOW PATH
+     * ...in which the left and right segment iterables are erased into AnySegmentIterables<T>
+     */
+    resolve_data_type(left_segment->data_type(), [&](const auto left_data_type)
+                      {
     using LeftColumnDataType = typename decltype(left_data_type)::type;
 
     auto left_iterable = create_any_segment_iterable<LeftColumnDataType>(*left_segment);
@@ -121,52 +127,57 @@ std::shared_ptr<RowIDPosList> ColumnVsColumnTableScanImpl::scan_chunk(ChunkID ch
       } else {
         Fail("Trying to compare strings and non-strings");
       }
-    });
-  });
+    }); });
 
-  return result;
+    return result;
 }
 
 template <EraseTypes erase_comparator_type, typename LeftIterable, typename RightIterable>
 std::shared_ptr<RowIDPosList> __attribute__((noinline)) ColumnVsColumnTableScanImpl::_typed_scan_chunk_with_iterables(
-    ChunkID chunk_id, const LeftIterable& left_iterable, const RightIterable& right_iterable) const {
-  auto matches_out = std::shared_ptr<RowIDPosList>{};
+    ChunkID chunk_id, const LeftIterable &left_iterable, const RightIterable &right_iterable) const
+{
+    auto matches_out = std::shared_ptr<RowIDPosList>{};
 
-  left_iterable.with_iterators([&](auto left_it, const auto left_end) {
-    right_iterable.with_iterators([&](auto right_it, const auto& right_end) {
-      matches_out =
-          _typed_scan_chunk_with_iterators<erase_comparator_type>(chunk_id, left_it, left_end, right_it, right_end);
-    });
-  });
+    left_iterable.with_iterators([&](auto left_it, const auto left_end)
+                                 { right_iterable.with_iterators([&](auto right_it, const auto &right_end)
+                                                                 { matches_out =
+                                                                       _typed_scan_chunk_with_iterators<erase_comparator_type>(chunk_id, left_it, left_end, right_it, right_end); }); });
 
-  return matches_out;
+    return matches_out;
 }
 
 template <EraseTypes erase_comparator_type, typename LeftIterator, typename RightIterator>
 std::shared_ptr<RowIDPosList> __attribute__((noinline)) ColumnVsColumnTableScanImpl::_typed_scan_chunk_with_iterators(
-    ChunkID chunk_id, LeftIterator& left_it, const LeftIterator& left_end, RightIterator& right_it,
-    const RightIterator& right_end) const {
-  auto matches_out = std::make_shared<RowIDPosList>();
+    ChunkID chunk_id, LeftIterator &left_it, const LeftIterator &left_end, RightIterator &right_it,
+    const RightIterator &right_end) const
+{
+    auto matches_out = std::make_shared<RowIDPosList>();
 
-  auto condition_was_flipped = false;
-  auto maybe_flipped_condition = _predicate_condition;
-  if (maybe_flipped_condition == PredicateCondition::GreaterThan ||
-      maybe_flipped_condition == PredicateCondition::GreaterThanEquals) {
-    maybe_flipped_condition = flip_predicate_condition(maybe_flipped_condition);
-    condition_was_flipped = true;
-  }
-
-  // NOLINTNEXTLINE(misc-unused-parameters): false positive for it1 and it2 being unused.
-  auto conditionally_erase_comparator_type = [](auto comparator, const auto& it1, const auto& it2) {
-    if constexpr (erase_comparator_type == EraseTypes::OnlyInDebugBuild) {
-      return comparator;
-    } else {
-      return std::function<bool(const AbstractSegmentPosition<std::decay_t<decltype(it1->value())>>&,
-                                const AbstractSegmentPosition<std::decay_t<decltype(it2->value())>>&)>{comparator};
+    auto condition_was_flipped = false;
+    auto maybe_flipped_condition = _predicate_condition;
+    if (maybe_flipped_condition == PredicateCondition::GreaterThan ||
+        maybe_flipped_condition == PredicateCondition::GreaterThanEquals)
+    {
+        maybe_flipped_condition = flip_predicate_condition(maybe_flipped_condition);
+        condition_was_flipped = true;
     }
-  };
 
-  with_comparator_light(maybe_flipped_condition, [&](auto predicate_comparator) {
+    // NOLINTNEXTLINE(misc-unused-parameters): false positive for it1 and it2 being unused.
+    auto conditionally_erase_comparator_type = [](auto comparator, const auto &it1, const auto &it2)
+    {
+        if constexpr (erase_comparator_type == EraseTypes::OnlyInDebugBuild)
+        {
+            return comparator;
+        }
+        else
+        {
+            return std::function<bool(const AbstractSegmentPosition<std::decay_t<decltype(it1->value())>> &,
+                                      const AbstractSegmentPosition<std::decay_t<decltype(it2->value())>> &)>{comparator};
+        }
+    };
+
+    with_comparator_light(maybe_flipped_condition, [&](auto predicate_comparator)
+                          {
     const auto comparator = [predicate_comparator](const auto& left, const auto& right) {
       return predicate_comparator(left.value(), right.value());
     };
@@ -180,10 +191,9 @@ std::shared_ptr<RowIDPosList> __attribute__((noinline)) ColumnVsColumnTableScanI
       const auto erased_comparator = conditionally_erase_comparator_type(comparator, left_it, right_it);
       AbstractTableScanImpl::_scan_with_iterators<true>(erased_comparator, left_it, left_end, chunk_id, *matches_out,
                                                         right_it);
-    }
-  });
+    } });
 
-  return matches_out;
+    return matches_out;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

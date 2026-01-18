@@ -2,33 +2,40 @@
 #include "storage/table.hpp"
 #include "utils/load_table.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class LoadTableTest : public BaseTest {};
+class LoadTableTest : public BaseTest
+{
+};
 
-TEST_F(LoadTableTest, EmptyTableFromHeader) {
-  const auto tbl_header_table = create_table_from_header("resources/test_data/tbl/float_int.tbl");
-  const auto expected_table = std::make_shared<Table>(
-      TableColumnDefinitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}}, TableType::Data);
+TEST_F(LoadTableTest, EmptyTableFromHeader)
+{
+    const auto tbl_header_table = create_table_from_header("resources/test_data/tbl/float_int.tbl");
+    const auto expected_table = std::make_shared<Table>(
+        TableColumnDefinitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}}, TableType::Data);
 
-  EXPECT_EQ(tbl_header_table->row_count(), 0);
-  EXPECT_TABLE_EQ_UNORDERED(tbl_header_table, expected_table);
+    EXPECT_EQ(tbl_header_table->row_count(), 0);
+    EXPECT_TABLE_EQ_UNORDERED(tbl_header_table, expected_table);
 }
 
-TEST_F(LoadTableTest, AllChunksImmutable) {
-  const auto table = load_table("resources/test_data/tbl/float_int.tbl", ChunkOffset{2});
+TEST_F(LoadTableTest, AllChunksImmutable)
+{
+    const auto table = load_table("resources/test_data/tbl/float_int.tbl", ChunkOffset{2});
 
-  EXPECT_EQ(table->row_count(), 3);
-  const auto chunk_count = table->chunk_count();
-  EXPECT_EQ(table->chunk_count(), 2);
+    EXPECT_EQ(table->row_count(), 3);
+    const auto chunk_count = table->chunk_count();
+    EXPECT_EQ(table->chunk_count(), 2);
 
-  for (auto chunk_id = ChunkID{0}; chunk_id < chunk_count; ++chunk_id) {
-    EXPECT_FALSE(table->get_chunk(chunk_id)->is_mutable());
-  }
+    for (auto chunk_id = ChunkID{0}; chunk_id < chunk_count; ++chunk_id)
+    {
+        EXPECT_FALSE(table->get_chunk(chunk_id)->is_mutable());
+    }
 }
 
-TEST_F(LoadTableTest, WindowsEncoding) {
-  EXPECT_THROW(load_table("resources/test_data/tbl/float_int_crlf.tbl", ChunkOffset{2}), std::exception);
+TEST_F(LoadTableTest, WindowsEncoding)
+{
+    EXPECT_THROW(load_table("resources/test_data/tbl/float_int_crlf.tbl", ChunkOffset{2}), std::exception);
 }
 
-}  // namespace hyrise
+} // namespace hyrise

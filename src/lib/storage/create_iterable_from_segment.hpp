@@ -2,7 +2,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 template <typename T>
 class ValueSegment;
@@ -45,37 +46,38 @@ class ReferenceSegmentIterable;
  */
 
 template <typename T, bool EraseSegmentType = HYRISE_DEBUG>
-auto create_iterable_from_segment(const ValueSegment<T>& segment);
+auto create_iterable_from_segment(const ValueSegment<T> &segment);
 
 template <typename T, bool EraseSegmentType = HYRISE_DEBUG>
-auto create_iterable_from_segment(const DictionarySegment<T>& segment);
+auto create_iterable_from_segment(const DictionarySegment<T> &segment);
 
 template <typename T, bool EraseSegmentType = HYRISE_DEBUG>
-auto create_iterable_from_segment(const RunLengthSegment<T>& segment);
+auto create_iterable_from_segment(const RunLengthSegment<T> &segment);
 
 template <typename T, bool EraseSegmentType = HYRISE_DEBUG>
-auto create_iterable_from_segment(const FixedStringDictionarySegment<T>& segment);
+auto create_iterable_from_segment(const FixedStringDictionarySegment<T> &segment);
 
 template <typename T, typename Enabled, bool EraseSegmentType = HYRISE_DEBUG>
-auto create_iterable_from_segment(const FrameOfReferenceSegment<T, Enabled>& segment);
+auto create_iterable_from_segment(const FrameOfReferenceSegment<T, Enabled> &segment);
 
 // Fix template deduction so that we can call `create_iterable_from_segment<T, false>` on FrameOfReferenceSegments
 template <typename T, bool EraseSegmentType, typename Enabled>
-auto create_iterable_from_segment(const FrameOfReferenceSegment<T, Enabled>& segment) {
-  return create_iterable_from_segment<T, Enabled, EraseSegmentType>(segment);
+auto create_iterable_from_segment(const FrameOfReferenceSegment<T, Enabled> &segment)
+{
+    return create_iterable_from_segment<T, Enabled, EraseSegmentType>(segment);
 }
 
 template <typename T, bool EraseSegmentType = true>
-auto create_iterable_from_segment(const LZ4Segment<T>& segment);
+auto create_iterable_from_segment(const LZ4Segment<T> &segment);
 
 template <typename T, bool EraseSegmentType = HYRISE_DEBUG,
           EraseReferencedSegmentType = (HYRISE_DEBUG ? EraseReferencedSegmentType::Yes
                                                      : EraseReferencedSegmentType::No)>
-auto create_iterable_from_segment(const ReferenceSegment& segment);
+auto create_iterable_from_segment(const ReferenceSegment &segment);
 
 /**@}*/
 
-}  // namespace hyrise
+} // namespace hyrise
 
 // Include these only now to break up include dependencies
 #include "create_iterable_from_reference_segment.ipp"

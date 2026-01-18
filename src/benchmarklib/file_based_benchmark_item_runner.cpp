@@ -25,104 +25,120 @@
 #include "storage/table.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 FileBasedBenchmarkItemRunner::FileBasedBenchmarkItemRunner(
-    const std::shared_ptr<BenchmarkConfig>& config, const std::string& query_path,
-    const std::unordered_set<std::string>& filename_excludelist,
-    const std::optional<std::unordered_set<std::string>>& query_subset)
-    : AbstractBenchmarkItemRunner(config) {
-  const auto is_sql_file = [](const std::filesystem::path& file_path) {
-    return std::filesystem::is_regular_file(file_path) && file_path.extension() == ".sql";
-  };
+    const std::shared_ptr<BenchmarkConfig> &config, const std::string &query_path,
+    const std::unordered_set<std::string> &filename_excludelist,
+    const std::optional<std::unordered_set<std::string>> &query_subset)
+    : AbstractBenchmarkItemRunner(config)
+{
+    const auto is_sql_file = [](const std::filesystem::path &file_path)
+    {
+        return std::filesystem::is_regular_file(file_path) && file_path.extension() == ".sql";
+    };
 
-  const auto path = std::filesystem::path{query_path};
-  Assert(std::filesystem::exists(path), "No such file or directory '" + query_path + "'");
+    const auto path = std::filesystem::path{query_path};
+    Assert(std::filesystem::exists(path), "No such file or directory '" + query_path + "'");
 
-  if (std::filesystem::is_regular_file(path)) {
-    Assert(is_sql_file(query_path), "Specified file '" + query_path + "' is not a .sql file.");
-    _parse_query_file(query_path, query_subset);
-  } else {
-    // Recursively walk through the specified directory and add all files on the way.
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
-      const auto& file_path = entry.path();
-      if (!is_sql_file(entry) || filename_excludelist.contains(file_path.filename())) {
-        continue;
-      }
-
-      _parse_query_file(file_path, query_subset);
+    if (std::filesystem::is_regular_file(path))
+    {
+        Assert(is_sql_file(query_path), "Specified file '" + query_path + "' is not a .sql file.");
+        _parse_query_file(query_path, query_subset);
     }
-  }
+    else
+    {
+        // Recursively walk through the specified directory and add all files on the way.
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(path))
+        {
+            const auto &file_path = entry.path();
+            if (!is_sql_file(entry) || filename_excludelist.contains(file_path.filename()))
+            {
+                continue;
+            }
 
-  _items.resize(_queries.size());
-  std::iota(_items.begin(), _items.end(), BenchmarkItemID{0});
+            _parse_query_file(file_path, query_subset);
+        }
+    }
 
-  // Sort queries by name.
-  std::ranges::sort(_queries, [](const auto& lhs, const auto& rhs) {
-    return lhs.name < rhs.name;
-  });
+    _items.resize(_queries.size());
+    std::iota(_items.begin(), _items.end(), BenchmarkItemID{0});
+
+    // Sort queries by name.
+    std::ranges::sort(_queries, [](const auto &lhs, const auto &rhs)
+                      { return lhs.name < rhs.name; });
 }
 
-bool FileBasedBenchmarkItemRunner::_on_execute_item(const BenchmarkItemID item_id, BenchmarkSQLExecutor& sql_executor) {
-  std::shared_ptr<const Table> expected_result_table = nullptr;
-  if (!_dedicated_expected_results.empty()) {
-    expected_result_table = _dedicated_expected_results[item_id];
-  }
+bool FileBasedBenchmarkItemRunner::_on_execute_item(const BenchmarkItemID item_id, BenchmarkSQLExecutor &sql_executor)
+{
+    std::shared_ptr<const Table> expected_result_table = nullptr;
+    if (!_dedicated_expected_results.empty())
+    {
+        expected_result_table = _dedicated_expected_results[item_id];
+    }
 
-  const auto [status, table] = sql_executor.execute(_queries[item_id].sql, expected_result_table);
-  return status == SQLPipelineStatus::Success;
+    const auto [status, table] = sql_executor.execute(_queries[item_id].sql, expected_result_table);
+    return status == SQLPipelineStatus::Success;
 }
 
-std::string FileBasedBenchmarkItemRunner::item_name(const BenchmarkItemID item_id) const {
-  return _queries[item_id].name;
+std::string FileBasedBenchmarkItemRunner::item_name(const BenchmarkItemID item_id) const
+{
+    return _queries[item_id].name;
 }
 
-const std::vector<BenchmarkItemID>& FileBasedBenchmarkItemRunner::items() const {
-  return _items;
+const std::vector<BenchmarkItemID> &FileBasedBenchmarkItemRunner::items() const
+{
+    return _items;
 }
 
 void FileBasedBenchmarkItemRunner::_parse_query_file(
-    const std::filesystem::path& query_file_path, const std::optional<std::unordered_set<std::string>>& query_subset) {
-  auto file = std::ifstream{query_file_path};
+    const std::filesystem::path &query_file_path, const std::optional<std::unordered_set<std::string>> &query_subset)
+{
+    auto file = std::ifstream{query_file_path};
 
-  // The names of queries from, e.g., "queries/TPCH-7.sql" will be prefixed with "TPCH-7."
-  const auto item_name_prefix = query_file_path.stem().string();
+    // The names of queries from, e.g., "queries/TPCH-7.sql" will be prefixed with "TPCH-7."
+    const auto item_name_prefix = query_file_path.stem().string();
 
-  const auto content = std::string{std::istreambuf_iterator<char>(file), {}};
+    const auto content = std::string{std::istreambuf_iterator<char>(file), {}};
 
-  /**
-   * A file can contain multiple SQL statements, and each statement may cover one or more lines.
-   * We use the SQLParser to split up the content of the file into the individual SQL statements.
-   */
+    /**
+     * A file can contain multiple SQL statements, and each statement may cover one or more lines.
+     * We use the SQLParser to split up the content of the file into the individual SQL statements.
+     */
 
-  auto parse_result = hsql::SQLParserResult{};
-  hsql::SQLParser::parse(content, &parse_result);
-  Assert(parse_result.isValid(), create_sql_parser_error_message(content, parse_result));
+    auto parse_result = hsql::SQLParserResult{};
+    hsql::SQLParser::parse(content, &parse_result);
+    Assert(parse_result.isValid(), create_sql_parser_error_message(content, parse_result));
 
-  auto queries_in_file = std::vector<Query>{parse_result.size()};
+    auto queries_in_file = std::vector<Query>{parse_result.size()};
 
-  auto sql_string_offset = size_t{0};
-  for (auto statement_idx = size_t{0}; statement_idx < parse_result.size(); ++statement_idx) {
-    const auto item_name = item_name_prefix + '.' + std::to_string(statement_idx);
-    const auto statement_string_length = parse_result.getStatement(statement_idx)->stringLength;
-    const auto statement_string = boost::trim_copy(content.substr(sql_string_offset, statement_string_length));
-    sql_string_offset += statement_string_length;
-    queries_in_file[statement_idx] = {.name = item_name, .sql = statement_string};
-  }
-
-  // Remove ".0" from the end of the query name if there is only one file
-  if (queries_in_file.size() == 1) {
-    queries_in_file.front().name.erase(queries_in_file.front().name.end() - 2, queries_in_file.front().name.end());
-  }
-
-  /**
-   * Add queries to _queries and _item_names if query_subset allows it
-   */
-  for (const auto& query : queries_in_file) {
-    if (!query_subset || query_subset->contains(query.name)) {
-      _queries.emplace_back(query);
+    auto sql_string_offset = size_t{0};
+    for (auto statement_idx = size_t{0}; statement_idx < parse_result.size(); ++statement_idx)
+    {
+        const auto item_name = item_name_prefix + '.' + std::to_string(statement_idx);
+        const auto statement_string_length = parse_result.getStatement(statement_idx)->stringLength;
+        const auto statement_string = boost::trim_copy(content.substr(sql_string_offset, statement_string_length));
+        sql_string_offset += statement_string_length;
+        queries_in_file[statement_idx] = {.name = item_name, .sql = statement_string};
     }
-  }
+
+    // Remove ".0" from the end of the query name if there is only one file
+    if (queries_in_file.size() == 1)
+    {
+        queries_in_file.front().name.erase(queries_in_file.front().name.end() - 2, queries_in_file.front().name.end());
+    }
+
+    /**
+     * Add queries to _queries and _item_names if query_subset allows it
+     */
+    for (const auto &query : queries_in_file)
+    {
+        if (!query_subset || query_subset->contains(query.name))
+        {
+            _queries.emplace_back(query);
+        }
+    }
 }
 
-}  // namespace hyrise
+} // namespace hyrise

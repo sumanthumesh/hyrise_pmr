@@ -28,9 +28,10 @@
 #include "utils/assert.hpp"
 #include "utils/pruning_utils.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;  // NOLINT(build/namespaces)
+using namespace hyrise; // NOLINT(build/namespaces)
 
 /**
  * This function traverses the LQP upwards from @param next_node to find all predicates that filter
@@ -42,12 +43,14 @@ using namespace hyrise;  // NOLINT(build/namespaces)
  * in their first few nodes.
  */
 std::vector<PredicatePruningChain> find_predicate_pruning_chains_by_stored_table_node_recursively(
-    const std::shared_ptr<AbstractLQPNode>& next_node, PredicatePruningChain current_predicate_pruning_chain,
-    const std::shared_ptr<StoredTableNode>& stored_table_node,
-    std::unordered_set<std::shared_ptr<PredicateNode>>& visited_predicate_nodes) {
-  auto predicate_pruning_chains = std::vector<PredicatePruningChain>{};
+    const std::shared_ptr<AbstractLQPNode> &next_node, PredicatePruningChain current_predicate_pruning_chain,
+    const std::shared_ptr<StoredTableNode> &stored_table_node,
+    std::unordered_set<std::shared_ptr<PredicateNode>> &visited_predicate_nodes)
+{
+    auto predicate_pruning_chains = std::vector<PredicatePruningChain>{};
 
-  visit_lqp_upwards(next_node, [&](const auto& current_node) {
+    visit_lqp_upwards(next_node, [&](const auto &current_node)
+                      {
     /**
      * In the following switch-statement, we
      *  (1) add PredicateNodes to the current predicate pruning chain, if applicable, and
@@ -135,174 +138,195 @@ std::vector<PredicatePruningChain> find_predicate_pruning_chains_by_stored_table
     }
 
     // Continue without recursion.
-    return LQPUpwardVisitation::VisitOutputs;
-  });
+    return LQPUpwardVisitation::VisitOutputs; });
 
-  return predicate_pruning_chains;
+    return predicate_pruning_chains;
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::string ChunkPruningRule::name() const {
-  static const auto name = std::string{"ChunkPruningRule"};
-  return name;
+std::string ChunkPruningRule::name() const
+{
+    static const auto name = std::string{"ChunkPruningRule"};
+    return name;
 }
 
-void ChunkPruningRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                                         OptimizationContext& /*optimization_context*/) const {
-  auto predicate_pruning_chains_by_stored_table_node =
-      std::unordered_map<std::shared_ptr<StoredTableNode>, std::vector<PredicatePruningChain>>{};
+void ChunkPruningRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                                         OptimizationContext & /*optimization_context*/) const
+{
+    auto predicate_pruning_chains_by_stored_table_node =
+        std::unordered_map<std::shared_ptr<StoredTableNode>, std::vector<PredicatePruningChain>>{};
 
-  // (1) Collect all StoredTableNodes and find the chains of PredicateNodes that sit on top of them.
-  const auto nodes = lqp_find_nodes_by_type(lqp_root, LQPNodeType::StoredTable);
-  for (const auto& node : nodes) {
-    const auto& stored_table_node = std::static_pointer_cast<StoredTableNode>(node);
-    predicate_pruning_chains_by_stored_table_node.emplace(
-        stored_table_node, _find_predicate_pruning_chains_by_stored_table_node(stored_table_node));
-  }
-
-  // (2) Set pruned chunks for each StoredTableNode.
-  for (const auto& [stored_table_node, predicate_pruning_chains] : predicate_pruning_chains_by_stored_table_node) {
-    if (predicate_pruning_chains.empty()) {
-      continue;
+    // (1) Collect all StoredTableNodes and find the chains of PredicateNodes that sit on top of them.
+    const auto nodes = lqp_find_nodes_by_type(lqp_root, LQPNodeType::StoredTable);
+    for (const auto &node : nodes)
+    {
+        const auto &stored_table_node = std::static_pointer_cast<StoredTableNode>(node);
+        predicate_pruning_chains_by_stored_table_node.emplace(
+            stored_table_node, _find_predicate_pruning_chains_by_stored_table_node(stored_table_node));
     }
 
-    // (2.1) Determine set of pruned chunks per predicate pruning chain.
-    auto pruned_chunk_id_sets = std::vector<std::set<ChunkID>>{};
-    for (const auto& predicate_pruning_chain : predicate_pruning_chains) {
-      auto exclusions = compute_chunk_exclude_list(predicate_pruning_chain, stored_table_node,
-                                                   _excluded_chunk_ids_by_predicate_node_cache);
-      pruned_chunk_id_sets.emplace_back(std::move(exclusions));
-    }
-
-    // (2.2) Calculate the intersection of pruned chunks across all predicate pruning chains.
-    const auto& pruned_chunk_ids = _intersect_chunk_ids(pruned_chunk_id_sets);
-    if (!pruned_chunk_ids.empty()) {
-      // (2.3) Set the pruned ChunkIds of stored_table_node.
-      DebugAssert(stored_table_node->pruned_chunk_ids().empty(),
-                  "Did not expect a StoredTableNode with an already existing set of pruned ChunkIDs.");
-      // Wanted side effect of using std::set: pruned_chunk_ids vector is already sorted.
-      stored_table_node->set_pruned_chunk_ids(std::vector<ChunkID>(pruned_chunk_ids.begin(), pruned_chunk_ids.end()));
-    }
-
-    // (2.4) Collect predicates with uncorrelated subqueries that we can use for dynamic pruning during execution and
-    //       set them as prunable_subquery_predicates of the respective StoredTableNodes (for more details, see
-    //       get_table.hpp).
-    // (2.4.1) Collect predicates with uncorrelated subqueries that are part of each chain in a new "pseudo" chain. When
-    //         we want to use them for pruning during execution, it is safe to add the chunks pruned by them to the
-    //         already pruned chunks.
-    const auto chain_count = predicate_pruning_chains.size();
-    auto chain_count_per_subquery_predicate = std::unordered_map<std::shared_ptr<PredicateNode>, uint64_t>{};
-    auto prunable_subquery_predicates = std::vector<std::weak_ptr<AbstractLQPNode>>{};
-    for (const auto& predicate_chain : predicate_pruning_chains) {
-      for (const auto& predicate_node : predicate_chain) {
-        // Only use binary and between predicates that can easily be used for pruning. Do not use, e.g, InExpressions
-        // etc., which might end up in the ExpressionEvaluator anyways.
-        const auto& predicate = std::dynamic_pointer_cast<AbstractPredicateExpression>(predicate_node->predicate());
-        if (!predicate) {
-          continue;
-        }
-        const auto predicate_condition = predicate->predicate_condition;
-        if (!is_binary_numeric_predicate_condition(predicate_condition) &&
-            !is_between_predicate_condition(predicate_condition)) {
-          continue;
+    // (2) Set pruned chunks for each StoredTableNode.
+    for (const auto &[stored_table_node, predicate_pruning_chains] : predicate_pruning_chains_by_stored_table_node)
+    {
+        if (predicate_pruning_chains.empty())
+        {
+            continue;
         }
 
-        for (auto& argument : predicate->arguments) {
-          if (argument->type == ExpressionType::LQPSubquery &&
-              !static_cast<const LQPSubqueryExpression&>(*argument).is_correlated()) {
-            /**
-             * Count the number of occurrences and add the predicate iff it appears in all chains. Otherwise, we could
-             * produce incorrect query results.
-             *   Example query: SELECT * FROM orders
-             *                   WHERE o_totalprice > (SELECT AVG(c_acctbal) FROM customer)
-             *                      OR o_orderstatus = 'O'
-             *   (Select orders that are above the average customer's account balance or that are still open.)
-             *   The LQP of this query looks like the following:
-             *
-             *                     [UnionPositions]
-             *             ________/              \_________
-             *            /                                 \
-             *      [Predicate] o_orderstatus = 'O'     [Predicate] o_totalprice > SUBQUERY
-             *           |                                   |                        *
-             *           |                                   |                        * uncorrelated subquery
-             *           |                                   |                        *
-             *           |                                   |                   [Aggregate] AVG(c_acctbal)
-             *           \___________             ___________/                        |
-             *                       \           /                                    |
-             *                       [StoredTable] orders                       [StoredTable] customer
-             *
-             * Usually, we would intersect the ChunkIDs that can be pruned for both predicates. Since we do not know the
-             * predicate value for the uncorrelated subquery, this is not possible. However, we cannot prune orders with
-             * o_totalprice > AVG(c_acctbal) since we could prune away open orders. Thus, we have to ensure the
-             * predicate in question is part of every chain. For the example query, this means using AND rather than OR.
-             */
-            const auto occurrence_count = ++chain_count_per_subquery_predicate[predicate_node];
-            if (occurrence_count == chain_count) {
-              prunable_subquery_predicates.emplace_back(predicate_node);
+        // (2.1) Determine set of pruned chunks per predicate pruning chain.
+        auto pruned_chunk_id_sets = std::vector<std::set<ChunkID>>{};
+        for (const auto &predicate_pruning_chain : predicate_pruning_chains)
+        {
+            auto exclusions = compute_chunk_exclude_list(predicate_pruning_chain, stored_table_node,
+                                                         _excluded_chunk_ids_by_predicate_node_cache);
+            pruned_chunk_id_sets.emplace_back(std::move(exclusions));
+        }
+
+        // (2.2) Calculate the intersection of pruned chunks across all predicate pruning chains.
+        const auto &pruned_chunk_ids = _intersect_chunk_ids(pruned_chunk_id_sets);
+        if (!pruned_chunk_ids.empty())
+        {
+            // (2.3) Set the pruned ChunkIds of stored_table_node.
+            DebugAssert(stored_table_node->pruned_chunk_ids().empty(),
+                        "Did not expect a StoredTableNode with an already existing set of pruned ChunkIDs.");
+            // Wanted side effect of using std::set: pruned_chunk_ids vector is already sorted.
+            stored_table_node->set_pruned_chunk_ids(std::vector<ChunkID>(pruned_chunk_ids.begin(), pruned_chunk_ids.end()));
+        }
+
+        // (2.4) Collect predicates with uncorrelated subqueries that we can use for dynamic pruning during execution and
+        //       set them as prunable_subquery_predicates of the respective StoredTableNodes (for more details, see
+        //       get_table.hpp).
+        // (2.4.1) Collect predicates with uncorrelated subqueries that are part of each chain in a new "pseudo" chain. When
+        //         we want to use them for pruning during execution, it is safe to add the chunks pruned by them to the
+        //         already pruned chunks.
+        const auto chain_count = predicate_pruning_chains.size();
+        auto chain_count_per_subquery_predicate = std::unordered_map<std::shared_ptr<PredicateNode>, uint64_t>{};
+        auto prunable_subquery_predicates = std::vector<std::weak_ptr<AbstractLQPNode>>{};
+        for (const auto &predicate_chain : predicate_pruning_chains)
+        {
+            for (const auto &predicate_node : predicate_chain)
+            {
+                // Only use binary and between predicates that can easily be used for pruning. Do not use, e.g, InExpressions
+                // etc., which might end up in the ExpressionEvaluator anyways.
+                const auto &predicate = std::dynamic_pointer_cast<AbstractPredicateExpression>(predicate_node->predicate());
+                if (!predicate)
+                {
+                    continue;
+                }
+                const auto predicate_condition = predicate->predicate_condition;
+                if (!is_binary_numeric_predicate_condition(predicate_condition) &&
+                    !is_between_predicate_condition(predicate_condition))
+                {
+                    continue;
+                }
+
+                for (auto &argument : predicate->arguments)
+                {
+                    if (argument->type == ExpressionType::LQPSubquery &&
+                        !static_cast<const LQPSubqueryExpression &>(*argument).is_correlated())
+                    {
+                        /**
+                         * Count the number of occurrences and add the predicate iff it appears in all chains. Otherwise, we could
+                         * produce incorrect query results.
+                         *   Example query: SELECT * FROM orders
+                         *                   WHERE o_totalprice > (SELECT AVG(c_acctbal) FROM customer)
+                         *                      OR o_orderstatus = 'O'
+                         *   (Select orders that are above the average customer's account balance or that are still open.)
+                         *   The LQP of this query looks like the following:
+                         *
+                         *                     [UnionPositions]
+                         *             ________/              \_________
+                         *            /                                 \
+                         *      [Predicate] o_orderstatus = 'O'     [Predicate] o_totalprice > SUBQUERY
+                         *           |                                   |                        *
+                         *           |                                   |                        * uncorrelated subquery
+                         *           |                                   |                        *
+                         *           |                                   |                   [Aggregate] AVG(c_acctbal)
+                         *           \___________             ___________/                        |
+                         *                       \           /                                    |
+                         *                       [StoredTable] orders                       [StoredTable] customer
+                         *
+                         * Usually, we would intersect the ChunkIDs that can be pruned for both predicates. Since we do not know the
+                         * predicate value for the uncorrelated subquery, this is not possible. However, we cannot prune orders with
+                         * o_totalprice > AVG(c_acctbal) since we could prune away open orders. Thus, we have to ensure the
+                         * predicate in question is part of every chain. For the example query, this means using AND rather than OR.
+                         */
+                        const auto occurrence_count = ++chain_count_per_subquery_predicate[predicate_node];
+                        if (occurrence_count == chain_count)
+                        {
+                            prunable_subquery_predicates.emplace_back(predicate_node);
+                        }
+                        // Make sure we do not count `x BETWEEN (SELECT MIN(y) ...) AND (SELECT (MAX(y) ...)` twice.
+                        break;
+                    }
+                }
             }
-            // Make sure we do not count `x BETWEEN (SELECT MIN(y) ...) AND (SELECT (MAX(y) ...)` twice.
-            break;
-          }
         }
-      }
-    }
 
-    // (2.4.2) Set the predicates that might be used for pruning during execution.
-    if (!prunable_subquery_predicates.empty()) {
-      stored_table_node->set_prunable_subquery_predicates(prunable_subquery_predicates);
+        // (2.4.2) Set the predicates that might be used for pruning during execution.
+        if (!prunable_subquery_predicates.empty())
+        {
+            stored_table_node->set_prunable_subquery_predicates(prunable_subquery_predicates);
+        }
     }
-  }
 }
 
 /**
  * @returns chains of PredicateNodes that sit on top of the given @param stored_table_node.
  */
 std::vector<PredicatePruningChain> ChunkPruningRule::_find_predicate_pruning_chains_by_stored_table_node(
-    const std::shared_ptr<StoredTableNode>& stored_table_node) {
-  /**
-   * In the following, we use a recursive function to traverse the LQP upwards from stored_table_node. It returns all
-   * predicate pruning chains that filter stored_table_node.
-   * It takes the following four arguments:
-   *   1. The first argument marks the starting point of the LQP upwards-traversal. Hence, we pass stored_table_node.
-   *   2. The second argument refers to the current predicate pruning chain. Since the LQP traversal has not yet
-   *      started, we pass an empty vector.
-   *   3. The third argument refers to the StoredTableNode for which predicate pruning chains should be returned.
-   *      Therefore, we have to pass stored_table_node again.
-   *   4. The fourth argument is used for debugging purposes: The following function's recursion should not lead to a
-   *      repeated visitation of nodes. Due to the assumption that predicate pruning chains do not merge after
-   *      having branched out, visited predicate nodes are tracked and checked for revisitation in an Assert.
-   */
-  auto visited_predicate_nodes = std::unordered_set<std::shared_ptr<PredicateNode>>{};
-  return find_predicate_pruning_chains_by_stored_table_node_recursively(stored_table_node, {}, stored_table_node,
-                                                                        visited_predicate_nodes);
+    const std::shared_ptr<StoredTableNode> &stored_table_node)
+{
+    /**
+     * In the following, we use a recursive function to traverse the LQP upwards from stored_table_node. It returns all
+     * predicate pruning chains that filter stored_table_node.
+     * It takes the following four arguments:
+     *   1. The first argument marks the starting point of the LQP upwards-traversal. Hence, we pass stored_table_node.
+     *   2. The second argument refers to the current predicate pruning chain. Since the LQP traversal has not yet
+     *      started, we pass an empty vector.
+     *   3. The third argument refers to the StoredTableNode for which predicate pruning chains should be returned.
+     *      Therefore, we have to pass stored_table_node again.
+     *   4. The fourth argument is used for debugging purposes: The following function's recursion should not lead to a
+     *      repeated visitation of nodes. Due to the assumption that predicate pruning chains do not merge after
+     *      having branched out, visited predicate nodes are tracked and checked for revisitation in an Assert.
+     */
+    auto visited_predicate_nodes = std::unordered_set<std::shared_ptr<PredicateNode>>{};
+    return find_predicate_pruning_chains_by_stored_table_node_recursively(stored_table_node, {}, stored_table_node,
+                                                                          visited_predicate_nodes);
 }
 
-std::set<ChunkID> ChunkPruningRule::_intersect_chunk_ids(const std::vector<std::set<ChunkID>>& chunk_id_sets) {
-  if (chunk_id_sets.empty() || chunk_id_sets[0].empty()) {
-    return {};
-  }
-
-  const auto chunk_id_set_count = chunk_id_sets.size();
-  if (chunk_id_set_count == 1) {
-    return chunk_id_sets[0];
-  }
-
-  auto chunk_id_set = chunk_id_sets[0];
-  for (auto set_idx = size_t{1}; set_idx < chunk_id_set_count; ++set_idx) {
-    const auto& current_chunk_id_set = chunk_id_sets[set_idx];
-    if (current_chunk_id_set.empty()) {
-      return {};
+std::set<ChunkID> ChunkPruningRule::_intersect_chunk_ids(const std::vector<std::set<ChunkID>> &chunk_id_sets)
+{
+    if (chunk_id_sets.empty() || chunk_id_sets[0].empty())
+    {
+        return {};
     }
 
-    auto intersection = std::set<ChunkID>{};
-    std::ranges::set_intersection(chunk_id_set, current_chunk_id_set, std::inserter(intersection, intersection.end()));
-    chunk_id_set = std::move(intersection);
-  }
+    const auto chunk_id_set_count = chunk_id_sets.size();
+    if (chunk_id_set_count == 1)
+    {
+        return chunk_id_sets[0];
+    }
 
-  return chunk_id_set;
+    auto chunk_id_set = chunk_id_sets[0];
+    for (auto set_idx = size_t{1}; set_idx < chunk_id_set_count; ++set_idx)
+    {
+        const auto &current_chunk_id_set = chunk_id_sets[set_idx];
+        if (current_chunk_id_set.empty())
+        {
+            return {};
+        }
+
+        auto intersection = std::set<ChunkID>{};
+        std::ranges::set_intersection(chunk_id_set, current_chunk_id_set, std::inserter(intersection, intersection.end()));
+        chunk_id_set = std::move(intersection);
+    }
+
+    return chunk_id_set;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -14,38 +14,43 @@
 #include "types.hpp"
 #include "utils/enum_constant.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class FrameOfReferenceEncoder : public SegmentEncoder<FrameOfReferenceEncoder> {
- public:
-  static constexpr auto _encoding_type = enum_c<EncodingType, EncodingType::FrameOfReference>;
-  static constexpr auto _uses_vector_compression = true;  // see base_segment_encoder.hpp for details
+class FrameOfReferenceEncoder : public SegmentEncoder<FrameOfReferenceEncoder>
+{
+  public:
+    static constexpr auto _encoding_type = enum_c<EncodingType, EncodingType::FrameOfReference>;
+    static constexpr auto _uses_vector_compression = true; // see base_segment_encoder.hpp for details
 
-  template <typename T>
-  std::shared_ptr<AbstractEncodedSegment> _on_encode(const AnySegmentIterable<T> segment_iterable,
-                                                     const PolymorphicAllocator<T>& allocator) {
-    static constexpr auto block_size = FrameOfReferenceSegment<T>::block_size;
+    template <typename T>
+    std::shared_ptr<AbstractEncodedSegment> _on_encode(const AnySegmentIterable<T> segment_iterable,
+                                                       const PolymorphicAllocator<T> &allocator)
+    {
+        static constexpr auto block_size = FrameOfReferenceSegment<T>::block_size;
 
-    // Ceiling of integer division
-    const auto div_ceil = [](auto x, auto y) {
-      return (x + y - 1u) / y;
-    };
+        // Ceiling of integer division
+        const auto div_ceil = [](auto x, auto y)
+        {
+            return (x + y - 1u) / y;
+        };
 
-    // holds the minimum of each block
-    auto block_minima = pmr_vector<T>{allocator};
+        // holds the minimum of each block
+        auto block_minima = pmr_vector<T>{allocator};
 
-    // holds the uncompressed offset values
-    auto offset_values = pmr_vector<uint32_t>{allocator};
+        // holds the uncompressed offset values
+        auto offset_values = pmr_vector<uint32_t>{allocator};
 
-    // holds whether a segment value is null
-    auto null_values = pmr_vector<bool>{allocator};
+        // holds whether a segment value is null
+        auto null_values = pmr_vector<bool>{allocator};
 
-    // used as optional input for the compression of the offset values
-    auto max_offset = uint32_t{0u};
+        // used as optional input for the compression of the offset values
+        auto max_offset = uint32_t{0u};
 
-    auto segment_contains_null_values = false;
+        auto segment_contains_null_values = false;
 
-    segment_iterable.with_iterators([&](auto segment_it, auto segment_end) {
+        segment_iterable.with_iterators([&](auto segment_it, auto segment_end)
+                                        {
       const auto size = std::distance(segment_it, segment_end);
       const auto num_blocks = div_ceil(size, block_size);
 
@@ -106,18 +111,18 @@ class FrameOfReferenceEncoder : public SegmentEncoder<FrameOfReferenceEncoder> {
           offset_values.push_back(offset);
           max_offset = std::max(max_offset, offset);
         }
-      }
-    });
+      } });
 
-    auto compressed_offset_values = compress_vector(offset_values, vector_compression_type(), allocator, {max_offset});
+        auto compressed_offset_values = compress_vector(offset_values, vector_compression_type(), allocator, {max_offset});
 
-    if (segment_contains_null_values) {
-      return std::make_shared<FrameOfReferenceSegment<T>>(std::move(block_minima), std::move(null_values),
-                                                          std::move(compressed_offset_values));
+        if (segment_contains_null_values)
+        {
+            return std::make_shared<FrameOfReferenceSegment<T>>(std::move(block_minima), std::move(null_values),
+                                                                std::move(compressed_offset_values));
+        }
+        return std::make_shared<FrameOfReferenceSegment<T>>(std::move(block_minima), std::nullopt,
+                                                            std::move(compressed_offset_values));
     }
-    return std::make_shared<FrameOfReferenceSegment<T>>(std::move(block_minima), std::nullopt,
-                                                        std::move(compressed_offset_values));
-  }
 };
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -34,21 +34,24 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;                         // NOLINT(build/namespaces)
-using namespace hyrise::expression_functional;  // NOLINT(build/namespaces)
+using namespace hyrise;                        // NOLINT(build/namespaces)
+using namespace hyrise::expression_functional; // NOLINT(build/namespaces)
 
-void rewrite_to_join(const std::shared_ptr<AbstractLQPNode>& node,
-                     const std::shared_ptr<AbstractExpression>& left_expression,
-                     const std::vector<std::shared_ptr<AbstractExpression>>& right_side_expressions, DataType data_type,
-                     const bool is_negated) {
-  // Create the temporary table for the build side of the semi/anti join
-  const auto list_as_table =
-      std::make_shared<Table>(TableColumnDefinitions{{"right_values", data_type, false}}, TableType::Data);
+void rewrite_to_join(const std::shared_ptr<AbstractLQPNode> &node,
+                     const std::shared_ptr<AbstractExpression> &left_expression,
+                     const std::vector<std::shared_ptr<AbstractExpression>> &right_side_expressions, DataType data_type,
+                     const bool is_negated)
+{
+    // Create the temporary table for the build side of the semi/anti join
+    const auto list_as_table =
+        std::make_shared<Table>(TableColumnDefinitions{{"right_values", data_type, false}}, TableType::Data);
 
-  // Fill the temporary table with values
-  resolve_data_type(data_type, [&](const auto data_type_t) {
+    // Fill the temporary table with values
+    resolve_data_type(data_type, [&](const auto data_type_t)
+                      {
     using ColumnDataType = typename decltype(data_type_t)::type;
     auto right_values = pmr_vector<ColumnDataType>{};
     right_values.reserve(right_side_expressions.size());
@@ -63,76 +66,84 @@ void rewrite_to_join(const std::shared_ptr<AbstractLQPNode>& node,
     }
 
     const auto value_segment = std::make_shared<ValueSegment<ColumnDataType>>(std::move(right_values));
-    list_as_table->append_chunk({value_segment});
-  });
+    list_as_table->append_chunk({value_segment}); });
 
-  // Add statistics to the dummy table so that following rules or other steps (such as the LQPVisualizer), which
-  // expect statistics to be present, do not run into problems.
-  list_as_table->set_table_statistics(TableStatistics::from_table(*list_as_table));
+    // Add statistics to the dummy table so that following rules or other steps (such as the LQPVisualizer), which
+    // expect statistics to be present, do not run into problems.
+    list_as_table->set_table_statistics(TableStatistics::from_table(*list_as_table));
 
-  // Create a join node
-  const auto static_table_node = std::make_shared<StaticTableNode>(list_as_table);
-  const auto right_column = std::make_shared<LQPColumnExpression>(static_table_node, ColumnID{0});
-  const auto join_predicate =
-      std::make_shared<BinaryPredicateExpression>(PredicateCondition::Equals, left_expression, right_column);
-  const auto join_mode = is_negated ? JoinMode::AntiNullAsTrue : JoinMode::Semi;
-  auto join_node = std::make_shared<JoinNode>(join_mode, join_predicate);
+    // Create a join node
+    const auto static_table_node = std::make_shared<StaticTableNode>(list_as_table);
+    const auto right_column = std::make_shared<LQPColumnExpression>(static_table_node, ColumnID{0});
+    const auto join_predicate =
+        std::make_shared<BinaryPredicateExpression>(PredicateCondition::Equals, left_expression, right_column);
+    const auto join_mode = is_negated ? JoinMode::AntiNullAsTrue : JoinMode::Semi;
+    auto join_node = std::make_shared<JoinNode>(join_mode, join_predicate);
 
-  // Replace the IN predicate with the join node
-  lqp_replace_node(node, join_node);
-  join_node->set_right_input(static_table_node);
+    // Replace the IN predicate with the join node
+    lqp_replace_node(node, join_node);
+    join_node->set_right_input(static_table_node);
 }
 
-void rewrite_to_disjunction(const std::shared_ptr<AbstractLQPNode>& node,
-                            const std::shared_ptr<AbstractExpression>& left_expression,
-                            const std::vector<std::shared_ptr<AbstractExpression>>& right_side_expressions) {
-  // It is easier not to use lqp_replace_node here, so we need to cache the original output relations
-  const auto old_output_relations = node->output_relations();
+void rewrite_to_disjunction(const std::shared_ptr<AbstractLQPNode> &node,
+                            const std::shared_ptr<AbstractExpression> &left_expression,
+                            const std::vector<std::shared_ptr<AbstractExpression>> &right_side_expressions)
+{
+    // It is easier not to use lqp_replace_node here, so we need to cache the original output relations
+    const auto old_output_relations = node->output_relations();
 
-  std::vector<std::shared_ptr<PredicateNode>> predicate_nodes{};
-  predicate_nodes.reserve(right_side_expressions.size());
+    std::vector<std::shared_ptr<PredicateNode>> predicate_nodes{};
+    predicate_nodes.reserve(right_side_expressions.size());
 
-  // Remove duplicates so that the results of the predicates do not overlap. Otherwise, rows might get added twice.
-  // Using an ExpressionUnorderedSet here means that the order of predicates is undefined.
-  auto unique_right_side_expressions =
-      ExpressionUnorderedSet{right_side_expressions.begin(), right_side_expressions.end()};
-  for (const auto& element : unique_right_side_expressions) {
-    auto predicate_node = PredicateNode::make(equals_(left_expression, element), node->left_input());
-    predicate_nodes.push_back(std::move(predicate_node));
-  }
+    // Remove duplicates so that the results of the predicates do not overlap. Otherwise, rows might get added twice.
+    // Using an ExpressionUnorderedSet here means that the order of predicates is undefined.
+    auto unique_right_side_expressions =
+        ExpressionUnorderedSet{right_side_expressions.begin(), right_side_expressions.end()};
+    for (const auto &element : unique_right_side_expressions)
+    {
+        auto predicate_node = PredicateNode::make(equals_(left_expression, element), node->left_input());
+        predicate_nodes.push_back(std::move(predicate_node));
+    }
 
-  // Create a PredicateNode for the first value. Then, successively hook up additional PredicateNodes using UnionNodes.
-  std::shared_ptr<AbstractLQPNode> last_node = predicate_nodes[0];
-  for (auto predicate_node_idx = size_t{1}; predicate_node_idx < predicate_nodes.size(); ++predicate_node_idx) {
-    last_node = UnionNode::make(SetOperationMode::All, last_node, predicate_nodes[predicate_node_idx]);
-  }
+    // Create a PredicateNode for the first value. Then, successively hook up additional PredicateNodes using UnionNodes.
+    std::shared_ptr<AbstractLQPNode> last_node = predicate_nodes[0];
+    for (auto predicate_node_idx = size_t{1}; predicate_node_idx < predicate_nodes.size(); ++predicate_node_idx)
+    {
+        last_node = UnionNode::make(SetOperationMode::All, last_node, predicate_nodes[predicate_node_idx]);
+    }
 
-  // Attach the final UnionNode (or PredicateNode if only one) to the original plan.
-  node->set_left_input(nullptr);
-  for (const auto& [output, input_side] : old_output_relations) {
-    output->set_input(input_side, last_node);
-  }
+    // Attach the final UnionNode (or PredicateNode if only one) to the original plan.
+    node->set_left_input(nullptr);
+    for (const auto &[output, input_side] : old_output_relations)
+    {
+        output->set_input(input_side, last_node);
+    }
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::string InExpressionRewriteRule::name() const {
-  static const auto name = std::string{"InExpressionRewriteRule"};
-  return name;
+std::string InExpressionRewriteRule::name() const
+{
+    static const auto name = std::string{"InExpressionRewriteRule"};
+    return name;
 }
 
-void InExpressionRewriteRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                                                OptimizationContext& optimization_context) const {
-  if (strategy == Strategy::ExpressionEvaluator) {
-    // This is the default anyway, i.e., what the SQLTranslator gave us
-    return;
-  }
+void InExpressionRewriteRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                                                OptimizationContext &optimization_context) const
+{
+    if (strategy == Strategy::ExpressionEvaluator)
+    {
+        // This is the default anyway, i.e., what the SQLTranslator gave us
+        return;
+    }
 
-  const auto cardinality_estimator = optimization_context.cost_estimator->cardinality_estimator->new_instance();
-  cardinality_estimator->guarantee_bottom_up_construction(lqp_root);
-  visit_lqp(lqp_root, [&](const auto& sub_node) {
+    const auto cardinality_estimator = optimization_context.cost_estimator->cardinality_estimator->new_instance();
+    cardinality_estimator->guarantee_bottom_up_construction(lqp_root);
+    visit_lqp(lqp_root, [&](const auto &sub_node)
+              {
     if (sub_node->type != LQPNodeType::Predicate) {
       // This rule only rewrites IN if it is part of a predicate (not, e.g., `SELECT a IN (1, 2) AS foo`)
       return LQPVisitation::VisitInputs;
@@ -199,8 +210,7 @@ void InExpressionRewriteRule::_apply_to_plan_without_subqueries(const std::share
       }
     }
 
-    return LQPVisitation::VisitInputs;
-  });
+    return LQPVisitation::VisitInputs; });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

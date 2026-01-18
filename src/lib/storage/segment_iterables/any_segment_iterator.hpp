@@ -4,9 +4,11 @@
 
 #include "storage/segment_iterables/abstract_segment_iterators.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-namespace detail {
+namespace detail
+{
 
 /**
  * Emulates a base class for segment iterators with a virtual interface.
@@ -14,22 +16,23 @@ namespace detail {
  * a virtual interface.
  */
 template <typename T>
-class AnySegmentIteratorWrapperBase {
- public:
-  virtual ~AnySegmentIteratorWrapperBase() = default;
+class AnySegmentIteratorWrapperBase
+{
+  public:
+    virtual ~AnySegmentIteratorWrapperBase() = default;
 
-  virtual void increment() = 0;
-  virtual void decrement() = 0;
-  virtual void advance(std::ptrdiff_t n) = 0;
-  virtual bool equal(const AnySegmentIteratorWrapperBase<T>* other) const = 0;
-  virtual std::ptrdiff_t distance_to(const AnySegmentIteratorWrapperBase<T>* other) const = 0;
-  virtual SegmentPosition<T> dereference() const = 0;
+    virtual void increment() = 0;
+    virtual void decrement() = 0;
+    virtual void advance(std::ptrdiff_t n) = 0;
+    virtual bool equal(const AnySegmentIteratorWrapperBase<T> *other) const = 0;
+    virtual std::ptrdiff_t distance_to(const AnySegmentIteratorWrapperBase<T> *other) const = 0;
+    virtual SegmentPosition<T> dereference() const = 0;
 
-  /**
-   * Segment iterators need to be copyable so we need a way
-   * to copy the iterator within the wrapper.
-   */
-  virtual std::unique_ptr<AnySegmentIteratorWrapperBase<T>> clone() const = 0;
+    /**
+     * Segment iterators need to be copyable so we need a way
+     * to copy the iterator within the wrapper.
+     */
+    virtual std::unique_ptr<AnySegmentIteratorWrapperBase<T>> clone() const = 0;
 };
 
 /**
@@ -39,50 +42,58 @@ class AnySegmentIteratorWrapperBase {
  * iterator class passed as template argument.
  */
 template <typename T, typename Iterator>
-class AnySegmentIteratorWrapper : public AnySegmentIteratorWrapperBase<T> {
- public:
-  explicit AnySegmentIteratorWrapper(const Iterator& iterator) : _iterator{iterator} {}
+class AnySegmentIteratorWrapper : public AnySegmentIteratorWrapperBase<T>
+{
+  public:
+    explicit AnySegmentIteratorWrapper(const Iterator &iterator) : _iterator{iterator} {}
 
-  void increment() final {
-    ++_iterator;
-  }
+    void increment() final
+    {
+        ++_iterator;
+    }
 
-  void decrement() final {
-    --_iterator;
-  }
+    void decrement() final
+    {
+        --_iterator;
+    }
 
-  void advance(std::ptrdiff_t n) final {
-    _iterator += n;
-  }
+    void advance(std::ptrdiff_t n) final
+    {
+        _iterator += n;
+    }
 
-  /**
-   * Although `other` could have a different type, it is practically impossible,
-   * since AnySegmentIterator is only used within AnySegmentIterable.
-   */
-  bool equal(const AnySegmentIteratorWrapperBase<T>* other) const final {
-    const auto casted_other = static_cast<const AnySegmentIteratorWrapper<T, Iterator>*>(other);
-    return _iterator == casted_other->_iterator;
-  }
+    /**
+     * Although `other` could have a different type, it is practically impossible,
+     * since AnySegmentIterator is only used within AnySegmentIterable.
+     */
+    bool equal(const AnySegmentIteratorWrapperBase<T> *other) const final
+    {
+        const auto casted_other = static_cast<const AnySegmentIteratorWrapper<T, Iterator> *>(other);
+        return _iterator == casted_other->_iterator;
+    }
 
-  std::ptrdiff_t distance_to(const AnySegmentIteratorWrapperBase<T>* other) const final {
-    const auto casted_other = static_cast<const AnySegmentIteratorWrapper<T, Iterator>*>(other);
-    return casted_other->_iterator - _iterator;
-  }
+    std::ptrdiff_t distance_to(const AnySegmentIteratorWrapperBase<T> *other) const final
+    {
+        const auto casted_other = static_cast<const AnySegmentIteratorWrapper<T, Iterator> *>(other);
+        return casted_other->_iterator - _iterator;
+    }
 
-  SegmentPosition<T> dereference() const final {
-    const auto value = *_iterator;
-    return {value.value(), value.is_null(), value.chunk_offset()};
-  }
+    SegmentPosition<T> dereference() const final
+    {
+        const auto value = *_iterator;
+        return {value.value(), value.is_null(), value.chunk_offset()};
+    }
 
-  std::unique_ptr<AnySegmentIteratorWrapperBase<T>> clone() const final {
-    return std::make_unique<AnySegmentIteratorWrapper<T, Iterator>>(_iterator);
-  }
+    std::unique_ptr<AnySegmentIteratorWrapperBase<T>> clone() const final
+    {
+        return std::make_unique<AnySegmentIteratorWrapper<T, Iterator>>(_iterator);
+    }
 
- private:
-  Iterator _iterator;
+  private:
+    Iterator _iterator;
 };
 
-}  // namespace detail
+} // namespace detail
 
 template <typename T>
 class AnySegmentIterable;
@@ -104,66 +115,75 @@ class AnySegmentIterable;
  * For another example for type erasure see: https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Type_Erasure
  */
 template <typename T>
-class AnySegmentIterator : public AbstractSegmentIterator<AnySegmentIterator<T>, SegmentPosition<T>> {
- public:
-  using ValueType = T;
-  using IterableType = AnySegmentIterable<T>;
+class AnySegmentIterator : public AbstractSegmentIterator<AnySegmentIterator<T>, SegmentPosition<T>>
+{
+  public:
+    using ValueType = T;
+    using IterableType = AnySegmentIterable<T>;
 
-  /**
-   * Prevents AnySegmentIterator from being created
-   * by anything else but AnySegmentIterable
-   *
-   * @{
-   */
-  template <typename U>
-  friend class AnySegmentIterable;
+    /**
+     * Prevents AnySegmentIterator from being created
+     * by anything else but AnySegmentIterable
+     *
+     * @{
+     */
+    template <typename U>
+    friend class AnySegmentIterable;
 
-  template <typename Iterator>
-  explicit AnySegmentIterator(const Iterator& iterator)
-      : _wrapper{std::make_unique<hyrise::detail::AnySegmentIteratorWrapper<T, Iterator>>(iterator)} {}
+    template <typename Iterator>
+    explicit AnySegmentIterator(const Iterator &iterator)
+        : _wrapper{std::make_unique<hyrise::detail::AnySegmentIteratorWrapper<T, Iterator>>(iterator)} {}
 
-  /**@}*/
+    /**@}*/
 
- public:
-  AnySegmentIterator(const AnySegmentIterator& other) : _wrapper{other._wrapper->clone()} {}
+  public:
+    AnySegmentIterator(const AnySegmentIterator &other) : _wrapper{other._wrapper->clone()} {}
 
-  AnySegmentIterator& operator=(const AnySegmentIterator& other) {
-    if (this == &other) {
-      return *this;
+    AnySegmentIterator &operator=(const AnySegmentIterator &other)
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+        _wrapper = other._wrapper->clone();
+        return *this;
     }
-    _wrapper = other._wrapper->clone();
-    return *this;
-  }
 
- private:
-  friend class boost::iterator_core_access;  // grants the boost::iterator_facade access to the private interface
+  private:
+    friend class boost::iterator_core_access; // grants the boost::iterator_facade access to the private interface
 
-  void increment() {
-    _wrapper->increment();
-  }
+    void increment()
+    {
+        _wrapper->increment();
+    }
 
-  void decrement() {
-    _wrapper->decrement();
-  }
+    void decrement()
+    {
+        _wrapper->decrement();
+    }
 
-  void advance(std::ptrdiff_t n) {
-    _wrapper->advance(n);
-  }
+    void advance(std::ptrdiff_t n)
+    {
+        _wrapper->advance(n);
+    }
 
-  bool equal(const AnySegmentIterator<T>& other) const {
-    return _wrapper->equal(other._wrapper.get());
-  }
+    bool equal(const AnySegmentIterator<T> &other) const
+    {
+        return _wrapper->equal(other._wrapper.get());
+    }
 
-  std::ptrdiff_t distance_to(const AnySegmentIterator& other) const {
-    return _wrapper->distance_to(other._wrapper.get());
-  }
+    std::ptrdiff_t distance_to(const AnySegmentIterator &other) const
+    {
+        return _wrapper->distance_to(other._wrapper.get());
+    }
 
-  SegmentPosition<T> dereference() const {
-    return _wrapper->dereference();
-  }
+    SegmentPosition<T> dereference() const
+    {
+        return _wrapper->dereference();
+    }
 
- private:
-  std::unique_ptr<hyrise::detail::AnySegmentIteratorWrapperBase<T>> _wrapper;
+  private:
+    std::unique_ptr<hyrise::detail::AnySegmentIteratorWrapperBase<T>> _wrapper;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

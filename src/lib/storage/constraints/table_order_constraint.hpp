@@ -3,11 +3,12 @@
 #include <unordered_set>
 #include <vector>
 
-#include <oneapi/tbb/concurrent_unordered_set.h>  // NOLINT(build/include_order): cpplint identifies TBB as C system headers.s
+#include <oneapi/tbb/concurrent_unordered_set.h> // NOLINT(build/include_order): cpplint identifies TBB as C system headers.s
 
 #include "abstract_table_constraint.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Container class to define order constraints for tables (i.e., ordering a table by @param ordering_columns also orders
@@ -16,33 +17,36 @@ namespace hyrise {
  *
  * Table order constraints are translated to order dependencies (ODs) in the LQP.
  */
-class TableOrderConstraint final : public AbstractTableConstraint {
- public:
-  TableOrderConstraint(std::vector<ColumnID>&& ordering_columns, std::vector<ColumnID>&& ordered_columns);
-  TableOrderConstraint() = delete;
+class TableOrderConstraint final : public AbstractTableConstraint
+{
+  public:
+    TableOrderConstraint(std::vector<ColumnID> &&ordering_columns, std::vector<ColumnID> &&ordered_columns);
+    TableOrderConstraint() = delete;
 
-  const std::vector<ColumnID>& ordering_columns() const;
+    const std::vector<ColumnID> &ordering_columns() const;
 
-  const std::vector<ColumnID>& ordered_columns() const;
+    const std::vector<ColumnID> &ordered_columns() const;
 
-  size_t hash() const override;
+    size_t hash() const override;
 
- protected:
-  bool _on_equals(const AbstractTableConstraint& table_constraint) const override;
+  protected:
+    bool _on_equals(const AbstractTableConstraint &table_constraint) const override;
 
-  std::vector<ColumnID> _ordering_columns;
-  std::vector<ColumnID> _ordered_columns;
+    std::vector<ColumnID> _ordering_columns;
+    std::vector<ColumnID> _ordered_columns;
 };
 
 using TableOrderConstraints = tbb::concurrent_unordered_set<TableOrderConstraint>;
 
-}  // namespace hyrise
+} // namespace hyrise
 
-namespace std {
+namespace std
+{
 
 template <>
-struct hash<hyrise::TableOrderConstraint> {
-  size_t operator()(const hyrise::TableOrderConstraint& table_order_constraint) const;
+struct hash<hyrise::TableOrderConstraint>
+{
+    size_t operator()(const hyrise::TableOrderConstraint &table_order_constraint) const;
 };
 
-}  // namespace std
+} // namespace std

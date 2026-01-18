@@ -13,14 +13,18 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-MultiPredicateJoinEvaluator::MultiPredicateJoinEvaluator(const Table& left, const Table& right,
+MultiPredicateJoinEvaluator::MultiPredicateJoinEvaluator(const Table &left, const Table &right,
                                                          const JoinMode join_mode,
-                                                         const std::vector<OperatorJoinPredicate>& join_predicates) {
-  for (const auto& predicate : join_predicates) {
-    resolve_data_type(left.column_data_type(predicate.column_ids.first), [&](auto left_type) {
-      resolve_data_type(right.column_data_type(predicate.column_ids.second), [&](auto right_type) {
+                                                         const std::vector<OperatorJoinPredicate> &join_predicates)
+{
+    for (const auto &predicate : join_predicates)
+    {
+        resolve_data_type(left.column_data_type(predicate.column_ids.first), [&](auto left_type)
+                          { resolve_data_type(right.column_data_type(predicate.column_ids.second), [&](auto right_type)
+                                              {
         using LeftColumnDataType = typename decltype(left_type)::type;
         using RightColumnDataType = typename decltype(right_type)::type;
 
@@ -43,37 +47,40 @@ MultiPredicateJoinEvaluator::MultiPredicateJoinEvaluator(const Table& left, cons
           });
         } else {
           Fail("Types of columns cannot be compared.");
-        }
-      });
-    });
-  }
+        } }); });
+    }
 }
 
-bool MultiPredicateJoinEvaluator::satisfies_all_predicates(const RowID& left_row_id, const RowID& right_row_id) {
-  for (const auto& comparator : _comparators) {
-    if (!comparator->compare(left_row_id, right_row_id)) {
-      return false;
+bool MultiPredicateJoinEvaluator::satisfies_all_predicates(const RowID &left_row_id, const RowID &right_row_id)
+{
+    for (const auto &comparator : _comparators)
+    {
+        if (!comparator->compare(left_row_id, right_row_id))
+        {
+            return false;
+        }
     }
-  }
 
-  return true;
+    return true;
 }
 
 template <typename T>
 std::vector<std::unique_ptr<AbstractSegmentAccessor<T>>> MultiPredicateJoinEvaluator::_create_accessors(
-    const Table& table, const ColumnID column_id) {
-  auto accessors = std::vector<std::unique_ptr<AbstractSegmentAccessor<T>>>{};
-  accessors.resize(table.chunk_count());
-  const auto chunk_count = table.chunk_count();
-  for (auto chunk_id = ChunkID{0}; chunk_id < chunk_count; ++chunk_id) {
-    const auto chunk = table.get_chunk(chunk_id);
-    Assert(chunk, "Physically deleted chunk should not reach this point, see get_chunk / #1686.");
+    const Table &table, const ColumnID column_id)
+{
+    auto accessors = std::vector<std::unique_ptr<AbstractSegmentAccessor<T>>>{};
+    accessors.resize(table.chunk_count());
+    const auto chunk_count = table.chunk_count();
+    for (auto chunk_id = ChunkID{0}; chunk_id < chunk_count; ++chunk_id)
+    {
+        const auto chunk = table.get_chunk(chunk_id);
+        Assert(chunk, "Physically deleted chunk should not reach this point, see get_chunk / #1686.");
 
-    const auto& segment = chunk->get_segment(column_id);
-    accessors[chunk_id] = create_segment_accessor<T>(segment);
-  }
+        const auto &segment = chunk->get_segment(column_id);
+        accessors[chunk_id] = create_segment_accessor<T>(segment);
+    }
 
-  return accessors;
+    return accessors;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

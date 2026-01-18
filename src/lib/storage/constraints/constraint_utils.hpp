@@ -7,7 +7,8 @@
 
 #include "storage/constraints/table_key_constraint.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Table;
 
@@ -28,30 +29,30 @@ class Table;
  *   foreign_key_constraint(customer_table, {"c_nationkey"}, nation_table, {"n_nationkey"});
  */
 
-void primary_key_constraint(const std::shared_ptr<Table>& table, const std::set<std::string>& columns);
-void unique_constraint(const std::shared_ptr<Table>& table, const std::set<std::string>& columns);
+void primary_key_constraint(const std::shared_ptr<Table> &table, const std::set<std::string> &columns);
+void unique_constraint(const std::shared_ptr<Table> &table, const std::set<std::string> &columns);
 
-void foreign_key_constraint(const std::shared_ptr<Table>& foreign_key_table,
-                            const std::vector<std::string>& foreign_key_columns,
-                            const std::shared_ptr<Table>& primary_key_table,
-                            const std::vector<std::string>& primary_key_columns);
+void foreign_key_constraint(const std::shared_ptr<Table> &foreign_key_table,
+                            const std::vector<std::string> &foreign_key_columns,
+                            const std::shared_ptr<Table> &primary_key_table,
+                            const std::vector<std::string> &primary_key_columns);
 
-void order_constraint(const std::shared_ptr<Table>& table, const std::vector<std::string>& ordering_columns,
-                      const std::vector<std::string>& ordered_columns);
+void order_constraint(const std::shared_ptr<Table> &table, const std::vector<std::string> &ordering_columns,
+                      const std::vector<std::string> &ordered_columns);
 
 /**
-* Check if MVCC data tells us that the existing UCC is guaranteed to be still valid. To do this, we can simply check
-* if the table chunks have seen any inserts/deletions since the last validation of the UCC. This information is
-* contained in the MVCC data of the chunks. Note that we use `max_begin_cid` here. This can lead to overly pessimistic
-* results, but as of right now we don't have a better way to determine the last valid per chunk here.
-*/
-bool key_constraint_is_confidently_valid(const std::shared_ptr<Table>& table,
-                                         const TableKeyConstraint& table_key_constraint);
+ * Check if MVCC data tells us that the existing UCC is guaranteed to be still valid. To do this, we can simply check
+ * if the table chunks have seen any inserts/deletions since the last validation of the UCC. This information is
+ * contained in the MVCC data of the chunks. Note that we use `max_begin_cid` here. This can lead to overly pessimistic
+ * results, but as of right now we don't have a better way to determine the last valid per chunk here.
+ */
+bool key_constraint_is_confidently_valid(const std::shared_ptr<Table> &table,
+                                         const TableKeyConstraint &table_key_constraint);
 
-bool key_constraint_is_confidently_invalid(const std::shared_ptr<Table>& table,
-                                           const TableKeyConstraint& table_key_constraint);
+bool key_constraint_is_confidently_invalid(const std::shared_ptr<Table> &table,
+                                           const TableKeyConstraint &table_key_constraint);
 
-bool column_is_unique(const std::shared_ptr<Table>& table, const ColumnID column_id);
-std::vector<ColumnID> unique_columns(const std::shared_ptr<Table>& table);
+bool column_is_unique(const std::shared_ptr<Table> &table, const ColumnID column_id);
+std::vector<ColumnID> unique_columns(const std::shared_ptr<Table> &table);
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -7,7 +7,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Takes delimited timestamp string with order year-month-day [hour:minute:second<.second fraction>] (ISO 8601 extended
@@ -17,19 +18,19 @@ namespace hyrise {
  * https://www.boost.org/doc/libs/1_79_0/doc/html/date_time/examples.html#date_time.examples.time_math
  * Notably, Boost's timestamps do not support years < 1400 or > 9999.
  */
-std::optional<boost::posix_time::ptime> string_to_timestamp(const std::string& timestamp_string);
+std::optional<boost::posix_time::ptime> string_to_timestamp(const std::string &timestamp_string);
 
 /**
  * This also handles edge cases with days that are the end of a month.
  * E.g., March 31 + one month == April 30, and vice versa.
  * This also applies to leap years.
  */
-boost::gregorian::date date_interval(const boost::gregorian::date& start_date, int64_t offset, DatetimeComponent unit);
+boost::gregorian::date date_interval(const boost::gregorian::date &start_date, int64_t offset, DatetimeComponent unit);
 
 // ISO 8601 extended format representation of the date.
-std::string date_to_string(const boost::gregorian::date& date);
+std::string date_to_string(const boost::gregorian::date &date);
 
 // ISO 8601 extended format representation of the timestamp without time indicator.
-std::string timestamp_to_string(const boost::posix_time::ptime& timestamp);
+std::string timestamp_to_string(const boost::posix_time::ptime &timestamp);
 
-}  // namespace hyrise
+} // namespace hyrise

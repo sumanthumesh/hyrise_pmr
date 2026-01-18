@@ -18,9 +18,10 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;  // NOLINT(build/namespaces)
+using namespace hyrise; // NOLINT(build/namespaces)
 
 // Only if we expect num_output_rows <= num_input_rows * selectivity_threshold, the ScanType can be set to IndexScan.
 // This threshold is kind of arbitrarily chosen, but Kester et al. suggest something similar in "Access Path Selection
@@ -32,68 +33,80 @@ constexpr auto INDEX_SCAN_SELECTIVITY_THRESHOLD = Cardinality{0.01};
 // (https://www.adms-conf.org/faust_adms12.pdf)
 constexpr auto INDEX_SCAN_ROW_COUNT_THRESHOLD = Cardinality{1000};
 
-bool is_single_column_index(const TableIndexStatistics& index_statistics) {
-  return index_statistics.column_ids.size() == 1;
+bool is_single_column_index(const TableIndexStatistics &index_statistics)
+{
+    return index_statistics.column_ids.size() == 1;
 }
 
-bool is_index_scan_applicable(const TableIndexStatistics& index_statistics,
-                              const std::shared_ptr<PredicateNode>& predicate_node,
-                              const std::shared_ptr<AbstractCostEstimator>& cost_estimator) {
-  if (!is_single_column_index(index_statistics)) {
-    return false;
-  }
+bool is_index_scan_applicable(const TableIndexStatistics &index_statistics,
+                              const std::shared_ptr<PredicateNode> &predicate_node,
+                              const std::shared_ptr<AbstractCostEstimator> &cost_estimator)
+{
+    if (!is_single_column_index(index_statistics))
+    {
+        return false;
+    }
 
-  const auto operator_predicates =
-      OperatorScanPredicate::from_expression(*predicate_node->predicate(), *predicate_node);
-  if (!operator_predicates || operator_predicates->size() != 1) {
-    return false;
-  }
+    const auto operator_predicates =
+        OperatorScanPredicate::from_expression(*predicate_node->predicate(), *predicate_node);
+    if (!operator_predicates || operator_predicates->size() != 1)
+    {
+        return false;
+    }
 
-  const auto& operator_predicate = (*operator_predicates)[0];
+    const auto &operator_predicate = (*operator_predicates)[0];
 
-  // Currently, we do not support two-column predicates.
-  if (is_column_id(operator_predicate.value)) {
-    return false;
-  }
+    // Currently, we do not support two-column predicates.
+    if (is_column_id(operator_predicate.value))
+    {
+        return false;
+    }
 
-  if (index_statistics.column_ids[0] != operator_predicate.column_id) {
-    return false;
-  }
+    if (index_statistics.column_ids[0] != operator_predicate.column_id)
+    {
+        return false;
+    }
 
-  // There is no conceptual limitation to this rule with other predicate conditions, but Hyrise's secondary indexes are
-  // hash-based and thus lack support for other predicate conditions.
-  if (operator_predicate.predicate_condition != PredicateCondition::Equals &&
-      operator_predicate.predicate_condition != PredicateCondition::NotEquals) {
-    return false;
-  }
+    // There is no conceptual limitation to this rule with other predicate conditions, but Hyrise's secondary indexes are
+    // hash-based and thus lack support for other predicate conditions.
+    if (operator_predicate.predicate_condition != PredicateCondition::Equals &&
+        operator_predicate.predicate_condition != PredicateCondition::NotEquals)
+    {
+        return false;
+    }
 
-  const auto row_count_table =
-      cost_estimator->cardinality_estimator->estimate_cardinality(predicate_node->left_input());
-  if (row_count_table < INDEX_SCAN_ROW_COUNT_THRESHOLD) {
-    return false;
-  }
+    const auto row_count_table =
+        cost_estimator->cardinality_estimator->estimate_cardinality(predicate_node->left_input());
+    if (row_count_table < INDEX_SCAN_ROW_COUNT_THRESHOLD)
+    {
+        return false;
+    }
 
-  const auto row_count_predicate = cost_estimator->cardinality_estimator->estimate_cardinality(predicate_node);
-  const auto selectivity = row_count_predicate / row_count_table;
+    const auto row_count_predicate = cost_estimator->cardinality_estimator->estimate_cardinality(predicate_node);
+    const auto selectivity = row_count_predicate / row_count_table;
 
-  return selectivity <= INDEX_SCAN_SELECTIVITY_THRESHOLD;
+    return selectivity <= INDEX_SCAN_SELECTIVITY_THRESHOLD;
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::string IndexScanRule::name() const {
-  static const auto name = std::string{"IndexScanRule"};
-  return name;
+std::string IndexScanRule::name() const
+{
+    static const auto name = std::string{"IndexScanRule"};
+    return name;
 }
 
-void IndexScanRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                                      OptimizationContext& optimization_context) const {
-  DebugAssert(optimization_context.cost_estimator, "IndexScanRule requires cost estimator to be set.");
-  Assert(lqp_root->type == LQPNodeType::Root, "ExpressionReductionRule needs root to hold onto.");
+void IndexScanRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                                      OptimizationContext &optimization_context) const
+{
+    DebugAssert(optimization_context.cost_estimator, "IndexScanRule requires cost estimator to be set.");
+    Assert(lqp_root->type == LQPNodeType::Root, "ExpressionReductionRule needs root to hold onto.");
 
-  visit_lqp(lqp_root, [&](const auto& node) {
+    visit_lqp(lqp_root, [&](const auto &node)
+              {
     if (node->type == LQPNodeType::Predicate) {
       const auto& child = node->left_input();
 
@@ -110,8 +123,7 @@ void IndexScanRule::_apply_to_plan_without_subqueries(const std::shared_ptr<Abst
       }
     }
 
-    return LQPVisitation::VisitInputs;
-  });
+    return LQPVisitation::VisitInputs; });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

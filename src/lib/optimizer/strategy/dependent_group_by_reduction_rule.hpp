@@ -5,7 +5,8 @@
 
 #include "abstract_rule.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * In SQL, the returned columns of an aggregate are either "group-by columns" or "aggregate columns", e.g., SUM(a). As
@@ -39,13 +40,14 @@ namespace hyrise {
  * Besides, this rule removes AggregateNodes that are inserted for SELECT DISTINCT clauses if the required columns are
  * already distinct.
  */
-class DependentGroupByReductionRule : public AbstractRule {
- public:
-  std::string name() const override;
+class DependentGroupByReductionRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

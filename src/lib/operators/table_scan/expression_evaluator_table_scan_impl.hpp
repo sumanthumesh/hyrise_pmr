@@ -7,7 +7,8 @@
 #include "expression/abstract_expression.hpp"
 #include "expression/evaluation/expression_evaluator.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Table;
 class UncorrelatedSubqueryResults;
@@ -17,17 +18,18 @@ class UncorrelatedSubqueryResults;
  * AbstractTableScanImpl. This is likely slower than any specialized `AbstractTableScanImpl` and should thus only be
  * used if a particular expression type doesn't have a specialized `AbstractTableScanImpl`.
  */
-class ExpressionEvaluatorTableScanImpl : public AbstractTableScanImpl {
- public:
-  ExpressionEvaluatorTableScanImpl(const std::shared_ptr<const Table>& in_table,
-                                   const std::shared_ptr<const AbstractExpression>& expression);
+class ExpressionEvaluatorTableScanImpl : public AbstractTableScanImpl
+{
+  public:
+    ExpressionEvaluatorTableScanImpl(const std::shared_ptr<const Table> &in_table,
+                                     const std::shared_ptr<const AbstractExpression> &expression);
 
-  std::string description() const override;
-  std::shared_ptr<RowIDPosList> scan_chunk(ChunkID chunk_id) override;
+    std::string description() const override;
+    std::shared_ptr<RowIDPosList> scan_chunk(ChunkID chunk_id) override;
 
- private:
-  std::shared_ptr<const Table> _in_table;
-  std::shared_ptr<const AbstractExpression> _expression;
+  private:
+    std::shared_ptr<const Table> _in_table;
+    std::shared_ptr<const AbstractExpression> _expression;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

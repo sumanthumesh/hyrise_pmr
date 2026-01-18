@@ -20,9 +20,11 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-namespace {
+namespace
+{
 
 /**
  * @brief Mapping of encoding types to encoders
@@ -36,64 +38,74 @@ const auto encoder_for_type = std::map<EncodingType, std::shared_ptr<BaseSegment
     {EncodingType::FrameOfReference, std::make_shared<FrameOfReferenceEncoder>()},
     {EncodingType::LZ4, std::make_shared<LZ4Encoder>()}};
 
-}  // namespace
+} // namespace
 
-std::unique_ptr<BaseSegmentEncoder> create_encoder(EncodingType encoding_type) {
-  Assert(encoding_type != EncodingType::Unencoded, "Encoding type must not be Unencoded`.");
+std::unique_ptr<BaseSegmentEncoder> create_encoder(EncodingType encoding_type)
+{
+    Assert(encoding_type != EncodingType::Unencoded, "Encoding type must not be Unencoded`.");
 
-  auto iter = encoder_for_type.find(encoding_type);
-  Assert(iter != encoder_for_type.cend(), "All encoding types must be in encoder_for_type.");
+    auto iter = encoder_for_type.find(encoding_type);
+    Assert(iter != encoder_for_type.cend(), "All encoding types must be in encoder_for_type.");
 
-  const auto& encoder = iter->second;
-  return encoder->create_new();
+    const auto &encoder = iter->second;
+    return encoder->create_new();
 }
 
-SegmentEncodingSpec get_segment_encoding_spec(const std::shared_ptr<const AbstractSegment>& segment) {
-  Assert(!std::dynamic_pointer_cast<const ReferenceSegment>(segment), "Reference segments cannot be encoded.");
+SegmentEncodingSpec get_segment_encoding_spec(const std::shared_ptr<const AbstractSegment> &segment)
+{
+    Assert(!std::dynamic_pointer_cast<const ReferenceSegment>(segment), "Reference segments cannot be encoded.");
 
-  if (std::dynamic_pointer_cast<const BaseValueSegment>(segment)) {
-    return SegmentEncodingSpec{EncodingType::Unencoded};
-  }
-
-  if (const auto encoded_segment = std::dynamic_pointer_cast<const AbstractEncodedSegment>(segment)) {
-    std::optional<VectorCompressionType> vector_compression;
-    if (encoded_segment->compressed_vector_type()) {
-      vector_compression = parent_vector_compression_type(*encoded_segment->compressed_vector_type());
+    if (std::dynamic_pointer_cast<const BaseValueSegment>(segment))
+    {
+        return SegmentEncodingSpec{EncodingType::Unencoded};
     }
-    return SegmentEncodingSpec{encoded_segment->encoding_type(), vector_compression};
-  }
 
-  Fail("Unexpected segment encoding found.");
+    if (const auto encoded_segment = std::dynamic_pointer_cast<const AbstractEncodedSegment>(segment))
+    {
+        std::optional<VectorCompressionType> vector_compression;
+        if (encoded_segment->compressed_vector_type())
+        {
+            vector_compression = parent_vector_compression_type(*encoded_segment->compressed_vector_type());
+        }
+        return SegmentEncodingSpec{encoded_segment->encoding_type(), vector_compression};
+    }
+
+    Fail("Unexpected segment encoding found.");
 }
 
-VectorCompressionType parent_vector_compression_type(const CompressedVectorType compressed_vector_type) {
-  switch (compressed_vector_type) {
+VectorCompressionType parent_vector_compression_type(const CompressedVectorType compressed_vector_type)
+{
+    switch (compressed_vector_type)
+    {
     case CompressedVectorType::FixedWidthInteger4Byte:
     case CompressedVectorType::FixedWidthInteger2Byte:
     case CompressedVectorType::FixedWidthInteger1Byte:
-      return VectorCompressionType::FixedWidthInteger;
-      break;
+        return VectorCompressionType::FixedWidthInteger;
+        break;
     case CompressedVectorType::BitPacking:
-      return VectorCompressionType::BitPacking;
-  }
-  Fail("Invalid enum value.");
+        return VectorCompressionType::BitPacking;
+    }
+    Fail("Invalid enum value.");
 }
 
-ChunkEncodingSpec auto_select_chunk_encoding_spec(const std::vector<DataType>& types,
-                                                  const std::vector<ColumnID>& unique_columns) {
-  const auto column_count = types.size();
-  auto chunk_encoding_spec = ChunkEncodingSpec{};
-  chunk_encoding_spec.reserve(column_count);
-  auto unique_columns_iter = unique_columns.begin();
-  for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id) {
-    const auto segment_values_are_unique =
-        unique_columns_iter != unique_columns.end() && *unique_columns_iter == column_id;
-    if (segment_values_are_unique) {
-      ++unique_columns_iter;
+ChunkEncodingSpec auto_select_chunk_encoding_spec(const std::vector<DataType> &types,
+                                                  const std::vector<ColumnID> &unique_columns)
+{
+    const auto column_count = types.size();
+    auto chunk_encoding_spec = ChunkEncodingSpec{};
+    chunk_encoding_spec.reserve(column_count);
+    auto unique_columns_iter = unique_columns.begin();
+    for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id)
+    {
+        const auto segment_values_are_unique =
+            unique_columns_iter != unique_columns.end() && *unique_columns_iter == column_id;
+        if (segment_values_are_unique)
+        {
+            ++unique_columns_iter;
+        }
+        chunk_encoding_spec.push_back(auto_select_segment_encoding_spec(types[column_id], segment_values_are_unique));
     }
-    chunk_encoding_spec.push_back(auto_select_segment_encoding_spec(types[column_id], segment_values_are_unique));
-  }
-  return chunk_encoding_spec;
+    return chunk_encoding_spec;
 }
 
 /**
@@ -101,18 +113,19 @@ ChunkEncodingSpec auto_select_chunk_encoding_spec(const std::vector<DataType>& t
  * For more details, see #2696. This PR includes a comparison of different encoding strategies:
  * https://github.com/hyrise/hyrise/pull/2696#pullrequestreview-3087933111
  */
-SegmentEncodingSpec auto_select_segment_encoding_spec(const DataType type, const bool segment_values_are_unique) {
-// SUMANTHTODO: Reinstate FrameOfReference and Unencoded types here before finalizing
+SegmentEncodingSpec auto_select_segment_encoding_spec(const DataType type, const bool segment_values_are_unique)
+{
+    // SUMANTHTODO: Reinstate FrameOfReference and Unencoded types here before finalizing
 
-  // if (segment_values_are_unique) {
-  //   return SegmentEncodingSpec{EncodingType::Unencoded};
-  // }
+    // if (segment_values_are_unique) {
+    //   return SegmentEncodingSpec{EncodingType::Unencoded};
+    // }
 
-//   if (type == DataType::Int) {
-//     return SegmentEncodingSpec{EncodingType::FrameOfReference};
-//   }
+    //   if (type == DataType::Int) {
+    //     return SegmentEncodingSpec{EncodingType::FrameOfReference};
+    //   }
 
-  return SegmentEncodingSpec{EncodingType::Dictionary};
+    return SegmentEncodingSpec{EncodingType::Dictionary};
 }
 
-}  // namespace hyrise
+} // namespace hyrise

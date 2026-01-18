@@ -8,7 +8,8 @@
 #include "abstract_statistics_object.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 static constexpr uint32_t DEFAULT_MAX_RANGES_COUNT = 10;
 
@@ -31,44 +32,48 @@ static constexpr uint32_t DEFAULT_MAX_RANGES_COUNT = 10;
  * instead of only looking at the distinct values (which is significantly cheaper for dictionary encoding).
  */
 template <typename T>
-class RangeFilter : public AbstractStatisticsObject, public std::enable_shared_from_this<RangeFilter<T>> {
- public:
-  static_assert(std::is_arithmetic_v<T>, "RangeFilter should not be instantiated for strings.");  // #1536
+class RangeFilter : public AbstractStatisticsObject, public std::enable_shared_from_this<RangeFilter<T>>
+{
+  public:
+    static_assert(std::is_arithmetic_v<T>, "RangeFilter should not be instantiated for strings."); // #1536
 
-  explicit RangeFilter(std::vector<std::pair<T, T>> init_ranges);
+    explicit RangeFilter(std::vector<std::pair<T, T>> init_ranges);
 
-  static std::unique_ptr<RangeFilter<T>> build_filter(const pmr_vector<T>& dictionary,
-                                                      uint32_t max_ranges_count = DEFAULT_MAX_RANGES_COUNT);
+    static std::unique_ptr<RangeFilter<T>> build_filter(const pmr_vector<T> &dictionary,
+                                                        uint32_t max_ranges_count = DEFAULT_MAX_RANGES_COUNT);
 
-  Cardinality estimate_cardinality(const PredicateCondition /*predicate_condition*/,
-                                   const AllTypeVariant& /*variant_value*/,
-                                   const std::optional<AllTypeVariant>& variant_value2 = std::nullopt) const;
+    Cardinality estimate_cardinality(const PredicateCondition /*predicate_condition*/,
+                                     const AllTypeVariant & /*variant_value*/,
+                                     const std::optional<AllTypeVariant> &variant_value2 = std::nullopt) const;
 
-  std::shared_ptr<const AbstractStatisticsObject> sliced(
-      const PredicateCondition predicate_condition, const AllTypeVariant& variant_value,
-      const std::optional<AllTypeVariant>& variant_value2 = std::nullopt) const override;
+    std::shared_ptr<const AbstractStatisticsObject> sliced(
+        const PredicateCondition predicate_condition, const AllTypeVariant &variant_value,
+        const std::optional<AllTypeVariant> &variant_value2 = std::nullopt) const override;
 
-  std::shared_ptr<const AbstractStatisticsObject> scaled(const Selectivity selectivity) const override;
+    std::shared_ptr<const AbstractStatisticsObject> scaled(const Selectivity selectivity) const override;
 
-  bool does_not_contain(const PredicateCondition predicate_condition, const AllTypeVariant& variant_value,
-                        const std::optional<AllTypeVariant>& variant_value2 = std::nullopt) const;
+    bool does_not_contain(const PredicateCondition predicate_condition, const AllTypeVariant &variant_value,
+                          const std::optional<AllTypeVariant> &variant_value2 = std::nullopt) const;
 
-  const std::vector<std::pair<T, T>> ranges;
+    const std::vector<std::pair<T, T>> ranges;
 };
 
 template <typename T>
-std::ostream& operator<<(std::ostream& stream, const RangeFilter<T>& filter) {
-  stream << "{ ";
+std::ostream &operator<<(std::ostream &stream, const RangeFilter<T> &filter)
+{
+    stream << "{ ";
 
-  for (auto range_it = filter.ranges.cbegin(); range_it != filter.ranges.cend(); ++range_it) {
-    if (range_it != filter.ranges.cbegin()) {
-      stream << ", ";
+    for (auto range_it = filter.ranges.cbegin(); range_it != filter.ranges.cend(); ++range_it)
+    {
+        if (range_it != filter.ranges.cbegin())
+        {
+            stream << ", ";
+        }
+        stream << "[" << range_it->first << ", " << range_it->second << "]";
     }
-    stream << "[" << range_it->first << ", " << range_it->second << "]";
-  }
 
-  stream << " }";
-  return stream;
+    stream << " }";
+    return stream;
 }
 
 extern template class RangeFilter<int32_t>;
@@ -76,4 +81,4 @@ extern template class RangeFilter<int64_t>;
 extern template class RangeFilter<float>;
 extern template class RangeFilter<double>;
 
-}  // namespace hyrise
+} // namespace hyrise

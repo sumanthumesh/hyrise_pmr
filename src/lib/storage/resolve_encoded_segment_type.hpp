@@ -18,7 +18,8 @@
 #include "utils/enum_constant.hpp"
 #include "utils/template_type.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 namespace hana = boost::hana;
 
@@ -45,9 +46,11 @@ constexpr auto encoded_segment_for_type = hana::make_map(
  * @see resolve_segment_type in resolve_type.hpp for info on usage
  */
 template <typename ColumnDataType, typename Functor>
-void resolve_encoded_segment_type(const AbstractEncodedSegment& segment, const Functor& functor) {
-  // Iterate over all pairs in the map
-  hana::fold(encoded_segment_for_type, false, [&](auto match_found, auto encoded_segment_pair) {
+void resolve_encoded_segment_type(const AbstractEncodedSegment &segment, const Functor &functor)
+{
+    // Iterate over all pairs in the map
+    hana::fold(encoded_segment_for_type, false, [&](auto match_found, auto encoded_segment_pair)
+               {
     const auto encoding_type_c = hana::first(encoded_segment_pair);
     const auto segment_template_c = hana::second(encoded_segment_pair);
 
@@ -72,8 +75,7 @@ void resolve_encoded_segment_type(const AbstractEncodedSegment& segment, const F
       return true;
     }
 
-    return match_found;
-  });
+    return match_found; });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

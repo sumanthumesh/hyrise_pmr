@@ -5,7 +5,8 @@
 
 #include "abstract_rule.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractLQPNode;
 class PredicateNode;
@@ -44,19 +45,20 @@ class PredicateNode;
  * into play. Also, predicates might be based on projections and/or joined columns, which makes propagation even more
  * complex. The approach chosen here is more flexible in that it works independently of the predicate's complexity.
  * However, different from a predicate propagation approach, it does not allow us to prune on the reduced side.
-**/
+ **/
 
-class SemiJoinReductionRule : public AbstractRule {
- public:
-  std::string name() const override;
+class SemiJoinReductionRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
-  // Defines the minimum selectivity for a semi join reduction to be added. For a candidate location in the LQP with an
-  // input cardinality `i`, the output cardinality of the semi join has to be lower than `i * MINIMUM_SELECTIVITY`.
-  constexpr static auto MINIMUM_SELECTIVITY = .25;
+    // Defines the minimum selectivity for a semi join reduction to be added. For a candidate location in the LQP with an
+    // input cardinality `i`, the output cardinality of the semi join has to be lower than `i * MINIMUM_SELECTIVITY`.
+    constexpr static auto MINIMUM_SELECTIVITY = .25;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

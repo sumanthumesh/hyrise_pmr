@@ -9,26 +9,30 @@
 #include "logical_query_plan/projection_node.hpp"
 #include "storage/prepared_plan.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-using namespace expression_functional;  // NOLINT(build/namespaces)
+using namespace expression_functional; // NOLINT(build/namespaces)
 
-class PreparedPlanTest : public BaseTest {
- public:
-  void SetUp() override {
-    node_a = MockNode::make(MockNode::ColumnDefinitions{{DataType::Int, "a"}, {DataType::Int, "b"}});
-    node_b = MockNode::make(MockNode::ColumnDefinitions{{DataType::Int, "x"}, {DataType::Int, "y"}});
+class PreparedPlanTest : public BaseTest
+{
+  public:
+    void SetUp() override
+    {
+        node_a = MockNode::make(MockNode::ColumnDefinitions{{DataType::Int, "a"}, {DataType::Int, "b"}});
+        node_b = MockNode::make(MockNode::ColumnDefinitions{{DataType::Int, "x"}, {DataType::Int, "y"}});
 
-    a_a = node_a->get_column("a");
-    b_x = node_b->get_column("x");
-  }
+        a_a = node_a->get_column("a");
+        b_x = node_b->get_column("x");
+    }
 
-  std::shared_ptr<MockNode> node_a, node_b;
-  std::shared_ptr<LQPColumnExpression> a_a, b_x;
+    std::shared_ptr<MockNode> node_a, node_b;
+    std::shared_ptr<LQPColumnExpression> a_a, b_x;
 };
 
-TEST_F(PreparedPlanTest, InstantiateHashEqual) {
-  // clang-format off
+TEST_F(PreparedPlanTest, InstantiateHashEqual)
+{
+    // clang-format off
   const auto placeholder_parameter_a = placeholder_(ParameterID{0});
   const auto placeholder_parameter_b = placeholder_(ParameterID{2});
   const auto correlated_parameter = correlated_parameter_(ParameterID{1}, a_a);
@@ -45,12 +49,12 @@ TEST_F(PreparedPlanTest, InstantiateHashEqual) {
   PredicateNode::make(greater_than_(a_a, placeholder_parameter_b),
     PredicateNode::make(less_than_(subquery_b, 4),
       node_a));
-  // clang-format on
+    // clang-format on
 
-  const auto prepared_plan = PreparedPlan{lqp, {ParameterID{0}, ParameterID{2}}};
-  const auto actual_lqp = prepared_plan.instantiate({value_(15), add_(42, 1337)});
+    const auto prepared_plan = PreparedPlan{lqp, {ParameterID{0}, ParameterID{2}}};
+    const auto actual_lqp = prepared_plan.instantiate({value_(15), add_(42, 1337)});
 
-  // clang-format off
+    // clang-format off
   const auto expected_subquery_a_lqp = PredicateNode::make(equals_(b_x, 15), node_b);
   const auto expected_subquery_a = lqp_subquery_(expected_subquery_a_lqp);
   const auto expected_subquery_b_lqp =
@@ -62,11 +66,11 @@ TEST_F(PreparedPlanTest, InstantiateHashEqual) {
   PredicateNode::make(greater_than_(a_a, add_(42, 1337)),
     PredicateNode::make(less_than_(expected_subquery_b, 4),
       node_a));
-  // clang-format on
+    // clang-format on
 
-  EXPECT_LQP_EQ(actual_lqp, expected_lqp);
-  EXPECT_EQ(*actual_lqp, *expected_lqp);
-  EXPECT_EQ(actual_lqp->hash(), expected_lqp->hash());
+    EXPECT_LQP_EQ(actual_lqp, expected_lqp);
+    EXPECT_EQ(*actual_lqp, *expected_lqp);
+    EXPECT_EQ(actual_lqp->hash(), expected_lqp->hash());
 }
 
-}  // namespace hyrise
+} // namespace hyrise

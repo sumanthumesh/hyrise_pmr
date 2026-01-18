@@ -5,7 +5,8 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * ExpressionResultViews is a Concept used internally in the ExpressionEvaluator to allow the compiler to throw
@@ -18,44 +19,52 @@ namespace hyrise {
  * View that looks at an ExpressionResult knowing that is a series and may contains nulls
  */
 template <typename T>
-class ExpressionResultNullableSeries {
- public:
-  using Type = T;
+class ExpressionResultNullableSeries
+{
+  public:
+    using Type = T;
 
-  ExpressionResultNullableSeries(const pmr_vector<T>& values, const pmr_vector<bool>& nulls)
-      : _values(values), _nulls(nulls) {
-    DebugAssert(values.size() == nulls.size(), "Need as many values as NULLs.");
-  }
+    ExpressionResultNullableSeries(const pmr_vector<T> &values, const pmr_vector<bool> &nulls)
+        : _values(values), _nulls(nulls)
+    {
+        DebugAssert(values.size() == nulls.size(), "Need as many values as NULLs.");
+    }
 
-  bool is_series() const {
-    return true;
-  }
+    bool is_series() const
+    {
+        return true;
+    }
 
-  bool is_literal() const {
-    return false;
-  }
+    bool is_literal() const
+    {
+        return false;
+    }
 
-  bool is_nullable() const {
-    return true;
-  }
+    bool is_nullable() const
+    {
+        return true;
+    }
 
-  const T& value(const size_t idx) const {
-    DebugAssert(idx < _values.size(), "Index out of range.");
-    return _values[idx];
-  }
+    const T &value(const size_t idx) const
+    {
+        DebugAssert(idx < _values.size(), "Index out of range.");
+        return _values[idx];
+    }
 
-  size_t size() const {
-    return _values.size();
-  }
+    size_t size() const
+    {
+        return _values.size();
+    }
 
-  bool is_null(const size_t idx) const {
-    DebugAssert(idx < _nulls.size(), "Index out of range.");
-    return _nulls[idx];
-  }
+    bool is_null(const size_t idx) const
+    {
+        DebugAssert(idx < _nulls.size(), "Index out of range.");
+        return _nulls[idx];
+    }
 
- private:
-  const pmr_vector<T>& _values;
-  const pmr_vector<bool>& _nulls;
+  private:
+    const pmr_vector<T> &_values;
+    const pmr_vector<bool> &_nulls;
 };
 
 /**
@@ -63,39 +72,46 @@ class ExpressionResultNullableSeries {
  * false
  */
 template <typename T>
-class ExpressionResultNonNullSeries {
- public:
-  using Type = T;
+class ExpressionResultNonNullSeries
+{
+  public:
+    using Type = T;
 
-  explicit ExpressionResultNonNullSeries(const pmr_vector<T>& values) : _values(values) {}
+    explicit ExpressionResultNonNullSeries(const pmr_vector<T> &values) : _values(values) {}
 
-  bool is_series() const {
-    return true;
-  }
+    bool is_series() const
+    {
+        return true;
+    }
 
-  bool is_literal() const {
-    return false;
-  }
+    bool is_literal() const
+    {
+        return false;
+    }
 
-  bool is_nullable() const {
-    return false;
-  }
+    bool is_nullable() const
+    {
+        return false;
+    }
 
-  size_t size() const {
-    return _values.size();
-  }
+    size_t size() const
+    {
+        return _values.size();
+    }
 
-  const T& value(const size_t idx) const {
-    DebugAssert(idx < _values.size(), "Index out of range.");
-    return _values[idx];
-  }
+    const T &value(const size_t idx) const
+    {
+        DebugAssert(idx < _values.size(), "Index out of range.");
+        return _values[idx];
+    }
 
-  bool is_null(const size_t idx) const {
-    return false;
-  }
+    bool is_null(const size_t idx) const
+    {
+        return false;
+    }
 
- private:
-  const pmr_vector<T>& _values;
+  private:
+    const pmr_vector<T> &_values;
 };
 
 /**
@@ -103,39 +119,46 @@ class ExpressionResultNonNullSeries {
  * is_null(), no matter which index is requested
  */
 template <typename T>
-class ExpressionResultLiteral {
- public:
-  using Type = T;
+class ExpressionResultLiteral
+{
+  public:
+    using Type = T;
 
-  ExpressionResultLiteral(const T& value, const bool null) : _value(value), _null(null) {}
+    ExpressionResultLiteral(const T &value, const bool null) : _value(value), _null(null) {}
 
-  bool is_series() const {
-    return false;
-  }
+    bool is_series() const
+    {
+        return false;
+    }
 
-  bool is_literal() const {
-    return true;
-  }
+    bool is_literal() const
+    {
+        return true;
+    }
 
-  bool is_nullable() const {
-    return _null;
-  }
+    bool is_nullable() const
+    {
+        return _null;
+    }
 
-  size_t size() const {
-    return 1;
-  }
+    size_t size() const
+    {
+        return 1;
+    }
 
-  const T& value(const size_t /*value*/) const {
-    return _value;
-  }
+    const T &value(const size_t /*value*/) const
+    {
+        return _value;
+    }
 
-  bool is_null(const size_t /*value*/) const {
-    return _null;
-  }
+    bool is_null(const size_t /*value*/) const
+    {
+        return _null;
+    }
 
- private:
-  T _value;
-  bool _null;
+  private:
+    T _value;
+    bool _null;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

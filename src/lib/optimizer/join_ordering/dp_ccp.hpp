@@ -4,7 +4,8 @@
 
 #include "abstract_join_ordering_algorithm.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractCostEstimator;
 class JoinGraph;
@@ -21,10 +22,11 @@ class JoinGraph;
  *
  * Local predicates are pushed down and sorted by increasing cost.
  */
-class DPccp final : public AbstractJoinOrderingAlgorithm {
- public:
-  std::shared_ptr<AbstractLQPNode> operator()(const JoinGraph& join_graph,
-                                              const std::shared_ptr<AbstractCostEstimator>& cost_estimator) override;
+class DPccp final : public AbstractJoinOrderingAlgorithm
+{
+  public:
+    std::shared_ptr<AbstractLQPNode> operator()(const JoinGraph &join_graph,
+                                                const std::shared_ptr<AbstractCostEstimator> &cost_estimator) override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

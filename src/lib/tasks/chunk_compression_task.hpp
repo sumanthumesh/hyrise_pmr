@@ -7,7 +7,8 @@
 #include "storage/encoding_type.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Chunk;
 class Table;
@@ -33,21 +34,22 @@ class Table;
  * Note: Reference segments are not invalidated by this task because the order in which
  *       records are stored does not change.
  */
-class ChunkCompressionTask : public AbstractTask {
- public:
-  explicit ChunkCompressionTask(const std::shared_ptr<Table>& table, const ChunkID chunk_id);
-  explicit ChunkCompressionTask(const std::shared_ptr<Table>& table, const std::vector<ChunkID>& chunk_ids);
-  explicit ChunkCompressionTask(const std::shared_ptr<Table>& table, const ChunkID chunk_id,
-                                const ChunkEncodingSpec& chunk_encoding_spec);
-  explicit ChunkCompressionTask(const std::shared_ptr<Table>& table, const std::vector<ChunkID>& chunk_ids,
-                                const ChunkEncodingSpec& chunk_encoding_spec);
+class ChunkCompressionTask : public AbstractTask
+{
+  public:
+    explicit ChunkCompressionTask(const std::shared_ptr<Table> &table, const ChunkID chunk_id);
+    explicit ChunkCompressionTask(const std::shared_ptr<Table> &table, const std::vector<ChunkID> &chunk_ids);
+    explicit ChunkCompressionTask(const std::shared_ptr<Table> &table, const ChunkID chunk_id,
+                                  const ChunkEncodingSpec &chunk_encoding_spec);
+    explicit ChunkCompressionTask(const std::shared_ptr<Table> &table, const std::vector<ChunkID> &chunk_ids,
+                                  const ChunkEncodingSpec &chunk_encoding_spec);
 
- protected:
-  void _on_execute() override;
+  protected:
+    void _on_execute() override;
 
- private:
-  const std::shared_ptr<Table> _table;
-  const std::vector<ChunkID> _chunk_ids;
-  std::optional<ChunkEncodingSpec> _chunk_encoding_spec;
+  private:
+    const std::shared_ptr<Table> _table;
+    const std::vector<ChunkID> _chunk_ids;
+    std::optional<ChunkEncodingSpec> _chunk_encoding_spec;
 };
-}  // namespace hyrise
+} // namespace hyrise

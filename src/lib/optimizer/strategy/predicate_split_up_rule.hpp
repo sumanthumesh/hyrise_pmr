@@ -7,7 +7,8 @@
 #include "abstract_rule.hpp"
 #include "logical_query_plan/predicate_node.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * This rule turns PredicateNodes with (nested) conjunctions ("and") and disjunctions ("or")
@@ -26,20 +27,21 @@ namespace hyrise {
  *     This rule splits up `EXISTS (...) OR EXISTS (...)` into two expressions that can later be rewritten into two
  *     semi-joins.
  */
-class PredicateSplitUpRule : public AbstractRule {
- public:
-  explicit PredicateSplitUpRule(const bool split_disjunctions = true);
-  std::string name() const override;
+class PredicateSplitUpRule : public AbstractRule
+{
+  public:
+    explicit PredicateSplitUpRule(const bool split_disjunctions = true);
+    std::string name() const override;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 
- private:
-  void _split_conjunction(const std::shared_ptr<PredicateNode>& predicate_node) const;
-  void _split_disjunction(const std::shared_ptr<PredicateNode>& predicate_node) const;
+  private:
+    void _split_conjunction(const std::shared_ptr<PredicateNode> &predicate_node) const;
+    void _split_disjunction(const std::shared_ptr<PredicateNode> &predicate_node) const;
 
-  bool _split_disjunctions;
+    bool _split_disjunctions;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

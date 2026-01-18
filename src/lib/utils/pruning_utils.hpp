@@ -10,7 +10,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class StoredTableNode;
 class TableStatistics;
@@ -21,16 +22,16 @@ using PredicatePruningChain = std::vector<std::shared_ptr<PredicateNode>>;
 using StoredTableNodePredicateNodePair = std::pair<std::shared_ptr<StoredTableNode>, std::shared_ptr<PredicateNode>>;
 
 std::set<ChunkID> compute_chunk_exclude_list(
-    const PredicatePruningChain& predicate_pruning_chain, const std::shared_ptr<StoredTableNode>& stored_table_node,
+    const PredicatePruningChain &predicate_pruning_chain, const std::shared_ptr<StoredTableNode> &stored_table_node,
     std::unordered_map<StoredTableNodePredicateNodePair, std::set<ChunkID>,
-                       boost::hash<StoredTableNodePredicateNodePair>>& excluded_chunk_ids_by_predicate);
+                       boost::hash<StoredTableNodePredicateNodePair>> &excluded_chunk_ids_by_predicate);
 
 // Convenience version when the result cache is not used by the caller for future calls, e.g., when there is only a
 // single PredicatePruningChain.
-std::set<ChunkID> compute_chunk_exclude_list(const PredicatePruningChain& predicate_pruning_chain,
-                                             const std::shared_ptr<StoredTableNode>& stored_table_node);
+std::set<ChunkID> compute_chunk_exclude_list(const PredicatePruningChain &predicate_pruning_chain,
+                                             const std::shared_ptr<StoredTableNode> &stored_table_node);
 
-std::shared_ptr<TableStatistics> prune_table_statistics(const TableStatistics& old_statistics,
+std::shared_ptr<TableStatistics> prune_table_statistics(const TableStatistics &old_statistics,
                                                         OperatorScanPredicate predicate, size_t num_rows_pruned);
 
 /**
@@ -47,13 +48,13 @@ std::shared_ptr<TableStatistics> prune_table_statistics(const TableStatistics& o
  * @return a vector of updated or invalid IDs.
  */
 std::vector<ColumnID> pruned_column_id_mapping(const size_t original_table_column_count,
-                                               const std::vector<ColumnID>& pruned_column_ids);
+                                               const std::vector<ColumnID> &pruned_column_ids);
 
 std::vector<ChunkID> pruned_chunk_id_mapping(const size_t original_table_chunk_count,
-                                             const std::vector<ChunkID>& pruned_chunk_ids);
+                                             const std::vector<ChunkID> &pruned_chunk_ids);
 
 // For a given ColumnID column_id and a sequence of pruned ColumnIDs, this function calculates the value that column_id
 // would have had before pruning.
-ColumnID column_id_before_pruning(const ColumnID column_id, const std::vector<ColumnID>& pruned_column_ids);
+ColumnID column_id_before_pruning(const ColumnID column_id, const std::vector<ColumnID> &pruned_column_ids);
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -6,9 +6,14 @@
 
 #include "scheduler/abstract_task.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-enum class TaskVisitation { VisitPredecessors, DoNotVisitPredecessors };
+enum class TaskVisitation
+{
+    VisitPredecessors,
+    DoNotVisitPredecessors
+};
 
 /**
  * Calls the passed @param visitor on @param task and recursively on its PREDECESSORS. The visitor returns
@@ -18,31 +23,40 @@ enum class TaskVisitation { VisitPredecessors, DoNotVisitPredecessors };
  * @tparam Visitor      Functor called with every task as a param. Returns `TaskVisitation`.
  */
 template <typename Task, typename Visitor>
-void visit_tasks(const std::shared_ptr<Task>& task, Visitor visitor) {
-  using AbstractTaskType = std::conditional_t<std::is_const_v<Task>, const AbstractTask, AbstractTask>;
+void visit_tasks(const std::shared_ptr<Task> &task, Visitor visitor)
+{
+    using AbstractTaskType = std::conditional_t<std::is_const_v<Task>, const AbstractTask, AbstractTask>;
 
-  auto task_queue = std::queue<std::shared_ptr<AbstractTaskType>>{};
-  task_queue.push(task);
+    auto task_queue = std::queue<std::shared_ptr<AbstractTaskType>>{};
+    task_queue.push(task);
 
-  auto visited_tasks = std::unordered_set<std::shared_ptr<AbstractTaskType>>{};
+    auto visited_tasks = std::unordered_set<std::shared_ptr<AbstractTaskType>>{};
 
-  while (!task_queue.empty()) {
-    const auto current_task = task_queue.front();
-    task_queue.pop();
+    while (!task_queue.empty())
+    {
+        const auto current_task = task_queue.front();
+        task_queue.pop();
 
-    if (!visited_tasks.emplace(current_task).second) {
-      continue;
+        if (!visited_tasks.emplace(current_task).second)
+        {
+            continue;
+        }
+
+        if (visitor(current_task) == TaskVisitation::VisitPredecessors)
+        {
+            for (const auto &predecessor : current_task->predecessors())
+            {
+                task_queue.push(predecessor.get().shared_from_this());
+            }
+        }
     }
-
-    if (visitor(current_task) == TaskVisitation::VisitPredecessors) {
-      for (const auto& predecessor : current_task->predecessors()) {
-        task_queue.push(predecessor.get().shared_from_this());
-      }
-    }
-  }
 }
 
-enum class TaskUpwardVisitation { VisitSuccessors, DoNotVisitSuccessors };
+enum class TaskUpwardVisitation
+{
+    VisitSuccessors,
+    DoNotVisitSuccessors
+};
 
 /**
  * Calls the passed @param visitor on @param task and recursively on its SUCCESSORS. The visitor returns
@@ -52,28 +66,33 @@ enum class TaskUpwardVisitation { VisitSuccessors, DoNotVisitSuccessors };
  * @tparam Visitor      Functor called with every task as a param. Returns `TaskUpwardVisitation`.
  */
 template <typename Task, typename Visitor>
-void visit_tasks_upwards(const std::shared_ptr<Task>& task, Visitor visitor) {
-  using AbstractTaskType = std::conditional_t<std::is_const_v<Task>, const AbstractTask, AbstractTask>;
+void visit_tasks_upwards(const std::shared_ptr<Task> &task, Visitor visitor)
+{
+    using AbstractTaskType = std::conditional_t<std::is_const_v<Task>, const AbstractTask, AbstractTask>;
 
-  auto task_queue = std::queue<std::shared_ptr<AbstractTaskType>>{};
-  task_queue.push(task);
+    auto task_queue = std::queue<std::shared_ptr<AbstractTaskType>>{};
+    task_queue.push(task);
 
-  auto visited_tasks = std::unordered_set<std::shared_ptr<AbstractTaskType>>{};
+    auto visited_tasks = std::unordered_set<std::shared_ptr<AbstractTaskType>>{};
 
-  while (!task_queue.empty()) {
-    const auto current_task = task_queue.front();
-    task_queue.pop();
+    while (!task_queue.empty())
+    {
+        const auto current_task = task_queue.front();
+        task_queue.pop();
 
-    if (!visited_tasks.emplace(current_task).second) {
-      continue;
+        if (!visited_tasks.emplace(current_task).second)
+        {
+            continue;
+        }
+
+        if (visitor(current_task) == TaskUpwardVisitation::VisitSuccessors)
+        {
+            for (const auto &successor : current_task->successors())
+            {
+                task_queue.push(successor.get().shared_from_this());
+            }
+        }
     }
-
-    if (visitor(current_task) == TaskUpwardVisitation::VisitSuccessors) {
-      for (const auto& successor : current_task->successors()) {
-        task_queue.push(successor.get().shared_from_this());
-      }
-    }
-  }
 }
 
-}  // namespace hyrise
+} // namespace hyrise

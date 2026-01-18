@@ -4,7 +4,8 @@
 #include "storage/dictionary_segment/attribute_vector_iterable.hpp"
 #include "storage/segment_iterables/any_segment_iterable.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * @defgroup Uniform interface to create an attribute vector iterable from a dictionary segment
@@ -18,10 +19,11 @@ namespace hyrise {
  * @{
  */
 
-inline auto create_iterable_from_attribute_vector(const BaseDictionarySegment& segment) {
-  return erase_type_from_iterable_if_debug(AttributeVectorIterable{segment, segment.null_value_id()});
+inline auto create_iterable_from_attribute_vector(const BaseDictionarySegment &segment)
+{
+    return erase_type_from_iterable_if_debug(AttributeVectorIterable{segment, segment.null_value_id()});
 }
 
 /**@}*/
 
-}  // namespace hyrise
+} // namespace hyrise

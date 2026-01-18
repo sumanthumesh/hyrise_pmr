@@ -18,7 +18,8 @@
 #include "storage/value_segment.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 namespace hana = boost::hana;
 
@@ -72,16 +73,17 @@ namespace hana = boost::hana;
  *   });
  */
 template <typename Functor>
-void resolve_data_type(DataType data_type, const Functor& functor) {
-  DebugAssert(data_type != DataType::Null, "data_type cannot be null.");
+void resolve_data_type(DataType data_type, const Functor &functor)
+{
+    DebugAssert(data_type != DataType::Null, "data_type cannot be null.");
 
-  hana::for_each(data_type_pairs, [&](auto data_type_pair) {
+    hana::for_each(data_type_pairs, [&](auto data_type_pair)
+                   {
     if (hana::first(data_type_pair) == data_type) {
       // The + before hana::second - which returns a reference - converts its return value into a value
       functor(+hana::second(data_type_pair));
       return;
-    }
-  });
+    } });
 }
 
 /**
@@ -111,45 +113,66 @@ using ConstOutIfConstIn = std::conditional_t<std::is_const_v<In>, const Out, Out
 template <typename ColumnDataType, typename AbstractSegmentType, typename Functor>
 // AbstractSegmentType allows segment to be const and non-const
 std::enable_if_t<std::is_same_v<AbstractSegment, std::remove_const_t<AbstractSegmentType>>>
-/*void*/ resolve_segment_type(AbstractSegmentType& segment, const Functor& functor) {
-  using ValueSegmentPtr = ConstOutIfConstIn<AbstractSegmentType, ValueSegment<ColumnDataType>>*;
-  using ReferenceSegmentPtr = ConstOutIfConstIn<AbstractSegmentType, ReferenceSegment>*;
-  using EncodedSegmentPtr = ConstOutIfConstIn<AbstractSegmentType, AbstractEncodedSegment>*;
+/*void*/ resolve_segment_type(AbstractSegmentType &segment, const Functor &functor)
+{
+    using ValueSegmentPtr = ConstOutIfConstIn<AbstractSegmentType, ValueSegment<ColumnDataType>> *;
+    using ReferenceSegmentPtr = ConstOutIfConstIn<AbstractSegmentType, ReferenceSegment> *;
+    using EncodedSegmentPtr = ConstOutIfConstIn<AbstractSegmentType, AbstractEncodedSegment> *;
 
-  if (const auto value_segment = dynamic_cast<ValueSegmentPtr>(&segment)) {
-    functor(*value_segment);
-  } else if (const auto reference_segment = dynamic_cast<ReferenceSegmentPtr>(&segment)) {
-    functor(*reference_segment);
-  } else if (const auto encoded_segment = dynamic_cast<EncodedSegmentPtr>(&segment)) {
-    resolve_encoded_segment_type<ColumnDataType>(*encoded_segment, functor);
-  } else {
-    Fail("Unrecognized column type encountered.");
-  }
+    if (const auto value_segment = dynamic_cast<ValueSegmentPtr>(&segment))
+    {
+        functor(*value_segment);
+    }
+    else if (const auto reference_segment = dynamic_cast<ReferenceSegmentPtr>(&segment))
+    {
+        functor(*reference_segment);
+    }
+    else if (const auto encoded_segment = dynamic_cast<EncodedSegmentPtr>(&segment))
+    {
+        resolve_encoded_segment_type<ColumnDataType>(*encoded_segment, functor);
+    }
+    else
+    {
+        Fail("Unrecognized column type encountered.");
+    }
 }
 
 // Used as a template parameter that is passed whenever we conditionally erase the type of the position list. This is
 // done to reduce the compile time at the cost of the runtime performance. We do not re-use EraseTypes here, as it
 // might confuse readers who could think that the setting erases all types within the functor.
-enum class ErasePosListType { OnlyInDebugBuild, Always };
+enum class ErasePosListType
+{
+    OnlyInDebugBuild,
+    Always
+};
 
 template <ErasePosListType erase_pos_list_type = ErasePosListType::OnlyInDebugBuild, typename Functor>
-void resolve_pos_list_type(const std::shared_ptr<const AbstractPosList>& untyped_pos_list, const Functor& functor) {
-  if constexpr (HYRISE_DEBUG || erase_pos_list_type == ErasePosListType::Always) {
-    functor(untyped_pos_list);
-  } else {
-    if (const auto row_id_pos_list = std::dynamic_pointer_cast<const RowIDPosList>(untyped_pos_list);
-        !untyped_pos_list || row_id_pos_list) {
-      // We also use this branch for nullptr instead of calling the functor with the untyped_pos_list. This way, we
-      // avoid initializing the functor template with AbstractPosList. The first thing the functor has to do is to
-      // check for nullptr anyway, and for that check it does not matter "which" nullptr we pass in.
-      functor(row_id_pos_list);
-    } else if (const auto entire_chunk_pos_list =
-                   std::dynamic_pointer_cast<const EntireChunkPosList>(untyped_pos_list)) {
-      functor(entire_chunk_pos_list);
-    } else {
-      Fail("Unrecognized PosList type encountered");
+void resolve_pos_list_type(const std::shared_ptr<const AbstractPosList> &untyped_pos_list, const Functor &functor)
+{
+    if constexpr (HYRISE_DEBUG || erase_pos_list_type == ErasePosListType::Always)
+    {
+        functor(untyped_pos_list);
     }
-  }
+    else
+    {
+        if (const auto row_id_pos_list = std::dynamic_pointer_cast<const RowIDPosList>(untyped_pos_list);
+            !untyped_pos_list || row_id_pos_list)
+        {
+            // We also use this branch for nullptr instead of calling the functor with the untyped_pos_list. This way, we
+            // avoid initializing the functor template with AbstractPosList. The first thing the functor has to do is to
+            // check for nullptr anyway, and for that check it does not matter "which" nullptr we pass in.
+            functor(row_id_pos_list);
+        }
+        else if (const auto entire_chunk_pos_list =
+                     std::dynamic_pointer_cast<const EntireChunkPosList>(untyped_pos_list))
+        {
+            functor(entire_chunk_pos_list);
+        }
+        else
+        {
+            Fail("Unrecognized PosList type encountered");
+        }
+    }
 }
 
 /**
@@ -176,33 +199,35 @@ void resolve_pos_list_type(const std::shared_ptr<const AbstractPosList>& untyped
  *   });
  */
 template <typename Functor,
-          typename AbstractSegmentType>  // AbstractSegmentType allows segment to be const and non-const
+          typename AbstractSegmentType> // AbstractSegmentType allows segment to be const and non-const
 std::enable_if_t<std::is_same_v<AbstractSegment, std::remove_const_t<AbstractSegmentType>>>
-/*void*/ resolve_data_and_segment_type(AbstractSegmentType& segment, const Functor& functor) {
-  resolve_data_type(segment.data_type(), [&](auto type) {
+/*void*/ resolve_data_and_segment_type(AbstractSegmentType &segment, const Functor &functor)
+{
+    resolve_data_type(segment.data_type(), [&](auto type)
+                      {
     using ColumnDataType = typename decltype(type)::type;
 
     resolve_segment_type<ColumnDataType>(segment, [&](auto& typed_segment) {
       functor(type, typed_segment);
-    });
-  });
+    }); });
 }
 
 /**
  * This function returns the DataType of a data type based on the definition in data_type_pairs.
  */
 template <typename T>
-constexpr DataType data_type_from_type() {
-  static_assert(hana::contains(data_types, hana::type_c<T>), "Type not a valid column type.");
+constexpr DataType data_type_from_type()
+{
+    static_assert(hana::contains(data_types, hana::type_c<T>), "Type not a valid column type.");
 
-  return hana::fold_left(data_type_pairs, DataType{}, [](auto data_type, auto type_tuple) {
+    return hana::fold_left(data_type_pairs, DataType{}, [](auto data_type, auto type_tuple)
+                           {
     // check whether T is one of the column types
     if (hana::type_c<T> == hana::second(type_tuple)) {
       return hana::first(type_tuple);
     }
 
-    return data_type;
-  });
+    return data_type; });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

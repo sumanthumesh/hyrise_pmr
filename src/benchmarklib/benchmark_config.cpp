@@ -8,7 +8,8 @@
 #include "encoding_config.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 BenchmarkConfig::BenchmarkConfig(const ChunkOffset init_chunk_size) : chunk_size{init_chunk_size} {}
 
@@ -16,15 +17,15 @@ BenchmarkConfig::BenchmarkConfig(const ChunkOffset init_chunk_size, const bool i
     : chunk_size{init_chunk_size}, cache_binary_tables{init_cache_binary_tables} {}
 
 BenchmarkConfig::BenchmarkConfig(const BenchmarkMode init_benchmark_mode, const ChunkOffset init_chunk_size,
-                                 const EncodingConfig& init_encoding_config, const bool init_chunk_indexes,
+                                 const EncodingConfig &init_encoding_config, const bool init_chunk_indexes,
                                  const bool init_table_indexes, const int64_t init_max_runs,
-                                 const Duration& init_max_duration, const Duration& init_warmup_duration,
-                                 const std::optional<std::string>& init_output_file_path,
+                                 const Duration &init_max_duration, const Duration &init_warmup_duration,
+                                 const std::optional<std::string> &init_output_file_path,
                                  const bool init_enable_scheduler, const uint32_t init_cores,
                                  const uint32_t init_data_preparation_cores, const uint32_t init_clients,
                                  const bool init_enable_visualization, const bool init_verify,
                                  const bool init_cache_binary_tables, const bool init_system_metrics,
-                                 const bool init_pipeline_metrics, const std::vector<std::string>& init_plugins)
+                                 const bool init_pipeline_metrics, const std::vector<std::string> &init_plugins)
     : benchmark_mode{init_benchmark_mode},
       chunk_size{init_chunk_size},
       encoding_config{init_encoding_config},
@@ -45,4 +46,4 @@ BenchmarkConfig::BenchmarkConfig(const BenchmarkMode init_benchmark_mode, const 
       pipeline_metrics{init_pipeline_metrics},
       plugins{init_plugins} {}
 
-}  // namespace hyrise
+} // namespace hyrise

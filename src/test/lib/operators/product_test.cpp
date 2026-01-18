@@ -11,49 +11,55 @@
 #include "storage/table.hpp"
 #include "types.hpp"
 
-namespace hyrise {
-class OperatorsProductTest : public BaseTest {
- public:
-  std::shared_ptr<TableWrapper> _table_wrapper_a, _table_wrapper_b, _table_wrapper_c;
+namespace hyrise
+{
+class OperatorsProductTest : public BaseTest
+{
+  public:
+    std::shared_ptr<TableWrapper> _table_wrapper_a, _table_wrapper_b, _table_wrapper_c;
 
-  void SetUp() override {
-    _table_wrapper_a = std::make_shared<TableWrapper>(load_table("resources/test_data/tbl/int.tbl", ChunkOffset{5}));
-    _table_wrapper_b = std::make_shared<TableWrapper>(load_table("resources/test_data/tbl/float.tbl", ChunkOffset{2}));
-    _table_wrapper_c =
-        std::make_shared<TableWrapper>(load_table("resources/test_data/tbl/int_int.tbl", ChunkOffset{2}));
+    void SetUp() override
+    {
+        _table_wrapper_a = std::make_shared<TableWrapper>(load_table("resources/test_data/tbl/int.tbl", ChunkOffset{5}));
+        _table_wrapper_b = std::make_shared<TableWrapper>(load_table("resources/test_data/tbl/float.tbl", ChunkOffset{2}));
+        _table_wrapper_c =
+            std::make_shared<TableWrapper>(load_table("resources/test_data/tbl/int_int.tbl", ChunkOffset{2}));
 
-    _table_wrapper_a->execute();
-    _table_wrapper_b->execute();
-    _table_wrapper_c->execute();
-  }
+        _table_wrapper_a->execute();
+        _table_wrapper_b->execute();
+        _table_wrapper_c->execute();
+    }
 };
 
-TEST_F(OperatorsProductTest, ValueSegments) {
-  auto product = std::make_shared<Product>(_table_wrapper_a, _table_wrapper_b);
-  product->execute();
+TEST_F(OperatorsProductTest, ValueSegments)
+{
+    auto product = std::make_shared<Product>(_table_wrapper_a, _table_wrapper_b);
+    product->execute();
 
-  std::shared_ptr<Table> expected_result = load_table("resources/test_data/tbl/int_float_product.tbl", ChunkOffset{3});
-  EXPECT_TABLE_EQ_UNORDERED(product->get_output(), expected_result);
+    std::shared_ptr<Table> expected_result = load_table("resources/test_data/tbl/int_float_product.tbl", ChunkOffset{3});
+    EXPECT_TABLE_EQ_UNORDERED(product->get_output(), expected_result);
 }
 
-TEST_F(OperatorsProductTest, ReferenceAndValueSegments) {
-  auto table_scan = create_table_scan(_table_wrapper_a, ColumnID{0}, PredicateCondition::GreaterThanEquals, 1234);
-  table_scan->execute();
+TEST_F(OperatorsProductTest, ReferenceAndValueSegments)
+{
+    auto table_scan = create_table_scan(_table_wrapper_a, ColumnID{0}, PredicateCondition::GreaterThanEquals, 1234);
+    table_scan->execute();
 
-  auto product = std::make_shared<Product>(table_scan, _table_wrapper_b);
-  product->execute();
+    auto product = std::make_shared<Product>(table_scan, _table_wrapper_b);
+    product->execute();
 
-  std::shared_ptr<Table> expected_result =
-      load_table("resources/test_data/tbl/int_filtered_float_product.tbl", ChunkOffset{3});
-  EXPECT_TABLE_EQ_UNORDERED(product->get_output(), expected_result);
+    std::shared_ptr<Table> expected_result =
+        load_table("resources/test_data/tbl/int_filtered_float_product.tbl", ChunkOffset{3});
+    EXPECT_TABLE_EQ_UNORDERED(product->get_output(), expected_result);
 }
 
-TEST_F(OperatorsProductTest, SelfProduct) {
-  auto product = std::make_shared<Product>(_table_wrapper_c, _table_wrapper_c);
-  product->execute();
+TEST_F(OperatorsProductTest, SelfProduct)
+{
+    auto product = std::make_shared<Product>(_table_wrapper_c, _table_wrapper_c);
+    product->execute();
 
-  const auto expected_result = load_table("resources/test_data/tbl/int_int_self_product.tbl");
-  EXPECT_TABLE_EQ_UNORDERED(product->get_output(), expected_result);
+    const auto expected_result = load_table("resources/test_data/tbl/int_int_self_product.tbl");
+    EXPECT_TABLE_EQ_UNORDERED(product->get_output(), expected_result);
 }
 
-}  // namespace hyrise
+} // namespace hyrise

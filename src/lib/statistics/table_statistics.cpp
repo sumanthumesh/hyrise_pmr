@@ -20,30 +20,35 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::shared_ptr<TableStatistics> TableStatistics::from_table(const Table& table) {
-  const auto column_count = table.column_count();
-  auto column_statistics = std::vector<std::shared_ptr<const BaseAttributeStatistics>>{column_count};
+std::shared_ptr<TableStatistics> TableStatistics::from_table(const Table &table)
+{
+    const auto column_count = table.column_count();
+    auto column_statistics = std::vector<std::shared_ptr<const BaseAttributeStatistics>>{column_count};
 
-  /**
-   * Determine bin count, within mostly arbitrarily chosen bounds: 5 (for tables with <=2k rows) up to 100 bins
-   * (for tables with >= 200m rows) are created.
-   */
-  const auto histogram_bin_count = std::min<size_t>(100, std::max<size_t>(5, table.row_count() / 2'000));
+    /**
+     * Determine bin count, within mostly arbitrarily chosen bounds: 5 (for tables with <=2k rows) up to 100 bins
+     * (for tables with >= 200m rows) are created.
+     */
+    const auto histogram_bin_count = std::min<size_t>(100, std::max<size_t>(5, table.row_count() / 2'000));
 
-  /**
-   * We highly recommend setting up a multithreaded scheduler before the following procedure is executed to parallelly
-   * create statistics objects for the table's columns.
-   */
+    /**
+     * We highly recommend setting up a multithreaded scheduler before the following procedure is executed to parallelly
+     * create statistics objects for the table's columns.
+     */
 
-  auto jobs = std::vector<std::shared_ptr<AbstractTask>>{};
-  jobs.reserve(column_count);
+    auto jobs = std::vector<std::shared_ptr<AbstractTask>>{};
+    jobs.reserve(column_count);
 
-  for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id) {
-    const auto generate_column_statistics = [&, column_id]() {
-      const auto column_data_type = table.column_data_type(column_id);
-      resolve_data_type(column_data_type, [&](auto type) {
+    for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id)
+    {
+        const auto generate_column_statistics = [&, column_id]()
+        {
+            const auto column_data_type = table.column_data_type(column_id);
+            resolve_data_type(column_data_type, [&](auto type)
+                              {
         using ColumnDataType = typename decltype(type)::type;
 
         const auto output_column_statistics = std::make_shared<AttributeStatistics<ColumnDataType>>();
@@ -66,43 +71,46 @@ std::shared_ptr<TableStatistics> TableStatistics::from_table(const Table& table)
           output_column_statistics->set_statistics_object(std::make_shared<NullValueRatioStatistics>(1.0));
         }
 
-        column_statistics[column_id] = output_column_statistics;
-      });
-    };
-    jobs.emplace_back(std::make_shared<JobTask>(generate_column_statistics));
-  }
-  Hyrise::get().scheduler()->schedule_and_wait_for_tasks(jobs);
+        column_statistics[column_id] = output_column_statistics; });
+        };
+        jobs.emplace_back(std::make_shared<JobTask>(generate_column_statistics));
+    }
+    Hyrise::get().scheduler()->schedule_and_wait_for_tasks(jobs);
 
-  return std::make_shared<TableStatistics>(std::move(column_statistics), table.row_count());
+    return std::make_shared<TableStatistics>(std::move(column_statistics), table.row_count());
 }
 
-TableStatistics::TableStatistics(std::vector<std::shared_ptr<const BaseAttributeStatistics>>&& init_column_statistics,
+TableStatistics::TableStatistics(std::vector<std::shared_ptr<const BaseAttributeStatistics>> &&init_column_statistics,
                                  const Cardinality init_row_count)
     : column_statistics(std::move(init_column_statistics)), row_count(init_row_count) {}
 
-DataType TableStatistics::column_data_type(const ColumnID column_id) const {
-  DebugAssert(column_id < column_statistics.size(), "ColumnID out of bounds");
-  return column_statistics[column_id]->data_type;
+DataType TableStatistics::column_data_type(const ColumnID column_id) const
+{
+    DebugAssert(column_id < column_statistics.size(), "ColumnID out of bounds");
+    return column_statistics[column_id]->data_type;
 }
 
-std::ostream& operator<<(std::ostream& stream, const TableStatistics& table_statistics) {
-  stream << "TableStatistics {\n  RowCount: " << table_statistics.row_count << ";\n";
+std::ostream &operator<<(std::ostream &stream, const TableStatistics &table_statistics)
+{
+    stream << "TableStatistics {\n  RowCount: " << table_statistics.row_count << ";\n";
 
-  for (const auto& column_statistics : table_statistics.column_statistics) {
-    if (const auto& dummy_statistics =
-            std::dynamic_pointer_cast<const CardinalityEstimator::DummyStatistics>(column_statistics)) {
-      stream << *dummy_statistics << '\n';
-      continue;
-    }
-    resolve_data_type(column_statistics->data_type, [&](const auto data_type_t) {
+    for (const auto &column_statistics : table_statistics.column_statistics)
+    {
+        if (const auto &dummy_statistics =
+                std::dynamic_pointer_cast<const CardinalityEstimator::DummyStatistics>(column_statistics))
+        {
+            stream << *dummy_statistics << '\n';
+            continue;
+        }
+        resolve_data_type(column_statistics->data_type, [&](const auto data_type_t)
+                          {
       using ColumnDataType = typename decltype(data_type_t)::type;
-      stream << *std::dynamic_pointer_cast<const AttributeStatistics<ColumnDataType>>(column_statistics);
-    });
-  }
+      stream << *std::dynamic_pointer_cast<const AttributeStatistics<ColumnDataType>>(column_statistics); });
+    }
 
-  stream << "}\n";
+    stream << "}\n";
 
-  return stream;
+    return stream;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

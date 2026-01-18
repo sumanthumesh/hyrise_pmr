@@ -4,7 +4,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * @brief Base class of all vector decompressors
@@ -15,15 +16,16 @@ namespace hyrise {
  *       are marked `final` so that the compiler can omit
  *       expensive virtual method calls!
  */
-class BaseVectorDecompressor {
- public:
-  virtual ~BaseVectorDecompressor() = default;
-  BaseVectorDecompressor() = default;
-  BaseVectorDecompressor(const BaseVectorDecompressor&) = default;
-  BaseVectorDecompressor(BaseVectorDecompressor&&) = default;
+class BaseVectorDecompressor
+{
+  public:
+    virtual ~BaseVectorDecompressor() = default;
+    BaseVectorDecompressor() = default;
+    BaseVectorDecompressor(const BaseVectorDecompressor &) = default;
+    BaseVectorDecompressor(BaseVectorDecompressor &&) = default;
 
-  virtual uint32_t get(size_t i) = 0;
-  virtual size_t size() const = 0;
+    virtual uint32_t get(size_t i) = 0;
+    virtual size_t size() const = 0;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

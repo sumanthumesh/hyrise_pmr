@@ -12,37 +12,43 @@
 #include "storage/table.hpp"
 #include "utils/load_table.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 // Base Class for tests that should be run with various encodings
-class EncodingTest : public BaseTestWithParam<SegmentEncodingSpec> {
- public:
-  std::shared_ptr<Table> load_table_with_encoding(const std::string& path,
-                                                  ChunkOffset target_chunk_size = Chunk::DEFAULT_SIZE) {
-    const auto table = load_table(path, target_chunk_size);
+class EncodingTest : public BaseTestWithParam<SegmentEncodingSpec>
+{
+  public:
+    std::shared_ptr<Table> load_table_with_encoding(const std::string &path,
+                                                    ChunkOffset target_chunk_size = Chunk::DEFAULT_SIZE)
+    {
+        const auto table = load_table(path, target_chunk_size);
 
-    auto chunk_encoding_spec = ChunkEncodingSpec{table->column_count(), SegmentEncodingSpec{EncodingType::Unencoded}};
+        auto chunk_encoding_spec = ChunkEncodingSpec{table->column_count(), SegmentEncodingSpec{EncodingType::Unencoded}};
 
-    for (auto column_id = ColumnID{0}; column_id < table->column_count(); ++column_id) {
-      if (encoding_supports_data_type(GetParam().encoding_type, table->column_data_type(column_id))) {
-        chunk_encoding_spec[column_id] = GetParam();
-      }
+        for (auto column_id = ColumnID{0}; column_id < table->column_count(); ++column_id)
+        {
+            if (encoding_supports_data_type(GetParam().encoding_type, table->column_data_type(column_id)))
+            {
+                chunk_encoding_spec[column_id] = GetParam();
+            }
+        }
+
+        ChunkEncoder::encode_all_chunks(table, chunk_encoding_spec);
+        return table;
     }
-
-    ChunkEncoder::encode_all_chunks(table, chunk_encoding_spec);
-    return table;
-  }
 };
 
-void assert_chunk_encoding(const std::shared_ptr<Chunk>& chunk, const ChunkEncodingSpec& spec);
+void assert_chunk_encoding(const std::shared_ptr<Chunk> &chunk, const ChunkEncodingSpec &spec);
 
 inline std::string all_segment_encoding_specs_formatter(
-    const testing::TestParamInfo<EncodingTest::ParamType>& param_info) {
-  auto stringstream = std::stringstream{};
-  stringstream << param_info.param;
-  auto string = stringstream.str();
-  boost::remove_erase_if(string, boost::is_any_of("() -"));
-  return string;
+    const testing::TestParamInfo<EncodingTest::ParamType> &param_info)
+{
+    auto stringstream = std::stringstream{};
+    stringstream << param_info.param;
+    auto string = stringstream.str();
+    boost::remove_erase_if(string, boost::is_any_of("() -"));
+    return string;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -8,7 +8,8 @@
 #include "compressed_vector_type.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * @brief Base class of all compressed vectors
@@ -25,26 +26,27 @@ namespace hyrise {
  *
  * Sub-classes must be added in compressed_vector_type.hpp
  */
-class BaseCompressedVector : private Noncopyable {
- public:
-  virtual ~BaseCompressedVector() = default;
+class BaseCompressedVector : private Noncopyable
+{
+  public:
+    virtual ~BaseCompressedVector() = default;
 
-  /**
-   * @brief Returns the number of elements in the vector
-   */
-  virtual size_t size() const = 0;
+    /**
+     * @brief Returns the number of elements in the vector
+     */
+    virtual size_t size() const = 0;
 
-  /**
-   * @brief Returns the physical size of the vector
-   */
-  virtual size_t data_size() const = 0;
+    /**
+     * @brief Returns the physical size of the vector
+     */
+    virtual size_t data_size() const = 0;
 
-  virtual CompressedVectorType type() const = 0;
+    virtual CompressedVectorType type() const = 0;
 
-  virtual std::unique_ptr<BaseVectorDecompressor> create_base_decompressor() const = 0;
+    virtual std::unique_ptr<BaseVectorDecompressor> create_base_decompressor() const = 0;
 
-  virtual std::unique_ptr<const BaseCompressedVector> copy_using_memory_resource(
-      MemoryResource& memory_resource) const = 0;
+    virtual std::unique_ptr<const BaseCompressedVector> copy_using_memory_resource(
+        MemoryResource &memory_resource) const = 0;
 };
 
 /**
@@ -61,79 +63,91 @@ using BaseCompressedVectorIterator =
  * Sub-classes must implement all method starting with `on_`.
  */
 template <typename Derived>
-class CompressedVector : public BaseCompressedVector {
- public:
-  /**
-   * @defgroup Non-virtual interface
-   * @{
-   */
+class CompressedVector : public BaseCompressedVector
+{
+  public:
+    /**
+     * @defgroup Non-virtual interface
+     * @{
+     */
 
-  /**
-   * @brief Returns a vector specific decompressor
-   * @return a unique_ptr of subclass of BaseVectorDecompressor
-   */
-  auto create_decompressor() const {
-    return _self().on_create_decompressor();
-  }
+    /**
+     * @brief Returns a vector specific decompressor
+     * @return a unique_ptr of subclass of BaseVectorDecompressor
+     */
+    auto create_decompressor() const
+    {
+        return _self().on_create_decompressor();
+    }
 
-  /**
-   * @brief Returns an iterator to the beginning
-   * @return a constant input iterator returning uint32_t
-   */
-  auto begin() const {
-    return _self().on_begin();
-  }
+    /**
+     * @brief Returns an iterator to the beginning
+     * @return a constant input iterator returning uint32_t
+     */
+    auto begin() const
+    {
+        return _self().on_begin();
+    }
 
-  auto cbegin() const {
-    return begin();
-  }
+    auto cbegin() const
+    {
+        return begin();
+    }
 
-  /**
-   * @brief Returns an iterator to the end
-   * @return a constant input iterator returning uint32_t
-   */
-  auto end() const {
-    return _self().on_end();
-  }
+    /**
+     * @brief Returns an iterator to the end
+     * @return a constant input iterator returning uint32_t
+     */
+    auto end() const
+    {
+        return _self().on_end();
+    }
 
-  auto cend() const {
-    return end();
-  }
+    auto cend() const
+    {
+        return end();
+    }
 
-  /**@}*/
+    /**@}*/
 
- public:
-  /**
-   * @defgroup Virtual interface implementation
-   * @{
-   */
+  public:
+    /**
+     * @defgroup Virtual interface implementation
+     * @{
+     */
 
-  size_t size() const final {
-    return _self().on_size();
-  }
+    size_t size() const final
+    {
+        return _self().on_size();
+    }
 
-  size_t data_size() const final {
-    return _self().on_data_size();
-  }
+    size_t data_size() const final
+    {
+        return _self().on_data_size();
+    }
 
-  CompressedVectorType type() const final {
-    return get_compressed_vector_type<Derived>();
-  }
+    CompressedVectorType type() const final
+    {
+        return get_compressed_vector_type<Derived>();
+    }
 
-  std::unique_ptr<BaseVectorDecompressor> create_base_decompressor() const final {
-    return _self().on_create_base_decompressor();
-  }
+    std::unique_ptr<BaseVectorDecompressor> create_base_decompressor() const final
+    {
+        return _self().on_create_base_decompressor();
+    }
 
-  std::unique_ptr<const BaseCompressedVector> copy_using_memory_resource(MemoryResource& memory_resource) const final {
-    return _self().on_copy_using_memory_resource(memory_resource);
-  }
+    std::unique_ptr<const BaseCompressedVector> copy_using_memory_resource(MemoryResource &memory_resource) const final
+    {
+        return _self().on_copy_using_memory_resource(memory_resource);
+    }
 
-  /**@}*/
+    /**@}*/
 
- private:
-  const Derived& _self() const {
-    return static_cast<const Derived&>(*this);
-  }
+  private:
+    const Derived &_self() const
+    {
+        return static_cast<const Derived &>(*this);
+    }
 };
 
-}  // namespace hyrise
+} // namespace hyrise

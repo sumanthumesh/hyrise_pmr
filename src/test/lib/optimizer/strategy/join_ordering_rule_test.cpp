@@ -16,41 +16,45 @@
  * We cannot actually test much about the JoinOrderingRule because it is highly dependent on the underlying algorithms,
  * which are tested separately.
  */
-namespace hyrise {
+namespace hyrise
+{
 
-using namespace expression_functional;  // NOLINT(build/namespaces)
+using namespace expression_functional; // NOLINT(build/namespaces)
 
-class JoinOrderingRuleTest : public StrategyBaseTest {
- public:
-  void SetUp() override {
-    StrategyBaseTest::SetUp();
-    rule = std::make_shared<JoinOrderingRule>();
-    // This test only makes sure THAT something gets reordered, not what the result of this reordering is - so the stats
-    // are just dummies.
-    const auto histogram = GenericHistogram<int32_t>::with_single_bin(1, 50, 20, 10);
+class JoinOrderingRuleTest : public StrategyBaseTest
+{
+  public:
+    void SetUp() override
+    {
+        StrategyBaseTest::SetUp();
+        rule = std::make_shared<JoinOrderingRule>();
+        // This test only makes sure THAT something gets reordered, not what the result of this reordering is - so the stats
+        // are just dummies.
+        const auto histogram = GenericHistogram<int32_t>::with_single_bin(1, 50, 20, 10);
 
-    node_a = create_mock_node_with_statistics({{DataType::Int, "a"}}, 20, {histogram});
-    node_b = create_mock_node_with_statistics({{DataType::Int, "b"}}, 20, {histogram});
-    node_c = create_mock_node_with_statistics({{DataType::Int, "c"}}, 20, {histogram});
-    node_d = create_mock_node_with_statistics({{DataType::Int, "d"}}, 20, {histogram});
+        node_a = create_mock_node_with_statistics({{DataType::Int, "a"}}, 20, {histogram});
+        node_b = create_mock_node_with_statistics({{DataType::Int, "b"}}, 20, {histogram});
+        node_c = create_mock_node_with_statistics({{DataType::Int, "c"}}, 20, {histogram});
+        node_d = create_mock_node_with_statistics({{DataType::Int, "d"}}, 20, {histogram});
 
-    a_a = node_a->get_column("a");
-    b_b = node_b->get_column("b");
-    c_c = node_c->get_column("c");
-    d_d = node_d->get_column("d");
-  }
+        a_a = node_a->get_column("a");
+        b_b = node_b->get_column("b");
+        c_c = node_c->get_column("c");
+        d_d = node_d->get_column("d");
+    }
 
-  std::shared_ptr<MockNode> node_a, node_b, node_c, node_d;
-  std::shared_ptr<LQPColumnExpression> a_a, b_b, c_c, d_d;
-  std::shared_ptr<AbstractCostEstimator> cost_estimator;
-  std::shared_ptr<JoinOrderingRule> rule;
+    std::shared_ptr<MockNode> node_a, node_b, node_c, node_d;
+    std::shared_ptr<LQPColumnExpression> a_a, b_b, c_c, d_d;
+    std::shared_ptr<AbstractCostEstimator> cost_estimator;
+    std::shared_ptr<JoinOrderingRule> rule;
 };
 
-TEST_F(JoinOrderingRuleTest, MultipleJoinGraphs) {
-  // Test that the JoinOrderingRule works when there are multiple parts in the plan that need isolated optimization,
-  // e.g., when there is a barrier in the form of an outer join.
+TEST_F(JoinOrderingRuleTest, MultipleJoinGraphs)
+{
+    // Test that the JoinOrderingRule works when there are multiple parts in the plan that need isolated optimization,
+    // e.g., when there is a barrier in the form of an outer join.
 
-  // clang-format off
+    // clang-format off
   _lqp =
   AggregateNode::make(expression_vector(a_a), expression_vector(),
     PredicateNode::make(equals_(a_a, b_b),
@@ -74,10 +78,10 @@ TEST_F(JoinOrderingRuleTest, MultipleJoinGraphs) {
           node_d,
           node_c)),
       node_a));
-  // clang-format on
+    // clang-format on
 
-  EXPECT_TRUE(_optimization_context.is_cacheable());
-  EXPECT_LQP_EQ(_lqp, expected_lqp);
+    EXPECT_TRUE(_optimization_context.is_cacheable());
+    EXPECT_LQP_EQ(_lqp, expected_lqp);
 }
 
-}  // namespace hyrise
+} // namespace hyrise

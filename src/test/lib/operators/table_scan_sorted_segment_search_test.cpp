@@ -4,83 +4,99 @@
 #include "operators/table_scan/sorted_segment_search.hpp"
 #include "storage/segment_iterate.hpp"
 
-namespace {
+namespace
+{
 
-struct TestData {
-  std::string predicate_condition_string;
-  hyrise::PredicateCondition predicate_condition;
-  int32_t search_value;
-  std::optional<int32_t> second_search_value;
-  std::vector<int32_t> expected;
+struct TestData
+{
+    std::string predicate_condition_string;
+    hyrise::PredicateCondition predicate_condition;
+    int32_t search_value;
+    std::optional<int32_t> second_search_value;
+    std::vector<int32_t> expected;
 };
 
-enum class NullValueUsage { WithoutNulls, WithNulls, OnlyNulls };
+enum class NullValueUsage
+{
+    WithoutNulls,
+    WithNulls,
+    OnlyNulls
+};
 
 using Params = std::tuple<TestData, hyrise::SortMode, NullValueUsage>;
 
-auto table_scan_sorted_segment_search_test_formatter = [](const ::testing::TestParamInfo<Params> info) {
-  return std::string{magic_enum::enum_name(std::get<1>(info.param))} +
-         std::get<0>(info.param).predicate_condition_string +
-         std::string{magic_enum::enum_name(std::get<2>(info.param))};
+auto table_scan_sorted_segment_search_test_formatter = [](const ::testing::TestParamInfo<Params> info)
+{
+    return std::string{magic_enum::enum_name(std::get<1>(info.param))} +
+           std::get<0>(info.param).predicate_condition_string +
+           std::string{magic_enum::enum_name(std::get<2>(info.param))};
 };
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-class OperatorsTableScanSortedSegmentSearchTest : public BaseTest, public ::testing::WithParamInterface<Params> {
- protected:
-  void SetUp() override {
-    auto test_data = TestData{};
-    auto null_value_usage = NullValueUsage::WithoutNulls;
-    std::tie(test_data, _sorted_by, null_value_usage) = GetParam();
-    _predicate_condition = test_data.predicate_condition;
-    _search_value = test_data.search_value;
-    _second_search_value = test_data.second_search_value;
-    _expected = test_data.expected;
-    _nullable = null_value_usage != NullValueUsage::WithoutNulls;
-    _all_values_null = null_value_usage == NullValueUsage::OnlyNulls;
+class OperatorsTableScanSortedSegmentSearchTest : public BaseTest, public ::testing::WithParamInterface<Params>
+{
+  protected:
+    void SetUp() override
+    {
+        auto test_data = TestData{};
+        auto null_value_usage = NullValueUsage::WithoutNulls;
+        std::tie(test_data, _sorted_by, null_value_usage) = GetParam();
+        _predicate_condition = test_data.predicate_condition;
+        _search_value = test_data.search_value;
+        _second_search_value = test_data.second_search_value;
+        _expected = test_data.expected;
+        _nullable = null_value_usage != NullValueUsage::WithoutNulls;
+        _all_values_null = null_value_usage == NullValueUsage::OnlyNulls;
 
-    const auto ascending = _sorted_by == SortMode::AscendingNullsFirst || _sorted_by == SortMode::AscendingNullsLast;
-    const auto nulls_last = _sorted_by == SortMode::AscendingNullsLast || _sorted_by == SortMode::DescendingNullsLast;
+        const auto ascending = _sorted_by == SortMode::AscendingNullsFirst || _sorted_by == SortMode::AscendingNullsLast;
+        const auto nulls_last = _sorted_by == SortMode::AscendingNullsLast || _sorted_by == SortMode::DescendingNullsLast;
 
-    if (!ascending) {
-      std::reverse(_expected.begin(), _expected.end());
+        if (!ascending)
+        {
+            std::reverse(_expected.begin(), _expected.end());
+        }
+
+        _segment = std::make_unique<ValueSegment<int32_t>>(_nullable);
+
+        if ((_nullable && !nulls_last) || _all_values_null)
+        {
+            _segment->append(NULL_VALUE);
+            _segment->append(NULL_VALUE);
+            _segment->append(NULL_VALUE);
+        }
+
+        if (_all_values_null)
+        {
+            return;
+        }
+
+        const auto table_size = 5;
+        for (int32_t row = 0; row < table_size; ++row)
+        {
+            _segment->append(ascending ? row : table_size - row - 1);
+            _segment->append(ascending ? row : table_size - row - 1);
+        }
+
+        if (_nullable && nulls_last)
+        {
+            _segment->append(NULL_VALUE);
+            _segment->append(NULL_VALUE);
+            _segment->append(NULL_VALUE);
+        }
     }
 
-    _segment = std::make_unique<ValueSegment<int32_t>>(_nullable);
-
-    if ((_nullable && !nulls_last) || _all_values_null) {
-      _segment->append(NULL_VALUE);
-      _segment->append(NULL_VALUE);
-      _segment->append(NULL_VALUE);
-    }
-
-    if (_all_values_null) {
-      return;
-    }
-
-    const auto table_size = 5;
-    for (int32_t row = 0; row < table_size; ++row) {
-      _segment->append(ascending ? row : table_size - row - 1);
-      _segment->append(ascending ? row : table_size - row - 1);
-    }
-
-    if (_nullable && nulls_last) {
-      _segment->append(NULL_VALUE);
-      _segment->append(NULL_VALUE);
-      _segment->append(NULL_VALUE);
-    }
-  }
-
-  std::unique_ptr<ValueSegment<int32_t>> _segment;
-  PredicateCondition _predicate_condition;
-  bool _nullable;
-  bool _all_values_null;
-  int32_t _search_value;
-  std::optional<int32_t> _second_search_value;
-  std::vector<int32_t> _expected;
-  SortMode _sorted_by;
+    std::unique_ptr<ValueSegment<int32_t>> _segment;
+    PredicateCondition _predicate_condition;
+    bool _nullable;
+    bool _all_values_null;
+    int32_t _search_value;
+    std::optional<int32_t> _second_search_value;
+    std::vector<int32_t> _expected;
+    SortMode _sorted_by;
 };
 
 // clang-format off
@@ -168,9 +184,11 @@ INSTANTIATE_TEST_SUITE_P(
 
 // clang-format on
 
-TEST_P(OperatorsTableScanSortedSegmentSearchTest, ScanSortedSegment) {
-  const auto iterable = create_iterable_from_segment(*_segment);
-  iterable.with_iterators([&](auto input_begin, auto input_end) {
+TEST_P(OperatorsTableScanSortedSegmentSearchTest, ScanSortedSegment)
+{
+    const auto iterable = create_iterable_from_segment(*_segment);
+    iterable.with_iterators([&](auto input_begin, auto input_end)
+                            {
     auto sorted_segment_search =
         _second_search_value
             ? SortedSegmentSearch(input_begin, input_end, _sorted_by, _nullable, _predicate_condition, _search_value,
@@ -198,8 +216,7 @@ TEST_P(OperatorsTableScanSortedSegmentSearchTest, ScanSortedSegment) {
       EXPECT_EQ(chunk_id, initial_chunk_id);
       EXPECT_FALSE(_segment->is_null(chunk_offset)) << "row " << index << " is null";
       EXPECT_EQ(_segment->get(chunk_offset), _expected[index]) << "row " << index << " is invalid";
-    }
-  });
+    } });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

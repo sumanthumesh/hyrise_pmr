@@ -6,7 +6,8 @@
 
 #include "abstract_scheduler.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  *
@@ -34,7 +35,7 @@ namespace hyrise {
  * TaskQueue.
  *
  * Note: currently, TaskQueues are not explicitly allocated on a NUMA node. This means most workers will frequently
- * access distant TaskQueues, which is ~1.6 times slower than accessing a local node [1]. 
+ * access distant TaskQueues, which is ~1.6 times slower than accessing a local node [1].
  *
  *  [1] http://frankdenneman.nl/2016/07/13/numa-deep-dive-4-local-memory-optimization/
  *
@@ -47,65 +48,66 @@ class UidAllocator;
 /**
  * Schedules Tasks
  */
-class NodeQueueScheduler final : public AbstractScheduler {
- public:
-  NodeQueueScheduler();
-  ~NodeQueueScheduler() override final;
+class NodeQueueScheduler final : public AbstractScheduler
+{
+  public:
+    NodeQueueScheduler();
+    ~NodeQueueScheduler() override final;
 
-  /**
-   * Create a TaskQueue on every node and a worker for every core.
-   */
-  void begin() override final;
+    /**
+     * Create a TaskQueue on every node and a worker for every core.
+     */
+    void begin() override final;
 
-  void finish() override final;
+    void finish() override final;
 
-  bool active() const override final;
+    bool active() const override final;
 
-  const std::vector<std::shared_ptr<TaskQueue>>& queues() const override final;
+    const std::vector<std::shared_ptr<TaskQueue>> &queues() const override final;
 
-  const std::vector<std::shared_ptr<Worker>>& workers() const;
+    const std::vector<std::shared_ptr<Worker>> &workers() const;
 
-  /**
-   * @param preferred_node_id
-   * @return `preferred_node_id` if a non-default preferred node ID is passed. When the node is the default of
-   *         CURRENT_NODE_ID but no current node (where the task is executed) can be obtained, the node ID of the node
-   *         with the lowest queue pressure is returned.
-   */
-  NodeID determine_queue_id(const NodeID preferred_node_id) const;
+    /**
+     * @param preferred_node_id
+     * @return `preferred_node_id` if a non-default preferred node ID is passed. When the node is the default of
+     *         CURRENT_NODE_ID but no current node (where the task is executed) can be obtained, the node ID of the node
+     *         with the lowest queue pressure is returned.
+     */
+    NodeID determine_queue_id(const NodeID preferred_node_id) const;
 
-  void wait_for_all_tasks() override final;
+    void wait_for_all_tasks() override final;
 
-  const std::atomic_int64_t& active_worker_count() const;
+    const std::atomic_int64_t &active_worker_count() const;
 
-  // Number of groups for _group_tasks
-  static constexpr auto NUM_GROUPS = 10;
+    // Number of groups for _group_tasks
+    static constexpr auto NUM_GROUPS = 10;
 
- protected:
-  /**
-   * @param task
-   * @param preferred_node_id determines to which queue tasks are added. Note, the task might still be stolen by other nodes due
-   *                          to task stealing in NUMA environments.
-   * @param priority
-   */
-  void _schedule(std::shared_ptr<AbstractTask> task, NodeID preferred_node_id = CURRENT_NODE_ID,
-                 SchedulePriority priority = SchedulePriority::Default) override final;
+  protected:
+    /**
+     * @param task
+     * @param preferred_node_id determines to which queue tasks are added. Note, the task might still be stolen by other nodes due
+     *                          to task stealing in NUMA environments.
+     * @param priority
+     */
+    void _schedule(std::shared_ptr<AbstractTask> task, NodeID preferred_node_id = CURRENT_NODE_ID,
+                   SchedulePriority priority = SchedulePriority::Default) override final;
 
-  void _group_tasks(const std::vector<std::shared_ptr<AbstractTask>>& tasks) const override final;
+    void _group_tasks(const std::vector<std::shared_ptr<AbstractTask>> &tasks) const override final;
 
- private:
-  std::atomic<TaskID::base_type> _task_counter{0};
-  std::shared_ptr<UidAllocator> _worker_id_allocator;
-  std::vector<std::shared_ptr<TaskQueue>> _queues;
-  std::vector<std::shared_ptr<Worker>> _workers;
-  std::vector<NodeID> _active_nodes;
+  private:
+    std::atomic<TaskID::base_type> _task_counter{0};
+    std::shared_ptr<UidAllocator> _worker_id_allocator;
+    std::vector<std::shared_ptr<TaskQueue>> _queues;
+    std::vector<std::shared_ptr<Worker>> _workers;
+    std::vector<NodeID> _active_nodes;
 
-  std::atomic_bool _active{false};
-  std::atomic_int64_t _active_worker_count{0};
+    std::atomic_bool _active{false};
+    std::atomic_int64_t _active_worker_count{0};
 
-  size_t _node_count{1};
-  std::vector<size_t> _workers_per_node;
+    size_t _node_count{1};
+    std::vector<size_t> _workers_per_node;
 
-  std::mutex _finish_mutex{};
+    std::mutex _finish_mutex{};
 };
 
-}  // namespace hyrise
+} // namespace hyrise

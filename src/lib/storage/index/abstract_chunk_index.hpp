@@ -8,7 +8,8 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractSegment;
 
@@ -33,134 +34,135 @@ class AbstractSegment;
  *                                               https://github.com/hyrise/hyrise/wiki/IndexesAndFilters
  **/
 
-class AbstractChunkIndex : private Noncopyable {
-  friend class GroupKeyIndexTest;
+class AbstractChunkIndex : private Noncopyable
+{
+    friend class GroupKeyIndexTest;
 
- public:
-  // For now we use an iterator over a vector of chunkoffsets as the GroupKeyIndex works like this
-  using Iterator = std::vector<ChunkOffset>::const_iterator;
+  public:
+    // For now we use an iterator over a vector of chunkoffsets as the GroupKeyIndex works like this
+    using Iterator = std::vector<ChunkOffset>::const_iterator;
 
-  /**
-   * Predicts the memory consumption in bytes of creating an index with the specific index implementation <type>
-   * on a Chunk with the following statistics:
-   *
-   * row_count - overall number of rows
-   * distinct_count - number of distinct values
-   * value_bytes - (average) size of a single value in bytes
-   *
-   * If no prediction is possible (or it is not implemented yet), this shall fail.
-   */
-  static size_t estimate_memory_consumption(ChunkIndexType type, ChunkOffset row_count, ChunkOffset distinct_count,
-                                            uint32_t value_bytes);
+    /**
+     * Predicts the memory consumption in bytes of creating an index with the specific index implementation <type>
+     * on a Chunk with the following statistics:
+     *
+     * row_count - overall number of rows
+     * distinct_count - number of distinct values
+     * value_bytes - (average) size of a single value in bytes
+     *
+     * If no prediction is possible (or it is not implemented yet), this shall fail.
+     */
+    static size_t estimate_memory_consumption(ChunkIndexType type, ChunkOffset row_count, ChunkOffset distinct_count,
+                                              uint32_t value_bytes);
 
-  /**
-   * Creates an index on all given segments. Since all indexes are composite indexes the order of
-   * the provided segments matters. Creating two indexes with the same segments, but in different orders
-   * leads to very different indexes.
-   */
+    /**
+     * Creates an index on all given segments. Since all indexes are composite indexes the order of
+     * the provided segments matters. Creating two indexes with the same segments, but in different orders
+     * leads to very different indexes.
+     */
 
-  AbstractChunkIndex() = delete;
-  explicit AbstractChunkIndex(const ChunkIndexType type);
-  AbstractChunkIndex(AbstractChunkIndex&&) = default;
-  virtual ~AbstractChunkIndex() = default;
+    AbstractChunkIndex() = delete;
+    explicit AbstractChunkIndex(const ChunkIndexType type);
+    AbstractChunkIndex(AbstractChunkIndex &&) = default;
+    virtual ~AbstractChunkIndex() = default;
 
-  /**
-   * Checks whether the given segments are covered by the index. This is the case when the order of the given columns
-   * and the columns of the index match, and the given segments are either exactly or a subset of the indexed segments.
-   *
-   * For example:
-   * We have an index on columns DAB.
-   * The index is considered to be applicable for columns D, DA and DAB.
-   * The index is NOT considered to be applicable for columns A, DABC, BAD etc.
-   * @return true if the given columns are covered by the index.
-   */
-  bool is_index_for(const std::vector<std::shared_ptr<const AbstractSegment>>& segments) const;
+    /**
+     * Checks whether the given segments are covered by the index. This is the case when the order of the given columns
+     * and the columns of the index match, and the given segments are either exactly or a subset of the indexed segments.
+     *
+     * For example:
+     * We have an index on columns DAB.
+     * The index is considered to be applicable for columns D, DA and DAB.
+     * The index is NOT considered to be applicable for columns A, DABC, BAD etc.
+     * @return true if the given columns are covered by the index.
+     */
+    bool is_index_for(const std::vector<std::shared_ptr<const AbstractSegment>> &segments) const;
 
-  /**
-   * Searches for the first entry within the chunk that is equal or greater than the given values.
-   * The number of given values has to be less or equal to the number of indexed segments. Additionally,
-   * the order of values and segments has to match. If less values are provided, the search is performed
-   * as if all entries of the table are truncated to the segments that got reference values.
-   *
-   * Calls _lower_bound() of the most derived class.
-   * See also upper_bound()
-   * @param values are used to query the index.
-   * @return An Iterator on the position of the first element equal or greater then provided values.
-   */
-  Iterator lower_bound(const std::vector<AllTypeVariant>& values) const;
+    /**
+     * Searches for the first entry within the chunk that is equal or greater than the given values.
+     * The number of given values has to be less or equal to the number of indexed segments. Additionally,
+     * the order of values and segments has to match. If less values are provided, the search is performed
+     * as if all entries of the table are truncated to the segments that got reference values.
+     *
+     * Calls _lower_bound() of the most derived class.
+     * See also upper_bound()
+     * @param values are used to query the index.
+     * @return An Iterator on the position of the first element equal or greater then provided values.
+     */
+    Iterator lower_bound(const std::vector<AllTypeVariant> &values) const;
 
-  /**
-   * Searches for the first entry within the chunk that is greater than the given values.
-   * The number of given values has to be less or equal to number of indexed segments. Additionally,
-   * the order of values and segments has to match. If less values are provided, the search is performed
-   * as if all entries of the table are truncated to the segments that got reference values.
-   *
-   * Calls _upper_bound() of the most derived class.
-   * See also lower_bound()
-   * @param values are used to query the index.
-   * @return An Iterator on the position of the first element greater then provided values.
-   */
-  Iterator upper_bound(const std::vector<AllTypeVariant>& values) const;
+    /**
+     * Searches for the first entry within the chunk that is greater than the given values.
+     * The number of given values has to be less or equal to number of indexed segments. Additionally,
+     * the order of values and segments has to match. If less values are provided, the search is performed
+     * as if all entries of the table are truncated to the segments that got reference values.
+     *
+     * Calls _upper_bound() of the most derived class.
+     * See also lower_bound()
+     * @param values are used to query the index.
+     * @return An Iterator on the position of the first element greater then provided values.
+     */
+    Iterator upper_bound(const std::vector<AllTypeVariant> &values) const;
 
-  /**
-   * Returns an Iterator to the position of the smallest indexed non-NULL element. This is useful for range queries
-   * with no specified begin.
-   * Iterating from cbegin() to cend() will result in a position list with ordered values.
-   * Calls _cbegin() of the most derived class.
-   * @return An Iterator on the position of first non-NULL element of the Index.
-   */
-  Iterator cbegin() const;
+    /**
+     * Returns an Iterator to the position of the smallest indexed non-NULL element. This is useful for range queries
+     * with no specified begin.
+     * Iterating from cbegin() to cend() will result in a position list with ordered values.
+     * Calls _cbegin() of the most derived class.
+     * @return An Iterator on the position of first non-NULL element of the Index.
+     */
+    Iterator cbegin() const;
 
-  /**
-   * Returns an Iterator past the position of the largest indexed non-NULL element. This is useful for open
-   * end range queries.
-   * Iterating from cbegin() to cend() will result in a position list with ordered values.
-   * Calls _cend() of the most derived class.
-   * @return An Iterator on the end of the non-NULL elements (one after the last element).
-   */
-  Iterator cend() const;
+    /**
+     * Returns an Iterator past the position of the largest indexed non-NULL element. This is useful for open
+     * end range queries.
+     * Iterating from cbegin() to cend() will result in a position list with ordered values.
+     * Calls _cend() of the most derived class.
+     * @return An Iterator on the end of the non-NULL elements (one after the last element).
+     */
+    Iterator cend() const;
 
-  /**
-   * Returns an Iterator to the first NULL.
-   * Iterating from null_cbegin() to null_cend() will result in a position list with all NULL values.
-   * NULL handing is currently only supported for single-column indexes.
-   * We do not have a concept for multi-column NULL handling yet. #1818
-   *
-   * @return An Iterator on the position of the first NULL.
-   */
-  Iterator null_cbegin() const;
+    /**
+     * Returns an Iterator to the first NULL.
+     * Iterating from null_cbegin() to null_cend() will result in a position list with all NULL values.
+     * NULL handing is currently only supported for single-column indexes.
+     * We do not have a concept for multi-column NULL handling yet. #1818
+     *
+     * @return An Iterator on the position of the first NULL.
+     */
+    Iterator null_cbegin() const;
 
-  /**
-   * Returns an Iterator past the position of the last NULL.
-   * Iterating from null_cbegin() to null_cend() will result in a position list with all NULL values.
-   * NULL handing is currently only supported for single-column indexes.
-   * We do not have a concept for multi-column NULL handling yet. #1818
-   *
-   * @return An Iterator on the end of the NULLs (one after the last NULL).
-   */
-  Iterator null_cend() const;
+    /**
+     * Returns an Iterator past the position of the last NULL.
+     * Iterating from null_cbegin() to null_cend() will result in a position list with all NULL values.
+     * NULL handing is currently only supported for single-column indexes.
+     * We do not have a concept for multi-column NULL handling yet. #1818
+     *
+     * @return An Iterator on the end of the NULLs (one after the last NULL).
+     */
+    Iterator null_cend() const;
 
-  ChunkIndexType type() const;
+    ChunkIndexType type() const;
 
-  /**
-   * Returns the memory consumption of this Index in bytes
-   */
-  size_t memory_consumption() const;
+    /**
+     * Returns the memory consumption of this Index in bytes
+     */
+    size_t memory_consumption() const;
 
- protected:
-  /**
-   * Seperate the public interface of the index from the interface for programmers implementing own
-   * indexes. Each method has to fullfill the contract of the corresponding public methods.
-   */
-  virtual Iterator _lower_bound(const std::vector<AllTypeVariant>&) const = 0;
-  virtual Iterator _upper_bound(const std::vector<AllTypeVariant>&) const = 0;
-  virtual Iterator _cbegin() const = 0;
-  virtual Iterator _cend() const = 0;
-  virtual std::vector<std::shared_ptr<const AbstractSegment>> _get_indexed_segments() const = 0;
-  virtual size_t _memory_consumption() const = 0;
-  std::vector<ChunkOffset> _null_positions;
+  protected:
+    /**
+     * Seperate the public interface of the index from the interface for programmers implementing own
+     * indexes. Each method has to fullfill the contract of the corresponding public methods.
+     */
+    virtual Iterator _lower_bound(const std::vector<AllTypeVariant> &) const = 0;
+    virtual Iterator _upper_bound(const std::vector<AllTypeVariant> &) const = 0;
+    virtual Iterator _cbegin() const = 0;
+    virtual Iterator _cend() const = 0;
+    virtual std::vector<std::shared_ptr<const AbstractSegment>> _get_indexed_segments() const = 0;
+    virtual size_t _memory_consumption() const = 0;
+    std::vector<ChunkOffset> _null_positions;
 
- private:
-  const ChunkIndexType _type;
+  private:
+    const ChunkIndexType _type;
 };
-}  // namespace hyrise
+} // namespace hyrise

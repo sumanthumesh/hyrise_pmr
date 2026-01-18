@@ -5,18 +5,20 @@
 
 #include "utils/meta_tables/abstract_meta_table.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * This is a class for showing all sort orders of stored chunks via a meta table.
  */
-class MetaChunkSortOrdersTable : public AbstractMetaTable {
- public:
-  MetaChunkSortOrdersTable();
+class MetaChunkSortOrdersTable : public AbstractMetaTable
+{
+  public:
+    MetaChunkSortOrdersTable();
 
-  const std::string& name() const final;
+    const std::string &name() const final;
 
- protected:
-  std::shared_ptr<Table> _on_generate() const final;
+  protected:
+    std::shared_ptr<Table> _on_generate() const final;
 };
-}  // namespace hyrise
+} // namespace hyrise

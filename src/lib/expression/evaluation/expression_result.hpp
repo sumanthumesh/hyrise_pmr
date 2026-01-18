@@ -14,18 +14,20 @@
 #include "storage/segment_iterables/segment_positions.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class BaseExpressionResult {
- public:
-  BaseExpressionResult() = default;
-  virtual ~BaseExpressionResult() = default;
-  BaseExpressionResult(const BaseExpressionResult&) = default;
-  BaseExpressionResult(BaseExpressionResult&&) = default;
-  BaseExpressionResult& operator=(const BaseExpressionResult&) = default;
-  BaseExpressionResult& operator=(BaseExpressionResult&&) = default;
+class BaseExpressionResult
+{
+  public:
+    BaseExpressionResult() = default;
+    virtual ~BaseExpressionResult() = default;
+    BaseExpressionResult(const BaseExpressionResult &) = default;
+    BaseExpressionResult(BaseExpressionResult &&) = default;
+    BaseExpressionResult &operator=(const BaseExpressionResult &) = default;
+    BaseExpressionResult &operator=(BaseExpressionResult &&) = default;
 
-  virtual AllTypeVariant value_as_variant(const size_t idx) const = 0;
+    virtual AllTypeVariant value_as_variant(const size_t idx) const = 0;
 };
 
 /**
@@ -54,80 +56,99 @@ class BaseExpressionResult {
  * information, such as `{values: [1, 2, 3, 4]; nulls: [true]}` or `{values: [1, 2, 3, 4]; nulls: [false]}`, are legal.
  */
 template <typename T>
-class ExpressionResult : public BaseExpressionResult {
- public:
-  using Type = T;
+class ExpressionResult : public BaseExpressionResult
+{
+  public:
+    using Type = T;
 
-  static std::shared_ptr<ExpressionResult<T>> make_null() {
-    ExpressionResult<T> null_value({{T{}}}, {true});
-    return std::make_shared<ExpressionResult<T>>(null_value);
-  }
-
-  ExpressionResult() = default;
-
-  explicit ExpressionResult(pmr_vector<T> init_values, pmr_vector<bool> init_nulls = {})
-      : values(std::move(init_values)), nulls(std::move(init_nulls)) {
-    // Allowed size of nulls: 0 (not nullable)
-    //                        1 (nullable, all values are NULL or NOT NULL, depending on the value)
-    //                        n (same as values, 1:1 mapping)
-    DebugAssert(nulls.empty() || nulls.size() == 1 || nulls.size() == values.size(), "Mismatching number of nulls");
-  }
-
-  bool is_nullable_series() const {
-    return size() != 1;
-  }
-
-  bool is_literal() const {
-    return size() == 1;
-  }
-
-  bool is_nullable() const {
-    return !nulls.empty();
-  }
-
-  const T& value(const size_t idx) const {
-    DebugAssert(size() == 1 || idx < size(), "Invalid ExpressionResult access");
-    return values[std::min(idx, values.size() - 1)];
-  }
-
-  AllTypeVariant value_as_variant(const size_t idx) const final {
-    return is_null(idx) ? AllTypeVariant{NullValue{}} : AllTypeVariant{value(idx)};
-  }
-
-  bool is_null(const size_t idx) const {
-    DebugAssert(size() == 1 || idx < size(), "Null idx out of bounds");
-    if (nulls.empty()) {
-      return false;
+    static std::shared_ptr<ExpressionResult<T>> make_null()
+    {
+        ExpressionResult<T> null_value({{T{}}}, {true});
+        return std::make_shared<ExpressionResult<T>>(null_value);
     }
-    return nulls[std::min(idx, nulls.size() - 1)];
-  }
 
-  /**
-   * Resolve ExpressionResult<T> to ExpressionResultNullableSeries<T>, ExpressionResultNonNullSeries<T> or
-   * ExpressionResultLiteral<T>
-   *
-   * Once resolved, a View doesn't need to do bounds checking when queried for value() or is_null(), thus reducing
-   * overhead
-   */
-  template <typename Functor>
-  void as_view(const Functor& fn) const {
-    if (size() == 1) {
-      fn(ExpressionResultLiteral(values.front(), is_nullable() && nulls.front()));
-    } else if (nulls.size() == 1 && nulls.front()) {
-      fn(ExpressionResultLiteral(T{}, true));
-    } else if (!is_nullable()) {
-      fn(ExpressionResultNonNullSeries(values));
-    } else {
-      fn(ExpressionResultNullableSeries(values, nulls));
+    ExpressionResult() = default;
+
+    explicit ExpressionResult(pmr_vector<T> init_values, pmr_vector<bool> init_nulls = {})
+        : values(std::move(init_values)), nulls(std::move(init_nulls))
+    {
+        // Allowed size of nulls: 0 (not nullable)
+        //                        1 (nullable, all values are NULL or NOT NULL, depending on the value)
+        //                        n (same as values, 1:1 mapping)
+        DebugAssert(nulls.empty() || nulls.size() == 1 || nulls.size() == values.size(), "Mismatching number of nulls");
     }
-  }
 
-  size_t size() const {
-    return values.size();
-  }
+    bool is_nullable_series() const
+    {
+        return size() != 1;
+    }
 
-  pmr_vector<T> values;
-  pmr_vector<bool> nulls;
+    bool is_literal() const
+    {
+        return size() == 1;
+    }
+
+    bool is_nullable() const
+    {
+        return !nulls.empty();
+    }
+
+    const T &value(const size_t idx) const
+    {
+        DebugAssert(size() == 1 || idx < size(), "Invalid ExpressionResult access");
+        return values[std::min(idx, values.size() - 1)];
+    }
+
+    AllTypeVariant value_as_variant(const size_t idx) const final
+    {
+        return is_null(idx) ? AllTypeVariant{NullValue{}} : AllTypeVariant{value(idx)};
+    }
+
+    bool is_null(const size_t idx) const
+    {
+        DebugAssert(size() == 1 || idx < size(), "Null idx out of bounds");
+        if (nulls.empty())
+        {
+            return false;
+        }
+        return nulls[std::min(idx, nulls.size() - 1)];
+    }
+
+    /**
+     * Resolve ExpressionResult<T> to ExpressionResultNullableSeries<T>, ExpressionResultNonNullSeries<T> or
+     * ExpressionResultLiteral<T>
+     *
+     * Once resolved, a View doesn't need to do bounds checking when queried for value() or is_null(), thus reducing
+     * overhead
+     */
+    template <typename Functor>
+    void as_view(const Functor &fn) const
+    {
+        if (size() == 1)
+        {
+            fn(ExpressionResultLiteral(values.front(), is_nullable() && nulls.front()));
+        }
+        else if (nulls.size() == 1 && nulls.front())
+        {
+            fn(ExpressionResultLiteral(T{}, true));
+        }
+        else if (!is_nullable())
+        {
+            fn(ExpressionResultNonNullSeries(values));
+        }
+        else
+        {
+            fn(ExpressionResultNullableSeries(values, nulls));
+        }
+    }
+
+    size_t size() const
+    {
+        return values.size();
+    }
+
+    pmr_vector<T> values;
+    pmr_vector<bool> nulls;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

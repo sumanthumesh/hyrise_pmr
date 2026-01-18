@@ -7,12 +7,15 @@
 #include <mutex>
 #include <thread>
 
-namespace hyrise {
+namespace hyrise
+{
 
 PausableLoopThread::PausableLoopThread(std::chrono::milliseconds loop_sleep_time,
-                                       const std::function<void(size_t)>& loop_func)
-    : _loop_sleep_time(loop_sleep_time) {
-  _loop_thread = std::thread([&, loop_func] {
+                                       const std::function<void(size_t)> &loop_func)
+    : _loop_sleep_time(loop_sleep_time)
+{
+    _loop_thread = std::thread([&, loop_func]
+                               {
     size_t counter = 0;
     while (!_shutdown_flag) {
       auto lock = std::unique_lock<std::mutex>{_mutex};
@@ -39,34 +42,41 @@ PausableLoopThread::PausableLoopThread(std::chrono::milliseconds loop_sleep_time
 
       _is_paused = false;
       loop_func(counter++);
+    } });
+}
+
+PausableLoopThread::~PausableLoopThread()
+{
+    _pause_requested = true;
+    _shutdown_flag = true;
+    _cv.notify_one();
+    if (_loop_thread.joinable())
+    {
+        _loop_thread.join();
     }
-  });
 }
 
-PausableLoopThread::~PausableLoopThread() {
-  _pause_requested = true;
-  _shutdown_flag = true;
-  _cv.notify_one();
-  if (_loop_thread.joinable()) {
-    _loop_thread.join();
-  }
+void PausableLoopThread::pause()
+{
+    if (!_loop_thread.joinable())
+    {
+        return;
+    }
+    _pause_requested = true;
+    while (!_is_paused)
+    {
+    }
 }
 
-void PausableLoopThread::pause() {
-  if (!_loop_thread.joinable()) {
-    return;
-  }
-  _pause_requested = true;
-  while (!_is_paused) {}
+void PausableLoopThread::resume()
+{
+    _pause_requested = false;
+    _cv.notify_one();
 }
 
-void PausableLoopThread::resume() {
-  _pause_requested = false;
-  _cv.notify_one();
+void PausableLoopThread::set_loop_sleep_time(std::chrono::milliseconds loop_sleep_time)
+{
+    _loop_sleep_time = loop_sleep_time;
 }
 
-void PausableLoopThread::set_loop_sleep_time(std::chrono::milliseconds loop_sleep_time) {
-  _loop_sleep_time = loop_sleep_time;
-}
-
-}  // namespace hyrise
+} // namespace hyrise

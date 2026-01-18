@@ -6,7 +6,8 @@
 #include "storage/abstract_segment.hpp"
 #include "storage/create_iterable_from_segment.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * @brief Materialization convenience functions.
@@ -23,30 +24,30 @@ namespace hyrise {
 
 // Materialize the values in the segment
 template <typename Container>
-void materialize_values(const AbstractSegment& segment, Container& container) {
-  using ContainerValueType = typename Container::value_type;
+void materialize_values(const AbstractSegment &segment, Container &container)
+{
+    using ContainerValueType = typename Container::value_type;
 
-  resolve_segment_type<ContainerValueType>(segment, [&](const auto& typed_segment) {
-    create_iterable_from_segment<ContainerValueType>(typed_segment).materialize_values(container);
-  });
+    resolve_segment_type<ContainerValueType>(segment, [&](const auto &typed_segment)
+                                             { create_iterable_from_segment<ContainerValueType>(typed_segment).materialize_values(container); });
 }
 
 // Materialize the values/nulls in the segment
 template <typename Container>
-void materialize_values_and_nulls(const AbstractSegment& segment, Container& container) {
-  using ContainerValueType = typename Container::value_type::second_type;
+void materialize_values_and_nulls(const AbstractSegment &segment, Container &container)
+{
+    using ContainerValueType = typename Container::value_type::second_type;
 
-  resolve_segment_type<ContainerValueType>(segment, [&](const auto& typed_segment) {
-    create_iterable_from_segment<ContainerValueType>(typed_segment).materialize_values_and_nulls(container);
-  });
+    resolve_segment_type<ContainerValueType>(segment, [&](const auto &typed_segment)
+                                             { create_iterable_from_segment<ContainerValueType>(typed_segment).materialize_values_and_nulls(container); });
 }
 
 // Materialize the nulls in the segment
 template <typename SegmentValueType, typename Container>
-void materialize_nulls(const AbstractSegment& segment, Container& container) {
-  resolve_segment_type<SegmentValueType>(segment, [&](const auto& typed_segment) {
-    create_iterable_from_segment<SegmentValueType>(typed_segment).materialize_nulls(container);
-  });
+void materialize_nulls(const AbstractSegment &segment, Container &container)
+{
+    resolve_segment_type<SegmentValueType>(segment, [&](const auto &typed_segment)
+                                           { create_iterable_from_segment<SegmentValueType>(typed_segment).materialize_nulls(container); });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

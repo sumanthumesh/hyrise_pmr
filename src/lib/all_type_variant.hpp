@@ -23,11 +23,13 @@
 #include "null_value.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 namespace hana = boost::hana;
 
-namespace detail {
+namespace detail
+{
 
 // clang-format off
 #define DATA_TYPE_INFO                 \
@@ -48,15 +50,20 @@ namespace detail {
 #define DATA_TYPE_ENUM_VALUES BOOST_PP_SEQ_TRANSFORM(GET_ELEM, 1, DATA_TYPE_INFO)
 #define DATA_TYPE_STRINGS BOOST_PP_SEQ_TRANSFORM(GET_ELEM, 2, DATA_TYPE_INFO)
 
-enum class DataType : uint8_t { Null, BOOST_PP_SEQ_ENUM(DATA_TYPE_ENUM_VALUES) };
+enum class DataType : uint8_t
+{
+    Null,
+    BOOST_PP_SEQ_ENUM(DATA_TYPE_ENUM_VALUES)
+};
 
 static constexpr auto data_types = hana::to_tuple(hana::tuple_t<BOOST_PP_SEQ_ENUM(DATA_TYPES)>);
 static constexpr auto data_type_enum_values =
     hana::make_tuple(BOOST_PP_SEQ_ENUM(BOOST_PP_SEQ_TRANSFORM(APPEND_ENUM_NAMESPACE, _, DATA_TYPE_ENUM_VALUES)));
 static constexpr auto data_type_strings = hana::make_tuple(BOOST_PP_SEQ_ENUM(DATA_TYPE_STRINGS));
 
-constexpr auto to_pair = [](auto tuple) {
-  return hana::make_pair(hana::at_c<0>(tuple), hana::at_c<1>(tuple));  // NOLINT(build/include_what_you_use)
+constexpr auto to_pair = [](auto tuple)
+{
+    return hana::make_pair(hana::at_c<0>(tuple), hana::at_c<1>(tuple)); // NOLINT(build/include_what_you_use)
 };
 
 static constexpr auto data_type_enum_pairs = hana::transform(hana::zip(data_type_enum_values, data_types), to_pair);
@@ -73,7 +80,7 @@ using TypesAsMplVector = decltype(hana::to<hana::ext::boost::mpl::vector_tag>(da
 // Creates boost::variant from mpl vector
 using AllTypeVariant = typename boost::make_variant_over<detail::TypesAsMplVector>::type;
 
-}  // namespace detail
+} // namespace detail
 
 static constexpr auto data_types = detail::data_types;
 static constexpr auto data_types_including_null = detail::data_types_including_null;
@@ -84,17 +91,18 @@ using DataType = detail::DataType;
 using AllTypeVariant = detail::AllTypeVariant;
 
 // Function to check if AllTypeVariant is null
-inline bool variant_is_null(const AllTypeVariant& variant) {
-  return (variant.which() == 0);
+inline bool variant_is_null(const AllTypeVariant &variant)
+{
+    return (variant.which() == 0);
 }
 
 const auto data_type_to_string =
-    hana::fold(data_type_enum_string_pairs, boost::bimap<DataType, std::string>{}, [](auto map, auto pair) {
+    hana::fold(data_type_enum_string_pairs, boost::bimap<DataType, std::string>{}, [](auto map, auto pair)
+               {
       map.insert({hana::first(pair), std::string{hana::second(pair)}});
-      return map;
-    });
+      return map; });
 
-std::ostream& operator<<(std::ostream& stream, const DataType data_type);
+std::ostream &operator<<(std::ostream &stream, const DataType data_type);
 
 bool is_floating_point_data_type(const DataType data_type);
 
@@ -121,16 +129,16 @@ static const auto NULL_VALUE = AllTypeVariant{};
 #define EXPLICIT_DECLARATION(r, template_class, type) extern template class template_class<type>;
 
 // Explicitly declares the given template class for all types in DATA_TYPES (used in .hpp)
-#define EXPLICITLY_DECLARE_DATA_TYPES(template_class)                     \
-  BOOST_PP_SEQ_FOR_EACH(EXPLICIT_DECLARATION, template_class, DATA_TYPES) \
-  static_assert(true, "End call of macro with a semicolon")
+#define EXPLICITLY_DECLARE_DATA_TYPES(template_class)                       \
+    BOOST_PP_SEQ_FOR_EACH(EXPLICIT_DECLARATION, template_class, DATA_TYPES) \
+    static_assert(true, "End call of macro with a semicolon")
 
 #define EXPLICIT_INSTANTIATION(r, template_class, type) template class template_class<type>;
 
 // Explicitly instantiates the given template class for all types in DATA_TYPES (used in .cpp)
-#define EXPLICITLY_INSTANTIATE_DATA_TYPES(template_class)                   \
-  BOOST_PP_SEQ_FOR_EACH(EXPLICIT_INSTANTIATION, template_class, DATA_TYPES) \
-  static_assert(true, "End call of macro with a semicolon")
+#define EXPLICITLY_INSTANTIATE_DATA_TYPES(template_class)                     \
+    BOOST_PP_SEQ_FOR_EACH(EXPLICIT_INSTANTIATION, template_class, DATA_TYPES) \
+    static_assert(true, "End call of macro with a semicolon")
 
 /**
  * This function returns the DataType of an AllTypeVariant
@@ -138,17 +146,20 @@ static const auto NULL_VALUE = AllTypeVariant{};
  * Note: DataType and AllTypeVariant are defined in a way such that
  *       the indices in DataType and AllTypeVariant match.
  */
-inline DataType data_type_from_all_type_variant(const AllTypeVariant& all_type_variant) {
-  return static_cast<DataType>(all_type_variant.which());
+inline DataType data_type_from_all_type_variant(const AllTypeVariant &all_type_variant)
+{
+    return static_cast<DataType>(all_type_variant.which());
 }
 
-}  // namespace hyrise
+} // namespace hyrise
 
-namespace std {
+namespace std
+{
 
 template <>
-struct hash<hyrise::AllTypeVariant> {
-  size_t operator()(const hyrise::AllTypeVariant& all_type_variant) const;
+struct hash<hyrise::AllTypeVariant>
+{
+    size_t operator()(const hyrise::AllTypeVariant &all_type_variant) const;
 };
 
-}  // namespace std
+} // namespace std

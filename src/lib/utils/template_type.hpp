@@ -2,16 +2,18 @@
 
 #include <boost/hana/type.hpp>
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Wraps a class template so that
  * it can be stored in a hana::type
  */
 template <template <typename...> typename TemplateT>
-struct TemplateType {
-  template <typename T>
-  using _template = TemplateT<T>;
+struct TemplateType
+{
+    template <typename T>
+    using _template = TemplateT<T>;
 };
 
 /**
@@ -21,4 +23,4 @@ struct TemplateType {
 template <template <typename...> typename TemplateT>
 constexpr auto template_c = hana::type_c<TemplateType<TemplateT>>;
 
-}  // namespace hyrise
+} // namespace hyrise

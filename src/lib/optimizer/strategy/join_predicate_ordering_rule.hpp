@@ -6,7 +6,8 @@
 #include "abstract_rule.hpp"
 #include "logical_query_plan/abstract_lqp_node.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * A rule that brings join predicates of a multi-predicate join into an efficient order.
@@ -21,13 +22,14 @@ namespace hyrise {
  * more here in this rule because the selectivities can be different after we transformed the plan, e.g., by a different
  * predicate placement or due to pruned chunks.
  */
-class JoinPredicateOrderingRule : public AbstractRule {
- public:
-  std::string name() const override;
+class JoinPredicateOrderingRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

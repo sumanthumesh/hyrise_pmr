@@ -6,7 +6,8 @@
 
 #include "abstract_expression.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Represents an external value in a correlated subquery
@@ -19,42 +20,44 @@ namespace hyrise {
  * NOTE: It is assumed that all correlated expression are nullable - it is very taxing,
  *       code-wise, to determine whether it actually is.
  */
-class CorrelatedParameterExpression : public AbstractExpression {
- public:
-  struct ReferencedExpressionInfo {
-    ReferencedExpressionInfo(const DataType init_data_type, const std::string& init_column_name);
+class CorrelatedParameterExpression : public AbstractExpression
+{
+  public:
+    struct ReferencedExpressionInfo
+    {
+        ReferencedExpressionInfo(const DataType init_data_type, const std::string &init_column_name);
 
-    bool operator==(const ReferencedExpressionInfo& rhs) const;
+        bool operator==(const ReferencedExpressionInfo &rhs) const;
 
-    DataType data_type;
-    std::string column_name;
-  };
+        DataType data_type;
+        std::string column_name;
+    };
 
-  CorrelatedParameterExpression(const ParameterID init_parameter_id, const AbstractExpression& referenced_expression);
-  CorrelatedParameterExpression(const ParameterID init_parameter_id,
-                                const ReferencedExpressionInfo& referenced_expression_info);
+    CorrelatedParameterExpression(const ParameterID init_parameter_id, const AbstractExpression &referenced_expression);
+    CorrelatedParameterExpression(const ParameterID init_parameter_id,
+                                  const ReferencedExpressionInfo &referenced_expression_info);
 
-  const std::optional<AllTypeVariant>& value() const;
-  void set_value(const std::optional<AllTypeVariant>& value);
+    const std::optional<AllTypeVariant> &value() const;
+    void set_value(const std::optional<AllTypeVariant> &value);
 
-  bool requires_computation() const override;
-  std::shared_ptr<AbstractExpression> _on_deep_copy(
-      std::unordered_map<const AbstractOperator*, std::shared_ptr<AbstractOperator>>& /*copied_ops*/) const override;
-  std::string description(const DescriptionMode /*mode*/) const override;
-  DataType data_type() const override;
+    bool requires_computation() const override;
+    std::shared_ptr<AbstractExpression> _on_deep_copy(
+        std::unordered_map<const AbstractOperator *, std::shared_ptr<AbstractOperator>> & /*copied_ops*/) const override;
+    std::string description(const DescriptionMode /*mode*/) const override;
+    DataType data_type() const override;
 
-  const ParameterID parameter_id;
+    const ParameterID parameter_id;
 
- protected:
-  bool _shallow_equals(const AbstractExpression& expression) const override;
-  size_t _shallow_hash() const override;
-  bool _on_is_nullable_on_lqp(const AbstractLQPNode& /*lqp*/) const override;
+  protected:
+    bool _shallow_equals(const AbstractExpression &expression) const override;
+    size_t _shallow_hash() const override;
+    bool _on_is_nullable_on_lqp(const AbstractLQPNode & /*lqp*/) const override;
 
- private:
-  const ReferencedExpressionInfo _referenced_expression_info;
+  private:
+    const ReferencedExpressionInfo _referenced_expression_info;
 
-  // Gets set in AbstractOperator::set_parameter during expression execution
-  std::optional<AllTypeVariant> _value;
+    // Gets set in AbstractOperator::set_parameter during expression execution
+    std::optional<AllTypeVariant> _value;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

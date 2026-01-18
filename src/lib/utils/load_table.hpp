@@ -7,20 +7,25 @@
 
 #include "storage/chunk.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Table;
 
-enum class SetLastChunkImmutable : bool { Yes = true, No = false };
+enum class SetLastChunkImmutable : bool
+{
+    Yes = true,
+    No = false
+};
 
-std::shared_ptr<Table> load_table(const std::string& file_name, ChunkOffset chunk_size = Chunk::DEFAULT_SIZE,
+std::shared_ptr<Table> load_table(const std::string &file_name, ChunkOffset chunk_size = Chunk::DEFAULT_SIZE,
                                   SetLastChunkImmutable mark_last_chunk_immutable = SetLastChunkImmutable::Yes);
 
 /**
  * Creates an empty table based on the meta information in the first lines of the file without loading the data itself.
  */
-std::shared_ptr<Table> create_table_from_header(const std::string& file_name,
+std::shared_ptr<Table> create_table_from_header(const std::string &file_name,
                                                 ChunkOffset chunk_size = Chunk::DEFAULT_SIZE);
-std::shared_ptr<Table> create_table_from_header(std::ifstream& infile, ChunkOffset chunk_size);
+std::shared_ptr<Table> create_table_from_header(std::ifstream &infile, ChunkOffset chunk_size);
 
-}  // namespace hyrise
+} // namespace hyrise

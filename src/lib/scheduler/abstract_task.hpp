@@ -11,7 +11,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Worker;
 
@@ -68,7 +69,15 @@ class Worker;
  */
 
 // The state enum values are declared in progressive order to allow for comparisons involving the >, >= operators.
-enum class TaskState { Created, Scheduled, Enqueued, AssignedToWorker, Started, Done };
+enum class TaskState
+{
+    Created,
+    Scheduled,
+    Enqueued,
+    AssignedToWorker,
+    Started,
+    Done
+};
 static_assert(static_cast<std::underlying_type_t<TaskState>>(TaskState::Created) == 0,
               "TaskState::Created is not equal to 0. TaskState enum values are expected to be ordered.");
 
@@ -77,150 +86,151 @@ static_assert(static_cast<std::underlying_type_t<TaskState>>(TaskState::Created)
  *
  * Derive and implement logic in _on_execute().
  */
-class AbstractTask : public std::enable_shared_from_this<AbstractTask> {
-  // The reason for using AbstractScheduler as friend classes here is that the _join method must absolutely not be
-  // called from anyone but the scheduler. As the interface could tempt developers to do so if that method was public,
-  // we chose this approach.
-  friend class AbstractScheduler;
+class AbstractTask : public std::enable_shared_from_this<AbstractTask>
+{
+    // The reason for using AbstractScheduler as friend classes here is that the _join method must absolutely not be
+    // called from anyone but the scheduler. As the interface could tempt developers to do so if that method was public,
+    // we chose this approach.
+    friend class AbstractScheduler;
 
-  // In the test cases, we create a cyclic task graph to ensure we fail in this case (cyclic tasks lead to deadlocks).
-  // However, cyclic tasks also leak memory since tasks hold shared pointers to their successors. Thus, the test must
-  // clear the successor pointers.
-  friend class OperatorTaskTest;
+    // In the test cases, we create a cyclic task graph to ensure we fail in this case (cyclic tasks lead to deadlocks).
+    // However, cyclic tasks also leak memory since tasks hold shared pointers to their successors. Thus, the test must
+    // clear the successor pointers.
+    friend class OperatorTaskTest;
 
- public:
-  explicit AbstractTask(SchedulePriority priority = SchedulePriority::Default, bool stealable = true);
-  virtual ~AbstractTask() = default;
+  public:
+    explicit AbstractTask(SchedulePriority priority = SchedulePriority::Default, bool stealable = true);
+    virtual ~AbstractTask() = default;
 
-  /**
-   * Unique ID of a task. Currently not in use, but really helpful for debugging.
-   */
-  TaskID id() const;
-  NodeID node_id() const;
+    /**
+     * Unique ID of a task. Currently not in use, but really helpful for debugging.
+     */
+    TaskID id() const;
+    NodeID node_id() const;
 
-  /**
-   * @return true if all dependencies are done.
-   */
-  bool is_ready() const;
+    /**
+     * @return true if all dependencies are done.
+     */
+    bool is_ready() const;
 
-  /**
-   * @return true if the task finished executing.
-   */
-  bool is_done() const;
+    /**
+     * @return true if the task finished executing.
+     */
+    bool is_done() const;
 
-  /**
-   * @return true if workers are allowed to steal the task from another node.
-   */
-  bool is_stealable() const;
+    /**
+     * @return true if workers are allowed to steal the task from another node.
+     */
+    bool is_stealable() const;
 
-  /**
-   * Description for debugging purposes.
-   */
-  virtual std::string description() const;
+    /**
+     * Description for debugging purposes.
+     */
+    virtual std::string description() const;
 
-  /**
-   * Task ids are determined on scheduling, no one else but the scheduler should have any reason to call this.
-   * @param task_id ID, unique during the lifetime of the program, of the task.
-   */
-  void set_id(TaskID task_id);
+    /**
+     * Task ids are determined on scheduling, no one else but the scheduler should have any reason to call this.
+     * @param task_id ID, unique during the lifetime of the program, of the task.
+     */
+    void set_id(TaskID task_id);
 
-  /**
-   * Make this task the dependency of another. Not thread-safe, see OperatorTask::make_tasks_from_operator.
-   * @param successor Task that will be executed after this.
-   */
-  void set_as_predecessor_of(const std::shared_ptr<AbstractTask>& successor);
+    /**
+     * Make this task the dependency of another. Not thread-safe, see OperatorTask::make_tasks_from_operator.
+     * @param successor Task that will be executed after this.
+     */
+    void set_as_predecessor_of(const std::shared_ptr<AbstractTask> &successor);
 
-  /**
-   * @return the predecessors of this task.
-   */
-  const std::vector<std::reference_wrapper<AbstractTask>>& predecessors() const;
+    /**
+     * @return the predecessors of this task.
+     */
+    const std::vector<std::reference_wrapper<AbstractTask>> &predecessors() const;
 
-  /**
-   * @return the successors of this task.
-   */
-  const std::vector<std::reference_wrapper<AbstractTask>>& successors() const;
+    /**
+     * @return the successors of this task.
+     */
+    const std::vector<std::reference_wrapper<AbstractTask>> &successors() const;
 
-  /**
-   * Node IDs are changed when moving the task between nodes (e.g. during work stealing).
-   */
-  void set_node_id(NodeID node_id);
+    /**
+     * Node IDs are changed when moving the task between nodes (e.g. during work stealing).
+     */
+    void set_node_id(NodeID node_id);
 
-  /**
-   * Callback to be executed right after the task finished. Notice the execution of the callback might happen on ANY
-   * thread.
-   */
-  void set_done_callback(const std::function<void()>& done_callback);
+    /**
+     * Callback to be executed right after the task finished. Notice the execution of the callback might happen on ANY
+     * thread.
+     */
+    void set_done_callback(const std::function<void()> &done_callback);
 
-  /**
-   * Schedules the task if a scheduler is available, otherwise just executes it on the current thread.
-   */
-  void schedule(NodeID preferred_node_id = CURRENT_NODE_ID);
+    /**
+     * Schedules the task if a scheduler is available, otherwise just executes it on the current thread.
+     */
+    void schedule(NodeID preferred_node_id = CURRENT_NODE_ID);
 
-  /**
-   * @returns true when the task is scheduled or was scheduled successfully.
-   */
-  bool is_scheduled() const;
+    /**
+     * @returns true when the task is scheduled or was scheduled successfully.
+     */
+    bool is_scheduled() const;
 
-  /**
-   * @returns true if the caller is atomically the first to try to enqueue this task into a TaskQueue, false otherwise.
-   * Makes sure a task only gets put into a TaskQueue once.
-   */
-  bool try_mark_as_enqueued();
+    /**
+     * @returns true if the caller is atomically the first to try to enqueue this task into a TaskQueue, false otherwise.
+     * Makes sure a task only gets put into a TaskQueue once.
+     */
+    bool try_mark_as_enqueued();
 
-  /**
-   * @returns true whether the caller is atomically the first to try to assign this task to a worker, false otherwise.
-   */
-  bool try_mark_as_assigned_to_worker();
+    /**
+     * @returns true whether the caller is atomically the first to try to assign this task to a worker, false otherwise.
+     */
+    bool try_mark_as_assigned_to_worker();
 
-  /**
-   * Executes the task in the current thread, blocks until all operations are finished.
-   */
-  void execute();
+    /**
+     * Executes the task in the current thread, blocks until all operations are finished.
+     */
+    void execute();
 
-  TaskState state() const;
+    TaskState state() const;
 
- protected:
-  virtual void _on_execute() = 0;
+  protected:
+    virtual void _on_execute() = 0;
 
-  /**
-   * Transitions the task's state to @param new_state.
-   * @returns true on success and false if another caller/thread/worker was faster in progressing this task's state.
-   */
-  [[nodiscard]] bool _try_transition_to(TaskState new_state);
+    /**
+     * Transitions the task's state to @param new_state.
+     * @returns true on success and false if another caller/thread/worker was faster in progressing this task's state.
+     */
+    [[nodiscard]] bool _try_transition_to(TaskState new_state);
 
- private:
-  /**
-   * Called by a dependency when it finished execution.
-   */
-  void _on_predecessor_done();
+  private:
+    /**
+     * Called by a dependency when it finished execution.
+     */
+    void _on_predecessor_done();
 
-  /**
-   * Blocks the calling thread until the Task finished executing. This is only called from non-Worker threads and from
-   * Hyrise::get().scheduler()->wait_for_tasks().
-   */
-  void _join();
+    /**
+     * Blocks the calling thread until the Task finished executing. This is only called from non-Worker threads and from
+     * Hyrise::get().scheduler()->wait_for_tasks().
+     */
+    void _join();
 
-  std::atomic<TaskID> _id{INVALID_TASK_ID};
-  std::atomic<NodeID> _node_id{INVALID_NODE_ID};
-  SchedulePriority _priority;
-  std::atomic_bool _stealable;
-  std::function<void()> _done_callback;
+    std::atomic<TaskID> _id{INVALID_TASK_ID};
+    std::atomic<NodeID> _node_id{INVALID_NODE_ID};
+    SchedulePriority _priority;
+    std::atomic_bool _stealable;
+    std::function<void()> _done_callback;
 
-  // For dependencies.
-  std::atomic_uint32_t _pending_predecessors{0};
+    // For dependencies.
+    std::atomic_uint32_t _pending_predecessors{0};
 
-  std::vector<std::reference_wrapper<AbstractTask>> _predecessors;
-  std::vector<std::reference_wrapper<AbstractTask>> _successors;
+    std::vector<std::reference_wrapper<AbstractTask>> _predecessors;
+    std::vector<std::reference_wrapper<AbstractTask>> _successors;
 
-  // State management.
-  std::atomic<TaskState> _state{TaskState::Created};
-  std::mutex _transition_to_mutex;
+    // State management.
+    std::atomic<TaskState> _state{TaskState::Created};
+    std::mutex _transition_to_mutex;
 
-  // For making Tasks join()-able.
-  std::atomic_bool _task_done{false};
+    // For making Tasks join()-able.
+    std::atomic_bool _task_done{false};
 
-  // Purely for debugging purposes, in order to be able to identify tasks after they have been scheduled.
-  std::string _description;
+    // Purely for debugging purposes, in order to be able to identify tasks after they have been scheduled.
+    std::string _description;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

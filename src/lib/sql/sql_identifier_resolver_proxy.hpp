@@ -5,7 +5,8 @@
 
 #include "expression/abstract_expression.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractExpression;
 struct SQLIdentifier;
@@ -32,23 +33,24 @@ class ParameterIDAllocator;
  *   to any expression from any outer query can be accessed from any inner query and accesses to expressions from outer
  *   queries are tracked by the correct SQLIdentifierResolverProxy.
  */
-class SQLIdentifierResolverProxy final {
- public:
-  SQLIdentifierResolverProxy(const std::shared_ptr<SQLIdentifierResolver>& wrapped_resolver,
-                             const std::shared_ptr<ParameterIDAllocator>& parameter_id_allocator,
-                             const std::shared_ptr<SQLIdentifierResolverProxy>& outer_context_proxy = {});
+class SQLIdentifierResolverProxy final
+{
+  public:
+    SQLIdentifierResolverProxy(const std::shared_ptr<SQLIdentifierResolver> &wrapped_resolver,
+                               const std::shared_ptr<ParameterIDAllocator> &parameter_id_allocator,
+                               const std::shared_ptr<SQLIdentifierResolverProxy> &outer_context_proxy = {});
 
-  std::shared_ptr<AbstractExpression> resolve_identifier_relaxed(const SQLIdentifier& identifier);
+    std::shared_ptr<AbstractExpression> resolve_identifier_relaxed(const SQLIdentifier &identifier);
 
-  const ExpressionUnorderedMap<ParameterID>& accessed_expressions() const;
+    const ExpressionUnorderedMap<ParameterID> &accessed_expressions() const;
 
- private:
-  std::shared_ptr<SQLIdentifierResolver> _wrapped_resolver;
-  std::shared_ptr<ParameterIDAllocator> _parameter_id_allocator;
-  std::shared_ptr<SQLIdentifierResolverProxy> _outer_context_proxy;
+  private:
+    std::shared_ptr<SQLIdentifierResolver> _wrapped_resolver;
+    std::shared_ptr<ParameterIDAllocator> _parameter_id_allocator;
+    std::shared_ptr<SQLIdentifierResolverProxy> _outer_context_proxy;
 
-  // Previously accessed expressions that were already assigned a ParameterID
-  ExpressionUnorderedMap<ParameterID> _accessed_expressions;
+    // Previously accessed expressions that were already assigned a ParameterID
+    ExpressionUnorderedMap<ParameterID> _accessed_expressions;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -11,7 +11,8 @@
 #include "storage/vector_compression/base_compressed_vector.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 namespace hana = boost::hana;
 
@@ -21,49 +22,58 @@ namespace hana = boost::hana;
  * This is simplest vector compression scheme. It matches the old FittedAttributeVector
  */
 template <typename UnsignedIntType>
-class FixedWidthIntegerVector : public CompressedVector<FixedWidthIntegerVector<UnsignedIntType>> {
-  static_assert(hana::contains(hana::tuple_t<uint8_t, uint16_t, uint32_t>, hana::type_c<UnsignedIntType>),
-                "UnsignedIntType must be any of the three listed unsigned integer types.");
+class FixedWidthIntegerVector : public CompressedVector<FixedWidthIntegerVector<UnsignedIntType>>
+{
+    static_assert(hana::contains(hana::tuple_t<uint8_t, uint16_t, uint32_t>, hana::type_c<UnsignedIntType>),
+                  "UnsignedIntType must be any of the three listed unsigned integer types.");
 
- public:
-  explicit FixedWidthIntegerVector(pmr_vector<UnsignedIntType> data) : _data{std::move(data)} {}
+  public:
+    explicit FixedWidthIntegerVector(pmr_vector<UnsignedIntType> data) : _data{std::move(data)} {}
 
-  const pmr_vector<UnsignedIntType>& data() const {
-    return _data;
-  }
+    const pmr_vector<UnsignedIntType> &data() const
+    {
+        return _data;
+    }
 
- public:
-  size_t on_size() const {
-    return _data.size();
-  }
+  public:
+    size_t on_size() const
+    {
+        return _data.size();
+    }
 
-  size_t on_data_size() const {
-    return sizeof(UnsignedIntType) * _data.size();
-  }
+    size_t on_data_size() const
+    {
+        return sizeof(UnsignedIntType) * _data.size();
+    }
 
-  auto on_create_base_decompressor() const {
-    return std::make_unique<FixedWidthIntegerDecompressor<UnsignedIntType>>(_data);
-  }
+    auto on_create_base_decompressor() const
+    {
+        return std::make_unique<FixedWidthIntegerDecompressor<UnsignedIntType>>(_data);
+    }
 
-  auto on_create_decompressor() const {
-    return FixedWidthIntegerDecompressor<UnsignedIntType>(_data);
-  }
+    auto on_create_decompressor() const
+    {
+        return FixedWidthIntegerDecompressor<UnsignedIntType>(_data);
+    }
 
-  auto on_begin() const {
-    return _data.cbegin();
-  }
+    auto on_begin() const
+    {
+        return _data.cbegin();
+    }
 
-  auto on_end() const {
-    return _data.cend();
-  }
+    auto on_end() const
+    {
+        return _data.cend();
+    }
 
-  std::unique_ptr<const BaseCompressedVector> on_copy_using_memory_resource(MemoryResource& memory_resource) const {
-    auto data_copy = pmr_vector<UnsignedIntType>{_data, &memory_resource};
-    return std::make_unique<FixedWidthIntegerVector<UnsignedIntType>>(std::move(data_copy));
-  }
+    std::unique_ptr<const BaseCompressedVector> on_copy_using_memory_resource(MemoryResource &memory_resource) const
+    {
+        auto data_copy = pmr_vector<UnsignedIntType>{_data, &memory_resource};
+        return std::make_unique<FixedWidthIntegerVector<UnsignedIntType>>(std::move(data_copy));
+    }
 
- private:
-  const pmr_vector<UnsignedIntType> _data;
+  private:
+    const pmr_vector<UnsignedIntType> _data;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

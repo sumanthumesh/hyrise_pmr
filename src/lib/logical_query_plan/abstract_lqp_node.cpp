@@ -26,19 +26,22 @@
 #include "utils/map_prunable_subquery_predicates.hpp"
 #include "utils/print_utils.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;  // NOLINT(build/namespaces)
+using namespace hyrise; // NOLINT(build/namespaces)
 
-void collect_lqps_in_plan(const AbstractLQPNode& lqp, std::unordered_set<std::shared_ptr<AbstractLQPNode>>& lqps);
+void collect_lqps_in_plan(const AbstractLQPNode &lqp, std::unordered_set<std::shared_ptr<AbstractLQPNode>> &lqps);
 
 /**
  * Utility for operator<<(std::ostream, AbstractLQPNode)
  * Put all LQPs found in an @param expression into @param lqps
  */
-void collect_lqps_from_expression(const std::shared_ptr<AbstractExpression>& expression,
-                                  std::unordered_set<std::shared_ptr<AbstractLQPNode>>& lqps) {
-  visit_expression(expression, [&](const auto& sub_expression) {
+void collect_lqps_from_expression(const std::shared_ptr<AbstractExpression> &expression,
+                                  std::unordered_set<std::shared_ptr<AbstractLQPNode>> &lqps)
+{
+    visit_expression(expression, [&](const auto &sub_expression)
+                     {
     const auto subquery_expression = std::dynamic_pointer_cast<const LQPSubqueryExpression>(sub_expression);
     if (!subquery_expression) {
       return ExpressionVisitation::VisitArguments;
@@ -46,55 +49,64 @@ void collect_lqps_from_expression(const std::shared_ptr<AbstractExpression>& exp
 
     lqps.emplace(subquery_expression->lqp);
     collect_lqps_in_plan(*subquery_expression->lqp, lqps);
-    return ExpressionVisitation::VisitArguments;
-  });
+    return ExpressionVisitation::VisitArguments; });
 }
 
 /**
  * Utility for operator<<(std::ostream, AbstractLQPNode)
  * Put all LQPs found in expressions in plan @param lqp into @param lqps
  */
-void collect_lqps_in_plan(const AbstractLQPNode& lqp, std::unordered_set<std::shared_ptr<AbstractLQPNode>>& lqps) {
-  for (const auto& node_expression : lqp.node_expressions) {
-    collect_lqps_from_expression(node_expression, lqps);
-  }
+void collect_lqps_in_plan(const AbstractLQPNode &lqp, std::unordered_set<std::shared_ptr<AbstractLQPNode>> &lqps)
+{
+    for (const auto &node_expression : lqp.node_expressions)
+    {
+        collect_lqps_from_expression(node_expression, lqps);
+    }
 
-  if (lqp.left_input()) {
-    collect_lqps_in_plan(*lqp.left_input(), lqps);
-  }
+    if (lqp.left_input())
+    {
+        collect_lqps_in_plan(*lqp.left_input(), lqps);
+    }
 
-  if (lqp.right_input()) {
-    collect_lqps_in_plan(*lqp.right_input(), lqps);
-  }
+    if (lqp.right_input())
+    {
+        collect_lqps_in_plan(*lqp.right_input(), lqps);
+    }
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
 AbstractLQPNode::AbstractLQPNode(LQPNodeType node_type,
-                                 const std::vector<std::shared_ptr<AbstractExpression>>& init_node_expressions)
+                                 const std::vector<std::shared_ptr<AbstractExpression>> &init_node_expressions)
     : type(node_type), node_expressions(init_node_expressions) {}
 
-AbstractLQPNode::~AbstractLQPNode() {
-  Assert(_outputs.empty(),
-         "There are outputs that should still reference this node. Thus this node shouldn't get deleted");
+AbstractLQPNode::~AbstractLQPNode()
+{
+    Assert(_outputs.empty(),
+           "There are outputs that should still reference this node. Thus this node shouldn't get deleted");
 
-  // We're in the destructor, thus we must make sure we're not calling any virtual methods - so we're doing the removal
-  // directly instead of calling set_left_input/right_input(nullptr)
-  if (_inputs[0]) {
-    _inputs[0]->_remove_output_pointer(*this);
-  }
+    // We're in the destructor, thus we must make sure we're not calling any virtual methods - so we're doing the removal
+    // directly instead of calling set_left_input/right_input(nullptr)
+    if (_inputs[0])
+    {
+        _inputs[0]->_remove_output_pointer(*this);
+    }
 
-  if (_inputs[1]) {
-    _inputs[1]->_remove_output_pointer(*this);
-  }
+    if (_inputs[1])
+    {
+        _inputs[1]->_remove_output_pointer(*this);
+    }
 }
 
-size_t AbstractLQPNode::hash() const {
-  auto hash = size_t{0};
+size_t AbstractLQPNode::hash() const
+{
+    auto hash = size_t{0};
 
-  visit_lqp(shared_from_this(), [&hash](const auto& node) {
+    visit_lqp(shared_from_this(), [&hash](const auto &node)
+              {
     if (node) {
       for (const auto& expression : node->node_expressions) {
         boost::hash_combine(hash, expression->hash());
@@ -104,354 +116,415 @@ size_t AbstractLQPNode::hash() const {
       return LQPVisitation::VisitInputs;
     }
 
-    return LQPVisitation::DoNotVisitInputs;
-  });
+    return LQPVisitation::DoNotVisitInputs; });
 
-  return hash;
+    return hash;
 }
 
-size_t AbstractLQPNode::_on_shallow_hash() const {
-  return 0;
+size_t AbstractLQPNode::_on_shallow_hash() const
+{
+    return 0;
 }
 
-std::shared_ptr<AbstractLQPNode> AbstractLQPNode::left_input() const {
-  return _inputs[0];
+std::shared_ptr<AbstractLQPNode> AbstractLQPNode::left_input() const
+{
+    return _inputs[0];
 }
 
-std::shared_ptr<AbstractLQPNode> AbstractLQPNode::right_input() const {
-  return _inputs[1];
+std::shared_ptr<AbstractLQPNode> AbstractLQPNode::right_input() const
+{
+    return _inputs[1];
 }
 
-std::shared_ptr<AbstractLQPNode> AbstractLQPNode::input(LQPInputSide side) const {
-  const auto input_index = static_cast<int>(side);
-  return _inputs[input_index];
+std::shared_ptr<AbstractLQPNode> AbstractLQPNode::input(LQPInputSide side) const
+{
+    const auto input_index = static_cast<int>(side);
+    return _inputs[input_index];
 }
 
-void AbstractLQPNode::set_left_input(const std::shared_ptr<AbstractLQPNode>& left) {
-  set_input(LQPInputSide::Left, left);
+void AbstractLQPNode::set_left_input(const std::shared_ptr<AbstractLQPNode> &left)
+{
+    set_input(LQPInputSide::Left, left);
 }
 
-void AbstractLQPNode::set_right_input(const std::shared_ptr<AbstractLQPNode>& right) {
-  DebugAssert(!right || type == LQPNodeType::Join || type == LQPNodeType::Union || type == LQPNodeType::Update ||
-                  type == LQPNodeType::Intersect || type == LQPNodeType::Except ||
-                  type == LQPNodeType::ChangeMetaTable || type == LQPNodeType::Mock,
-              "This node type does not accept a right input.");
-  set_input(LQPInputSide::Right, right);
+void AbstractLQPNode::set_right_input(const std::shared_ptr<AbstractLQPNode> &right)
+{
+    DebugAssert(!right || type == LQPNodeType::Join || type == LQPNodeType::Union || type == LQPNodeType::Update ||
+                    type == LQPNodeType::Intersect || type == LQPNodeType::Except ||
+                    type == LQPNodeType::ChangeMetaTable || type == LQPNodeType::Mock,
+                "This node type does not accept a right input.");
+    set_input(LQPInputSide::Right, right);
 }
 
-void AbstractLQPNode::set_input(LQPInputSide side, const std::shared_ptr<AbstractLQPNode>& input) {
-  // We need a reference to _inputs[input_idx], so not calling this->input(side)
-  auto& current_input = _inputs[static_cast<int>(side)];
+void AbstractLQPNode::set_input(LQPInputSide side, const std::shared_ptr<AbstractLQPNode> &input)
+{
+    // We need a reference to _inputs[input_idx], so not calling this->input(side)
+    auto &current_input = _inputs[static_cast<int>(side)];
 
-  if (current_input == input) {
-    return;
-  }
+    if (current_input == input)
+    {
+        return;
+    }
 
-  // Untie from previous input
-  if (current_input) {
-    current_input->_remove_output_pointer(*this);
-  }
+    // Untie from previous input
+    if (current_input)
+    {
+        current_input->_remove_output_pointer(*this);
+    }
 
-  /**
-   * Tie in the new input
-   */
-  current_input = input;
-  if (current_input) {
-    current_input->_add_output_pointer(shared_from_this());
-  }
+    /**
+     * Tie in the new input
+     */
+    current_input = input;
+    if (current_input)
+    {
+        current_input->_add_output_pointer(shared_from_this());
+    }
 }
 
-size_t AbstractLQPNode::input_count() const {
-  /**
-   * Testing the shared_ptrs for null in _inputs to determine input count
-   */
-  return _inputs.size() - std::count(_inputs.cbegin(), _inputs.cend(), nullptr);
+size_t AbstractLQPNode::input_count() const
+{
+    /**
+     * Testing the shared_ptrs for null in _inputs to determine input count
+     */
+    return _inputs.size() - std::count(_inputs.cbegin(), _inputs.cend(), nullptr);
 }
 
-LQPInputSide AbstractLQPNode::get_input_side(const std::shared_ptr<AbstractLQPNode>& output) const {
-  if (output->_inputs[0].get() == this) {
-    return LQPInputSide::Left;
-  }
+LQPInputSide AbstractLQPNode::get_input_side(const std::shared_ptr<AbstractLQPNode> &output) const
+{
+    if (output->_inputs[0].get() == this)
+    {
+        return LQPInputSide::Left;
+    }
 
-  if (output->_inputs[1].get() == this) {
-    return LQPInputSide::Right;
-  }
+    if (output->_inputs[1].get() == this)
+    {
+        return LQPInputSide::Right;
+    }
 
-  Fail("Specified output node is not actually an output node of this node.");
+    Fail("Specified output node is not actually an output node of this node.");
 }
 
-std::vector<LQPInputSide> AbstractLQPNode::get_input_sides() const {
-  auto input_sides = std::vector<LQPInputSide>{};
-  input_sides.reserve(_outputs.size());
+std::vector<LQPInputSide> AbstractLQPNode::get_input_sides() const
+{
+    auto input_sides = std::vector<LQPInputSide>{};
+    input_sides.reserve(_outputs.size());
 
-  for (const auto& output_weak_ptr : _outputs) {
-    const auto output = output_weak_ptr.lock();
-    DebugAssert(output, "Failed to lock output");
-    input_sides.emplace_back(get_input_side(output));
-  }
+    for (const auto &output_weak_ptr : _outputs)
+    {
+        const auto output = output_weak_ptr.lock();
+        DebugAssert(output, "Failed to lock output");
+        input_sides.emplace_back(get_input_side(output));
+    }
 
-  return input_sides;
+    return input_sides;
 }
 
-std::vector<std::shared_ptr<AbstractLQPNode>> AbstractLQPNode::outputs() const {
-  auto outputs = std::vector<std::shared_ptr<AbstractLQPNode>>{};
-  outputs.reserve(_outputs.size());
+std::vector<std::shared_ptr<AbstractLQPNode>> AbstractLQPNode::outputs() const
+{
+    auto outputs = std::vector<std::shared_ptr<AbstractLQPNode>>{};
+    outputs.reserve(_outputs.size());
 
-  for (const auto& output_weak_ptr : _outputs) {
-    const auto output = output_weak_ptr.lock();
-    DebugAssert(output, "Failed to lock output");
-    outputs.emplace_back(output);
-  }
+    for (const auto &output_weak_ptr : _outputs)
+    {
+        const auto output = output_weak_ptr.lock();
+        DebugAssert(output, "Failed to lock output");
+        outputs.emplace_back(output);
+    }
 
-  return outputs;
+    return outputs;
 }
 
 // clang-tidy wants this to be const. Technically, it could be, but as this node will be modified via set_input, it is
 // syntactically incorrect.
-void AbstractLQPNode::remove_output(const std::shared_ptr<AbstractLQPNode>& output) {  // NOLINT
-  const auto input_side = get_input_side(output);
-  // set_input() will untie the nodes
-  output->set_input(input_side, nullptr);
+void AbstractLQPNode::remove_output(const std::shared_ptr<AbstractLQPNode> &output)
+{ // NOLINT
+    const auto input_side = get_input_side(output);
+    // set_input() will untie the nodes
+    output->set_input(input_side, nullptr);
 }
 
-void AbstractLQPNode::clear_outputs() {
-  // Don't use for-each loop here, as remove_output manipulates the _outputs vector
-  while (!_outputs.empty()) {
-    auto output = _outputs.front().lock();
-    DebugAssert(output, "Failed to lock output");
-    remove_output(output);
-  }
+void AbstractLQPNode::clear_outputs()
+{
+    // Don't use for-each loop here, as remove_output manipulates the _outputs vector
+    while (!_outputs.empty())
+    {
+        auto output = _outputs.front().lock();
+        DebugAssert(output, "Failed to lock output");
+        remove_output(output);
+    }
 }
 
-std::vector<LQPOutputRelation> AbstractLQPNode::output_relations() const {
-  auto output_relations = std::vector<LQPOutputRelation>(output_count());
+std::vector<LQPOutputRelation> AbstractLQPNode::output_relations() const
+{
+    auto output_relations = std::vector<LQPOutputRelation>(output_count());
 
-  const auto outputs = this->outputs();
-  const auto input_sides = get_input_sides();
+    const auto outputs = this->outputs();
+    const auto input_sides = get_input_sides();
 
-  const auto output_relation_count = output_relations.size();
-  for (auto output_idx = size_t{0}; output_idx < output_relation_count; ++output_idx) {
-    output_relations[output_idx] =
-        LQPOutputRelation{.output = outputs[output_idx], .input_side = input_sides[output_idx]};
-  }
+    const auto output_relation_count = output_relations.size();
+    for (auto output_idx = size_t{0}; output_idx < output_relation_count; ++output_idx)
+    {
+        output_relations[output_idx] =
+            LQPOutputRelation{.output = outputs[output_idx], .input_side = input_sides[output_idx]};
+    }
 
-  return output_relations;
+    return output_relations;
 }
 
-size_t AbstractLQPNode::output_count() const {
-  return _outputs.size();
+size_t AbstractLQPNode::output_count() const
+{
+    return _outputs.size();
 }
 
-std::shared_ptr<AbstractLQPNode> AbstractLQPNode::deep_copy(LQPNodeMapping node_mapping) const {
-  const auto copy = _deep_copy_impl(node_mapping);
+std::shared_ptr<AbstractLQPNode> AbstractLQPNode::deep_copy(LQPNodeMapping node_mapping) const
+{
+    const auto copy = _deep_copy_impl(node_mapping);
 
-  // StoredTableNodes can store references to PredicateNodes as prunable subquery predicates (see get_table.hpp for
-  // details). We must assign the copies of these PredicateNodes after copying the entire LQP (see
-  // map_prunable_subquery_predicates.hpp).
-  map_prunable_subquery_predicates(node_mapping);
+    // StoredTableNodes can store references to PredicateNodes as prunable subquery predicates (see get_table.hpp for
+    // details). We must assign the copies of these PredicateNodes after copying the entire LQP (see
+    // map_prunable_subquery_predicates.hpp).
+    map_prunable_subquery_predicates(node_mapping);
 
-  return copy;
+    return copy;
 }
 
-bool AbstractLQPNode::shallow_equals(const AbstractLQPNode& rhs, const LQPNodeMapping& node_mapping) const {
-  if (type != rhs.type) {
-    return false;
-  }
-  return _on_shallow_equals(rhs, node_mapping);
+bool AbstractLQPNode::shallow_equals(const AbstractLQPNode &rhs, const LQPNodeMapping &node_mapping) const
+{
+    if (type != rhs.type)
+    {
+        return false;
+    }
+    return _on_shallow_equals(rhs, node_mapping);
 }
 
-std::vector<std::shared_ptr<AbstractExpression>> AbstractLQPNode::output_expressions() const {
-  Assert(left_input() && !right_input(),
-         "Can only forward input expressions iff there is a left input and no right input");
-  return left_input()->output_expressions();
+std::vector<std::shared_ptr<AbstractExpression>> AbstractLQPNode::output_expressions() const
+{
+    Assert(left_input() && !right_input(),
+           "Can only forward input expressions iff there is a left input and no right input");
+    return left_input()->output_expressions();
 }
 
-std::optional<ColumnID> AbstractLQPNode::find_column_id(const AbstractExpression& expression) const {
-  const auto& expressions_of_output = output_expressions();
-  return find_expression_idx(expression, expressions_of_output);
+std::optional<ColumnID> AbstractLQPNode::find_column_id(const AbstractExpression &expression) const
+{
+    const auto &expressions_of_output = output_expressions();
+    return find_expression_idx(expression, expressions_of_output);
 }
 
-ColumnID AbstractLQPNode::get_column_id(const AbstractExpression& expression) const {
-  const auto column_id = find_column_id(expression);
-  Assert(column_id, "This node has no column '" + expression.as_column_name() + "'.");
-  return *column_id;
+ColumnID AbstractLQPNode::get_column_id(const AbstractExpression &expression) const
+{
+    const auto column_id = find_column_id(expression);
+    Assert(column_id, "This node has no column '" + expression.as_column_name() + "'.");
+    return *column_id;
 }
 
-bool AbstractLQPNode::has_output_expressions(const ExpressionUnorderedSet& expressions) const {
-  const auto& output_expressions = this->output_expressions();
-  return contains_all_expressions(expressions, output_expressions);
+bool AbstractLQPNode::has_output_expressions(const ExpressionUnorderedSet &expressions) const
+{
+    const auto &output_expressions = this->output_expressions();
+    return contains_all_expressions(expressions, output_expressions);
 }
 
-bool AbstractLQPNode::is_column_nullable(const ColumnID column_id) const {
-  // Default behaviour: Forward from input
-  Assert(left_input() && !right_input(),
-         "Can forward nullability from input iff there is a left input and no right input");
-  return left_input()->is_column_nullable(column_id);
+bool AbstractLQPNode::is_column_nullable(const ColumnID column_id) const
+{
+    // Default behaviour: Forward from input
+    Assert(left_input() && !right_input(),
+           "Can forward nullability from input iff there is a left input and no right input");
+    return left_input()->is_column_nullable(column_id);
 }
 
-std::pair<bool, bool> AbstractLQPNode::has_matching_ucc(const ExpressionUnorderedSet& expressions) const {
-  Assert(!expressions.empty(), "Invalid input. Set of expressions should not be empty.");
-  DebugAssert(has_output_expressions(expressions),
-              "The given expressions are not a subset of the LQP's output expressions.");
+std::pair<bool, bool> AbstractLQPNode::has_matching_ucc(const ExpressionUnorderedSet &expressions) const
+{
+    Assert(!expressions.empty(), "Invalid input. Set of expressions should not be empty.");
+    DebugAssert(has_output_expressions(expressions),
+                "The given expressions are not a subset of the LQP's output expressions.");
 
-  const auto& unique_column_combinations = this->unique_column_combinations();
-  if (unique_column_combinations.empty()) {
-    return {false, false};
-  }
+    const auto &unique_column_combinations = this->unique_column_combinations();
+    if (unique_column_combinations.empty())
+    {
+        return {false, false};
+    }
 
-  const auto existing_ucc = find_ucc(unique_column_combinations, expressions);
-  if (existing_ucc == unique_column_combinations.end()) {
-    return {false, false};
-  }
-  return {true, existing_ucc->is_genuine()};
+    const auto existing_ucc = find_ucc(unique_column_combinations, expressions);
+    if (existing_ucc == unique_column_combinations.end())
+    {
+        return {false, false};
+    }
+    return {true, existing_ucc->is_genuine()};
 }
 
 bool AbstractLQPNode::has_matching_od(
-    const std::vector<std::shared_ptr<AbstractExpression>>& ordering_expressions,
-    const std::vector<std::shared_ptr<AbstractExpression>>& ordered_expressions) const {
-  Assert(!ordering_expressions.empty(), "Invalid input. List of ordering expressions should not be empty.");
-  DebugAssert(has_output_expressions({ordering_expressions.cbegin(), ordering_expressions.cend()}),
-              "The given ordering expressions are not a subset of the LQP's output expressions.");
-  Assert(!ordered_expressions.empty(), "Invalid input. List of ordered expressions should not be empty.");
-  DebugAssert(has_output_expressions({ordered_expressions.cbegin(), ordered_expressions.cend()}),
-              "The given ordered expressions are not a subset of the LQP's output expressions.");
+    const std::vector<std::shared_ptr<AbstractExpression>> &ordering_expressions,
+    const std::vector<std::shared_ptr<AbstractExpression>> &ordered_expressions) const
+{
+    Assert(!ordering_expressions.empty(), "Invalid input. List of ordering expressions should not be empty.");
+    DebugAssert(has_output_expressions({ordering_expressions.cbegin(), ordering_expressions.cend()}),
+                "The given ordering expressions are not a subset of the LQP's output expressions.");
+    Assert(!ordered_expressions.empty(), "Invalid input. List of ordered expressions should not be empty.");
+    DebugAssert(has_output_expressions({ordered_expressions.cbegin(), ordered_expressions.cend()}),
+                "The given ordered expressions are not a subset of the LQP's output expressions.");
 
-  const auto& order_dependencies = this->order_dependencies();
-  if (order_dependencies.empty()) {
+    const auto &order_dependencies = this->order_dependencies();
+    if (order_dependencies.empty())
+    {
+        return false;
+    }
+
+    for (const auto &od : order_dependencies)
+    {
+        // Continue if OD requires more ordering expressions to guarantee sortedness than provided.
+        if (od.ordering_expressions.size() > ordering_expressions.size())
+        {
+            continue;
+        }
+
+        // Continue if the OD's ordering expression are not the first of the provided expressions. It is totally fine if
+        // the OD requires fewer ordering expressions than given.
+        if (!expression_list_is_prefix(od.ordering_expressions, ordering_expressions))
+        {
+            continue;
+        }
+
+        // Continue if more ordered expressions are requested than OD guarantees.
+        if (ordered_expressions.size() > od.ordered_expressions.size())
+        {
+            continue;
+        }
+
+        // Found matching OD if the requested ordered expressions are the first of the OD's ordered expressions. Totally
+        // fine if the OD orders more expressions that requested.
+        if (expression_list_is_prefix(ordered_expressions, od.ordered_expressions))
+        {
+            return true;
+        }
+    }
+
     return false;
-  }
+}
 
-  for (const auto& od : order_dependencies) {
-    // Continue if OD requires more ordering expressions to guarantee sortedness than provided.
-    if (od.ordering_expressions.size() > ordering_expressions.size()) {
-      continue;
+FunctionalDependencies AbstractLQPNode::functional_dependencies() const
+{
+    // (1) Gather non-trivial FDs and perform sanity checks.
+    const auto &non_trivial_fds = non_trivial_functional_dependencies();
+    if constexpr (HYRISE_DEBUG)
+    {
+        auto fds = FunctionalDependencies{};
+        const auto &output_expressions = this->output_expressions();
+        const auto &output_expressions_set = ExpressionUnorderedSet{output_expressions.cbegin(), output_expressions.cend()};
+
+        for (const auto &fd : non_trivial_fds)
+        {
+            const auto [_, inserted] = fds.insert(fd);
+            Assert(inserted, "FDs with the same set of determinant expressions should be merged.");
+
+            for (const auto &fd_determinant_expression : fd.determinants)
+            {
+                Assert(output_expressions_set.contains(fd_determinant_expression),
+                       "Expected FD's determinant expressions to be a subset of the node's output expressions.");
+                Assert(!is_column_nullable(get_column_id(*fd_determinant_expression)),
+                       "Expected FD's determinant expressions to be non-nullable.");
+            }
+            Assert(std::ranges::all_of(fd.dependents,
+                                       [&output_expressions_set](const auto &fd_dependent_expression)
+                                       {
+                                           return output_expressions_set.contains(fd_dependent_expression);
+                                       }),
+                   "Expected the FD's dependent expressions to be a subset of the node's output expressions.");
+        }
     }
 
-    // Continue if the OD's ordering expression are not the first of the provided expressions. It is totally fine if
-    // the OD requires fewer ordering expressions than given.
-    if (!expression_list_is_prefix(od.ordering_expressions, ordering_expressions)) {
-      continue;
+    // (2) Derive trivial FDs from the node's unique column combinations and order dependencies.
+    const auto &unique_column_combinations = this->unique_column_combinations();
+    const auto &order_dependencies = this->order_dependencies();
+    // Early exit if there are no UCCs and ODs.
+    if (unique_column_combinations.empty() && order_dependencies.empty())
+    {
+        return non_trivial_fds;
     }
 
-    // Continue if more ordered expressions are requested than OD guarantees.
-    if (ordered_expressions.size() > od.ordered_expressions.size()) {
-      continue;
+    auto trivial_fds = FunctionalDependencies{};
+    if (!unique_column_combinations.empty())
+    {
+        trivial_fds = fds_from_unique_column_combinations(shared_from_this(), unique_column_combinations);
     }
 
-    // Found matching OD if the requested ordered expressions are the first of the OD's ordered expressions. Totally
-    // fine if the OD orders more expressions that requested.
-    if (expression_list_is_prefix(ordered_expressions, od.ordered_expressions)) {
-      return true;
+    if (!order_dependencies.empty())
+    {
+        trivial_fds = union_fds(trivial_fds, fds_from_order_dependencies(shared_from_this(), order_dependencies));
     }
-  }
 
-  return false;
+    // (3) Merge and return FDs.
+    return union_fds(non_trivial_fds, trivial_fds);
 }
 
-FunctionalDependencies AbstractLQPNode::functional_dependencies() const {
-  // (1) Gather non-trivial FDs and perform sanity checks.
-  const auto& non_trivial_fds = non_trivial_functional_dependencies();
-  if constexpr (HYRISE_DEBUG) {
-    auto fds = FunctionalDependencies{};
-    const auto& output_expressions = this->output_expressions();
-    const auto& output_expressions_set = ExpressionUnorderedSet{output_expressions.cbegin(), output_expressions.cend()};
-
-    for (const auto& fd : non_trivial_fds) {
-      const auto [_, inserted] = fds.insert(fd);
-      Assert(inserted, "FDs with the same set of determinant expressions should be merged.");
-
-      for (const auto& fd_determinant_expression : fd.determinants) {
-        Assert(output_expressions_set.contains(fd_determinant_expression),
-               "Expected FD's determinant expressions to be a subset of the node's output expressions.");
-        Assert(!is_column_nullable(get_column_id(*fd_determinant_expression)),
-               "Expected FD's determinant expressions to be non-nullable.");
-      }
-      Assert(std::ranges::all_of(fd.dependents,
-                                 [&output_expressions_set](const auto& fd_dependent_expression) {
-                                   return output_expressions_set.contains(fd_dependent_expression);
-                                 }),
-             "Expected the FD's dependent expressions to be a subset of the node's output expressions.");
+FunctionalDependencies AbstractLQPNode::non_trivial_functional_dependencies() const
+{
+    if (left_input())
+    {
+        Assert(!right_input(), "Expected single input node for implicit FD forwarding. Please override this function.");
+        return left_input()->non_trivial_functional_dependencies();
     }
-  }
 
-  // (2) Derive trivial FDs from the node's unique column combinations and order dependencies.
-  const auto& unique_column_combinations = this->unique_column_combinations();
-  const auto& order_dependencies = this->order_dependencies();
-  // Early exit if there are no UCCs and ODs.
-  if (unique_column_combinations.empty() && order_dependencies.empty()) {
-    return non_trivial_fds;
-  }
-
-  auto trivial_fds = FunctionalDependencies{};
-  if (!unique_column_combinations.empty()) {
-    trivial_fds = fds_from_unique_column_combinations(shared_from_this(), unique_column_combinations);
-  }
-
-  if (!order_dependencies.empty()) {
-    trivial_fds = union_fds(trivial_fds, fds_from_order_dependencies(shared_from_this(), order_dependencies));
-  }
-
-  // (3) Merge and return FDs.
-  return union_fds(non_trivial_fds, trivial_fds);
+    // For instance, StoredTableNode or StaticTableNode cannot provide any non-trivial FDs.
+    return {};
 }
 
-FunctionalDependencies AbstractLQPNode::non_trivial_functional_dependencies() const {
-  if (left_input()) {
-    Assert(!right_input(), "Expected single input node for implicit FD forwarding. Please override this function.");
-    return left_input()->non_trivial_functional_dependencies();
-  }
-
-  // For instance, StoredTableNode or StaticTableNode cannot provide any non-trivial FDs.
-  return {};
+bool AbstractLQPNode::operator==(const AbstractLQPNode &rhs) const
+{
+    if (this == &rhs)
+    {
+        return true;
+    }
+    return !lqp_find_subplan_mismatch(shared_from_this(), rhs.shared_from_this());
 }
 
-bool AbstractLQPNode::operator==(const AbstractLQPNode& rhs) const {
-  if (this == &rhs) {
-    return true;
-  }
-  return !lqp_find_subplan_mismatch(shared_from_this(), rhs.shared_from_this());
+bool AbstractLQPNode::operator!=(const AbstractLQPNode &rhs) const
+{
+    return !operator==(rhs);
 }
 
-bool AbstractLQPNode::operator!=(const AbstractLQPNode& rhs) const {
-  return !operator==(rhs);
+std::shared_ptr<AbstractLQPNode> AbstractLQPNode::_deep_copy_impl(LQPNodeMapping &node_mapping) const
+{
+    auto copied_left_input = std::shared_ptr<AbstractLQPNode>{};
+    auto copied_right_input = std::shared_ptr<AbstractLQPNode>{};
+
+    if (left_input())
+    {
+        copied_left_input = left_input()->_deep_copy_impl(node_mapping);
+    }
+
+    if (right_input())
+    {
+        copied_right_input = right_input()->_deep_copy_impl(node_mapping);
+    }
+
+    auto copy = _shallow_copy(node_mapping);
+    copy->set_left_input(copied_left_input);
+    copy->set_right_input(copied_right_input);
+
+    return copy;
 }
 
-std::shared_ptr<AbstractLQPNode> AbstractLQPNode::_deep_copy_impl(LQPNodeMapping& node_mapping) const {
-  auto copied_left_input = std::shared_ptr<AbstractLQPNode>{};
-  auto copied_right_input = std::shared_ptr<AbstractLQPNode>{};
+std::shared_ptr<AbstractLQPNode> AbstractLQPNode::_shallow_copy(LQPNodeMapping &node_mapping) const
+{
+    const auto node_mapping_iter = node_mapping.find(shared_from_this());
 
-  if (left_input()) {
-    copied_left_input = left_input()->_deep_copy_impl(node_mapping);
-  }
+    // Handle diamond shapes in the LQP; don't copy nodes twice
+    if (node_mapping_iter != node_mapping.end())
+    {
+        return node_mapping_iter->second;
+    }
 
-  if (right_input()) {
-    copied_right_input = right_input()->_deep_copy_impl(node_mapping);
-  }
+    auto shallow_copy = _on_shallow_copy(node_mapping);
+    shallow_copy->comment = comment;
+    node_mapping.emplace(shared_from_this(), shallow_copy);
 
-  auto copy = _shallow_copy(node_mapping);
-  copy->set_left_input(copied_left_input);
-  copy->set_right_input(copied_right_input);
-
-  return copy;
+    return shallow_copy;
 }
 
-std::shared_ptr<AbstractLQPNode> AbstractLQPNode::_shallow_copy(LQPNodeMapping& node_mapping) const {
-  const auto node_mapping_iter = node_mapping.find(shared_from_this());
-
-  // Handle diamond shapes in the LQP; don't copy nodes twice
-  if (node_mapping_iter != node_mapping.end()) {
-    return node_mapping_iter->second;
-  }
-
-  auto shallow_copy = _on_shallow_copy(node_mapping);
-  shallow_copy->comment = comment;
-  node_mapping.emplace(shared_from_this(), shallow_copy);
-
-  return shallow_copy;
-}
-
-void AbstractLQPNode::_remove_output_pointer(const AbstractLQPNode& output) {
-  const auto iter = std::ranges::find_if(_outputs, [&](const auto& other) {
+void AbstractLQPNode::_remove_output_pointer(const AbstractLQPNode &output)
+{
+    const auto iter = std::ranges::find_if(_outputs, [&](const auto &other)
+                                           {
     /**
      * HACK!
      *  Normally we'd just check `&output == other.lock().get()` here.
@@ -465,108 +538,125 @@ void AbstractLQPNode::_remove_output_pointer(const AbstractLQPNode& output) {
      * node_b.reset(); // node_b::~AbstractLQPNode() will call `node_a.remove_output_pointer(node_b)`
      *                 // But we cannot lock node_b anymore, since its ref count is already 0.
      */
-    return &output == other.lock().get() || other.expired();
-  });
-  DebugAssert(iter != _outputs.end(), "Specified output node is not actually a output node of this node.");
+    return &output == other.lock().get() || other.expired(); });
+    DebugAssert(iter != _outputs.end(), "Specified output node is not actually a output node of this node.");
 
-  /**
-   * TODO(anybody) This is actually a O(n) operation, could be O(1) by just swapping the last element into the deleted
-   * element.
-   */
-  _outputs.erase(iter);
+    /**
+     * TODO(anybody) This is actually a O(n) operation, could be O(1) by just swapping the last element into the deleted
+     * element.
+     */
+    _outputs.erase(iter);
 }
 
-void AbstractLQPNode::_add_output_pointer(const std::shared_ptr<AbstractLQPNode>& output) {
-  // Having the same output multiple times is allowed, e.g. for self joins
-  _outputs.emplace_back(output);
+void AbstractLQPNode::_add_output_pointer(const std::shared_ptr<AbstractLQPNode> &output)
+{
+    // Having the same output multiple times is allowed, e.g. for self joins
+    _outputs.emplace_back(output);
 }
 
-UniqueColumnCombinations AbstractLQPNode::_forward_left_unique_column_combinations() const {
-  Assert(left_input(), "Cannot forward unique column combinations without an input node.");
-  const auto& input_unique_column_combinations = left_input()->unique_column_combinations();
+UniqueColumnCombinations AbstractLQPNode::_forward_left_unique_column_combinations() const
+{
+    Assert(left_input(), "Cannot forward unique column combinations without an input node.");
+    const auto &input_unique_column_combinations = left_input()->unique_column_combinations();
 
-  if constexpr (HYRISE_DEBUG) {
-    // Check whether output expressions are missing.
-    for (const auto& ucc : input_unique_column_combinations) {
-      Assert(has_output_expressions(ucc.expressions),
-             "Forwarding of UCC is illegal because node misses output expressions.");
+    if constexpr (HYRISE_DEBUG)
+    {
+        // Check whether output expressions are missing.
+        for (const auto &ucc : input_unique_column_combinations)
+        {
+            Assert(has_output_expressions(ucc.expressions),
+                   "Forwarding of UCC is illegal because node misses output expressions.");
+        }
     }
-  }
-  return input_unique_column_combinations;
+    return input_unique_column_combinations;
 }
 
-OrderDependencies AbstractLQPNode::_forward_left_order_dependencies() const {
-  Assert(left_input(), "Cannot forward order dependencies without an input node.");
-  const auto& input_order_dependencies = left_input()->order_dependencies();
+OrderDependencies AbstractLQPNode::_forward_left_order_dependencies() const
+{
+    Assert(left_input(), "Cannot forward order dependencies without an input node.");
+    const auto &input_order_dependencies = left_input()->order_dependencies();
 
-  if constexpr (HYRISE_DEBUG) {
-    // Check whether output expressions are missing.
-    const auto& output_expressions = this->output_expressions();
-    for (const auto& od : input_order_dependencies) {
-      Assert(contains_all_expressions(od.ordering_expressions, output_expressions) &&
-                 contains_all_expressions(od.ordered_expressions, output_expressions),
-             "Forwarding of OD is illegal because node misses output expressions.");
+    if constexpr (HYRISE_DEBUG)
+    {
+        // Check whether output expressions are missing.
+        const auto &output_expressions = this->output_expressions();
+        for (const auto &od : input_order_dependencies)
+        {
+            Assert(contains_all_expressions(od.ordering_expressions, output_expressions) &&
+                       contains_all_expressions(od.ordered_expressions, output_expressions),
+                   "Forwarding of OD is illegal because node misses output expressions.");
+        }
     }
-  }
-  return input_order_dependencies;
+    return input_order_dependencies;
 }
 
-AbstractExpression::DescriptionMode AbstractLQPNode::_expression_description_mode(const DescriptionMode mode) {
-  switch (mode) {
+AbstractExpression::DescriptionMode AbstractLQPNode::_expression_description_mode(const DescriptionMode mode)
+{
+    switch (mode)
+    {
     case DescriptionMode::Short:
-      return AbstractExpression::DescriptionMode::ColumnName;
+        return AbstractExpression::DescriptionMode::ColumnName;
     case DescriptionMode::Detailed:
-      return AbstractExpression::DescriptionMode::Detailed;
-  }
-  Fail("Unhandled DescriptionMode");
+        return AbstractExpression::DescriptionMode::Detailed;
+    }
+    Fail("Unhandled DescriptionMode");
 }
 
-std::ostream& operator<<(std::ostream& stream, const AbstractLQPNode& node) {
-  // Recursively collect all LQPs in LQPSubqueryExpressions (and any anywhere within those) in this LQP into a list and
-  // then print them
-  auto lqps = std::unordered_set<std::shared_ptr<AbstractLQPNode>>{};
-  collect_lqps_in_plan(node, lqps);
+std::ostream &operator<<(std::ostream &stream, const AbstractLQPNode &node)
+{
+    // Recursively collect all LQPs in LQPSubqueryExpressions (and any anywhere within those) in this LQP into a list and
+    // then print them
+    auto lqps = std::unordered_set<std::shared_ptr<AbstractLQPNode>>{};
+    collect_lqps_in_plan(node, lqps);
 
-  const auto output_lqp_to_stream = [&](const auto& root) {
-    const auto get_inputs_fn = [](const auto& node2) {
-      std::vector<std::shared_ptr<const AbstractLQPNode>> inputs;
-      if (node2->left_input()) {
-        inputs.emplace_back(node2->left_input());
-      }
+    const auto output_lqp_to_stream = [&](const auto &root)
+    {
+        const auto get_inputs_fn = [](const auto &node2)
+        {
+            std::vector<std::shared_ptr<const AbstractLQPNode>> inputs;
+            if (node2->left_input())
+            {
+                inputs.emplace_back(node2->left_input());
+            }
 
-      if (node2->right_input()) {
-        inputs.emplace_back(node2->right_input());
-      }
+            if (node2->right_input())
+            {
+                inputs.emplace_back(node2->right_input());
+            }
 
-      return inputs;
+            return inputs;
+        };
+
+        const auto node_print_fn = [](const auto &node2, auto &stream2)
+        {
+            stream2 << node2->description(AbstractLQPNode::DescriptionMode::Detailed);
+            if (!node2->comment.empty())
+            {
+                stream2 << " (" << node2->comment << ")";
+            }
+            stream2 << " @ " << node2;
+        };
+
+        print_directed_acyclic_graph<const AbstractLQPNode>(root.shared_from_this(), get_inputs_fn, node_print_fn, stream);
     };
 
-    const auto node_print_fn = [](const auto& node2, auto& stream2) {
-      stream2 << node2->description(AbstractLQPNode::DescriptionMode::Detailed);
-      if (!node2->comment.empty()) {
-        stream2 << " (" << node2->comment << ")";
-      }
-      stream2 << " @ " << node2;
-    };
+    output_lqp_to_stream(node);
 
-    print_directed_acyclic_graph<const AbstractLQPNode>(root.shared_from_this(), get_inputs_fn, node_print_fn, stream);
-  };
+    if (lqps.empty())
+    {
+        return stream;
+    }
 
-  output_lqp_to_stream(node);
+    stream << "-------- Subqueries ---------\n";
 
-  if (lqps.empty()) {
+    for (const auto &lqp : lqps)
+    {
+        stream << lqp.get() << ": \n";
+        output_lqp_to_stream(*lqp);
+        stream << '\n';
+    }
+
     return stream;
-  }
-
-  stream << "-------- Subqueries ---------\n";
-
-  for (const auto& lqp : lqps) {
-    stream << lqp.get() << ": \n";
-    output_lqp_to_stream(*lqp);
-    stream << '\n';
-  }
-
-  return stream;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

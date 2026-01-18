@@ -5,7 +5,8 @@
 
 #include "abstract_rule.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractLQPNode;
 
@@ -19,13 +20,14 @@ class AbstractLQPNode;
  *   join_to_predicate_rewrite_rule.hpp). We mark the prunable input side of a JoinNode to allow the application of
  *   specific rules for these cases.
  */
-class ColumnPruningRule : public AbstractRule {
- public:
-  std::string name() const override;
+class ColumnPruningRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

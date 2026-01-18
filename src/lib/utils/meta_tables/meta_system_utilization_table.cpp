@@ -3,8 +3,8 @@
 // NOLINTBEGIN(misc-include-cleaner): disable for entire file as we need many headers (e.g., macOS's `mach.h` is an
 //     umbrella header) and differentiating between macOS and Linux is too cumbersome for this file.
 
-#include <stdlib.h>  // NOLINT(hicpp-deprecated-headers,modernize-deprecated-headers): For _SC_CLK_TCK and others.
-#include <time.h>    // NOLINT(hicpp-deprecated-headers,modernize-deprecated-headers): For localtime_r.
+#include <stdlib.h> // NOLINT(hicpp-deprecated-headers,modernize-deprecated-headers): For _SC_CLK_TCK and others.
+#include <time.h>   // NOLINT(hicpp-deprecated-headers,modernize-deprecated-headers): For localtime_r.
 
 // clang-format off
 #ifdef __APPLE__
@@ -40,7 +40,8 @@
 #include "utils/assert.hpp"
 #include "utils/meta_tables/abstract_meta_table.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 MetaSystemUtilizationTable::MetaSystemUtilizationTable()
     : AbstractMetaTable(TableColumnDefinitions{{"cpu_system_time", DataType::Long, false},
@@ -56,131 +57,140 @@ MetaSystemUtilizationTable::MetaSystemUtilizationTable()
                                                {"allocated_memory", DataType::Long, true},
                                                {"cpu_affinity_count", DataType::Int, false}}) {}
 
-const std::string& MetaSystemUtilizationTable::name() const {
-  static const auto name = std::string{"system_utilization"};
-  return name;
+const std::string &MetaSystemUtilizationTable::name() const
+{
+    static const auto name = std::string{"system_utilization"};
+    return name;
 }
 
-std::shared_ptr<Table> MetaSystemUtilizationTable::_on_generate() const {
-  auto output_table = std::make_shared<Table>(_column_definitions, TableType::Data);
+std::shared_ptr<Table> MetaSystemUtilizationTable::_on_generate() const
+{
+    auto output_table = std::make_shared<Table>(_column_definitions, TableType::Data);
 
-  const auto system_cpu_ticks = _get_system_cpu_time();
-  const auto process_cpu_ticks = _get_process_cpu_time();
-  const auto total_ticks = _get_total_time();
-  const auto load_avg = _get_load_avg();
-  const auto system_memory_usage = _get_system_memory_usage();
-  const auto process_memory_usage = _get_process_memory_usage();
-  const auto allocated_memory = _get_allocated_memory();
-  const auto allocated_memory_variant =
-      allocated_memory ? AllTypeVariant{static_cast<int64_t>(*allocated_memory)} : AllTypeVariant{NULL_VALUE};
-  const auto cpu_affinity_count = Hyrise::get().topology.num_cpus();
+    const auto system_cpu_ticks = _get_system_cpu_time();
+    const auto process_cpu_ticks = _get_process_cpu_time();
+    const auto total_ticks = _get_total_time();
+    const auto load_avg = _get_load_avg();
+    const auto system_memory_usage = _get_system_memory_usage();
+    const auto process_memory_usage = _get_process_memory_usage();
+    const auto allocated_memory = _get_allocated_memory();
+    const auto allocated_memory_variant =
+        allocated_memory ? AllTypeVariant{static_cast<int64_t>(*allocated_memory)} : AllTypeVariant{NULL_VALUE};
+    const auto cpu_affinity_count = Hyrise::get().topology.num_cpus();
 
-  output_table->append({static_cast<int64_t>(system_cpu_ticks), static_cast<int64_t>(process_cpu_ticks),
-                        static_cast<int64_t>(total_ticks), load_avg.load_1_min, load_avg.load_5_min,
-                        load_avg.load_15_min, static_cast<int64_t>(system_memory_usage.free_memory),
-                        static_cast<int64_t>(system_memory_usage.available_memory),
-                        static_cast<int64_t>(process_memory_usage.virtual_memory),
-                        static_cast<int64_t>(process_memory_usage.physical_memory), allocated_memory_variant,
-                        static_cast<int32_t>(cpu_affinity_count)});
+    output_table->append({static_cast<int64_t>(system_cpu_ticks), static_cast<int64_t>(process_cpu_ticks),
+                          static_cast<int64_t>(total_ticks), load_avg.load_1_min, load_avg.load_5_min,
+                          load_avg.load_15_min, static_cast<int64_t>(system_memory_usage.free_memory),
+                          static_cast<int64_t>(system_memory_usage.available_memory),
+                          static_cast<int64_t>(process_memory_usage.virtual_memory),
+                          static_cast<int64_t>(process_memory_usage.physical_memory), allocated_memory_variant,
+                          static_cast<int32_t>(cpu_affinity_count)});
 
-  return output_table;
+    return output_table;
 }
 
 /**
  * Returns the load average values for 1min, 5min, and 15min.
  */
-MetaSystemUtilizationTable::LoadAvg MetaSystemUtilizationTable::_get_load_avg() {
-  auto load_avg = std::array<double, 3>{};
-  const int nelem = getloadavg(load_avg.data(), 3);
-  Assert(nelem == 3, "Failed to read load averages");
-  return {.load_1_min = static_cast<float>(load_avg[0]),
-          .load_5_min = static_cast<float>(load_avg[1]),
-          .load_15_min = static_cast<float>(load_avg[2])};
+MetaSystemUtilizationTable::LoadAvg MetaSystemUtilizationTable::_get_load_avg()
+{
+    auto load_avg = std::array<double, 3>{};
+    const int nelem = getloadavg(load_avg.data(), 3);
+    Assert(nelem == 3, "Failed to read load averages");
+    return {.load_1_min = static_cast<float>(load_avg[0]),
+            .load_5_min = static_cast<float>(load_avg[1]),
+            .load_15_min = static_cast<float>(load_avg[2])};
 }
 
 /**
  * Returns the time in ns since epoch.
  */
-uint64_t MetaSystemUtilizationTable::_get_total_time() {
-  auto time = std::chrono::steady_clock::now().time_since_epoch();
-  return std::chrono::nanoseconds{time}.count();
+uint64_t MetaSystemUtilizationTable::_get_total_time()
+{
+    auto time = std::chrono::steady_clock::now().time_since_epoch();
+    return std::chrono::nanoseconds{time}.count();
 }
 
 /**
  * Returns the time in ns that ALL processes have spent on the CPU since an arbitrary point in the past. This might be
  *  used to differentiate between CPU time consumed by this process and by other processes on the same machine.
  */
-uint64_t MetaSystemUtilizationTable::_get_system_cpu_time() {
+uint64_t MetaSystemUtilizationTable::_get_system_cpu_time()
+{
 #ifdef __linux__
-  auto stat_file = std::ifstream{};
-  auto cpu_line = std::string{};
-  try {
-    stat_file.open("/proc/stat", std::ifstream::in);
+    auto stat_file = std::ifstream{};
+    auto cpu_line = std::string{};
+    try
+    {
+        stat_file.open("/proc/stat", std::ifstream::in);
 
-    std::getline(stat_file, cpu_line);
-    stat_file.close();
-  } catch (std::ios_base::failure& fail) {
-    Fail("Failed to read /proc/stat (" + fail.what() + ").");
-  }
+        std::getline(stat_file, cpu_line);
+        stat_file.close();
+    }
+    catch (std::ios_base::failure &fail)
+    {
+        Fail("Failed to read /proc/stat (" + fail.what() + ").");
+    }
 
-  const auto cpu_ticks = _parse_value_string(cpu_line);
-  Assert(cpu_ticks.size() > 2, "Unexpected number of values.");
+    const auto cpu_ticks = _parse_value_string(cpu_line);
+    Assert(cpu_ticks.size() > 2, "Unexpected number of values.");
 
-  const auto user_ticks = cpu_ticks[0];
-  const auto user_nice_ticks = cpu_ticks[1];
-  const auto kernel_ticks = cpu_ticks[2];
+    const auto user_ticks = cpu_ticks[0];
+    const auto user_nice_ticks = cpu_ticks[1];
+    const auto kernel_ticks = cpu_ticks[2];
 
-  const auto active_ticks = static_cast<double>(user_ticks + user_nice_ticks + kernel_ticks);
+    const auto active_ticks = static_cast<double>(user_ticks + user_nice_ticks + kernel_ticks);
 
 #else
 
 #ifdef __APPLE__
-  auto cpu_info = host_cpu_load_info_data_t{};
-  auto count = HOST_CPU_LOAD_INFO_COUNT;
-  const auto ret =
-      host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, reinterpret_cast<host_info_t>(&cpu_info), &count);
-  Assert(ret == KERN_SUCCESS, "Failed to get host_statistics.");
+    auto cpu_info = host_cpu_load_info_data_t{};
+    auto count = HOST_CPU_LOAD_INFO_COUNT;
+    const auto ret =
+        host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, reinterpret_cast<host_info_t>(&cpu_info), &count);
+    Assert(ret == KERN_SUCCESS, "Failed to get host_statistics.");
 
-  const auto active_ticks = static_cast<double>(
-      cpu_info.cpu_ticks[CPU_STATE_SYSTEM] + cpu_info.cpu_ticks[CPU_STATE_USER] + cpu_info.cpu_ticks[CPU_STATE_NICE]);
+    const auto active_ticks = static_cast<double>(
+        cpu_info.cpu_ticks[CPU_STATE_SYSTEM] + cpu_info.cpu_ticks[CPU_STATE_USER] + cpu_info.cpu_ticks[CPU_STATE_NICE]);
 #else
 
-  Fail("Method not implemented for this platform.");
+    Fail("Method not implemented for this platform.");
 
-#endif  // __APPLE__
-#endif  // __linux__
+#endif // __APPLE__
+#endif // __linux__
 
-  // The amount of time from HOST_CPU_LOAD_INFO is measured in units of clock ticks. `sysconf(_SC_CLK_TCK)` can be used
-  // to convert it to seconds, which we further convert to nanoseconds.
-  const auto ticks_per_second = static_cast<double>(sysconf(_SC_CLK_TCK));  // NOLINT(misc-include-cleaner)
-  return static_cast<uint64_t>((active_ticks / ticks_per_second) * static_cast<double>(std::nano::den));
+    // The amount of time from HOST_CPU_LOAD_INFO is measured in units of clock ticks. `sysconf(_SC_CLK_TCK)` can be used
+    // to convert it to seconds, which we further convert to nanoseconds.
+    const auto ticks_per_second = static_cast<double>(sysconf(_SC_CLK_TCK)); // NOLINT(misc-include-cleaner)
+    return static_cast<uint64_t>((active_ticks / ticks_per_second) * static_cast<double>(std::nano::den));
 }
 
 /**
  * Returns the time in ns that THIS process has spent on the CPU since an arbitrary point in the past.
  */
-uint64_t MetaSystemUtilizationTable::_get_process_cpu_time() {
-  // CLOCK_PROCESS_CPUTIME_ID:
-  // A clock that measures (user and system) CPU time consumed by (all of the threads in) the calling process.
+uint64_t MetaSystemUtilizationTable::_get_process_cpu_time()
+{
+    // CLOCK_PROCESS_CPUTIME_ID:
+    // A clock that measures (user and system) CPU time consumed by (all of the threads in) the calling process.
 #ifdef __linux__
-  struct timespec time_spec{};
+    struct timespec time_spec{};
 
-  const auto ret = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time_spec);  // NOLINT(misc-include-cleaner)
-  Assert(ret == 0, "Failed in clock_gettime.");
+    const auto ret = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time_spec); // NOLINT(misc-include-cleaner)
+    Assert(ret == 0, "Failed in clock_gettime.");
 
-  const auto active_ns = (time_spec.tv_sec * std::nano::den) + time_spec.tv_nsec;
+    const auto active_ns = (time_spec.tv_sec * std::nano::den) + time_spec.tv_nsec;
 
-  return active_ns;
+    return active_ns;
 #endif
 
 #ifdef __APPLE__
-  const auto active_ns = clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID);  // NOLINT(misc-include-cleaner)
-  Assert(active_ns != 0, "Failed in clock_gettime_nsec_np.");
+    const auto active_ns = clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID); // NOLINT(misc-include-cleaner)
+    Assert(active_ns != 0, "Failed in clock_gettime_nsec_np.");
 
-  return active_ns;
+    return active_ns;
 #endif
 
-  Fail("Method not implemented for this platform.");
+    Fail("Method not implemented for this platform.");
 }
 
 /**
@@ -189,52 +199,60 @@ uint64_t MetaSystemUtilizationTable::_get_process_cpu_time() {
  * - Available memory includes free memory and currently allocated memory that could be made available (e.g. buffers,
  *   caches ...). This is not equivalent to the total memory size, since certain data cannot be paged at any time.
  */
-MetaSystemUtilizationTable::SystemMemoryUsage MetaSystemUtilizationTable::_get_system_memory_usage() {
+MetaSystemUtilizationTable::SystemMemoryUsage MetaSystemUtilizationTable::_get_system_memory_usage()
+{
 #ifdef __linux__
-  auto meminfo_file = std::ifstream{};
-  auto memory_usage = MetaSystemUtilizationTable::SystemMemoryUsage{};
-  try {
-    meminfo_file.open("/proc/meminfo", std::ifstream::in);
+    auto meminfo_file = std::ifstream{};
+    auto memory_usage = MetaSystemUtilizationTable::SystemMemoryUsage{};
+    try
+    {
+        meminfo_file.open("/proc/meminfo", std::ifstream::in);
 
-    auto meminfo_line = std::string{};
-    while (std::getline(meminfo_file, meminfo_line)) {
-      if (meminfo_line.starts_with("MemFree")) {
-        memory_usage.free_memory = _parse_value_string(meminfo_line)[0] * 1024;
-      } else if (meminfo_line.starts_with("MemAvailable")) {
-        memory_usage.available_memory = _parse_value_string(meminfo_line)[0] * 1024;
-      }
+        auto meminfo_line = std::string{};
+        while (std::getline(meminfo_file, meminfo_line))
+        {
+            if (meminfo_line.starts_with("MemFree"))
+            {
+                memory_usage.free_memory = _parse_value_string(meminfo_line)[0] * 1024;
+            }
+            else if (meminfo_line.starts_with("MemAvailable"))
+            {
+                memory_usage.available_memory = _parse_value_string(meminfo_line)[0] * 1024;
+            }
+        }
+        meminfo_file.close();
     }
-    meminfo_file.close();
-  } catch (std::ios_base::failure& fail) {
-    Fail("Failed to read /proc/meminfo (" + fail.what() + ").");
-  }
+    catch (std::ios_base::failure &fail)
+    {
+        Fail("Failed to read /proc/meminfo (" + fail.what() + ").");
+    }
 
-  return memory_usage;
+    return memory_usage;
 #endif
 
 #ifdef __APPLE__
-  auto physical_memory = int64_t{0};
-  auto size = sizeof(physical_memory);
-  auto ret = sysctlbyname("hw.memsize", &physical_memory, &size, nullptr, 0);
-  Assert(ret == 0, "Failed to call sysctl hw.memsize.");
+    auto physical_memory = int64_t{0};
+    auto size = sizeof(physical_memory);
+    auto ret = sysctlbyname("hw.memsize", &physical_memory, &size, nullptr, 0);
+    Assert(ret == 0, "Failed to call sysctl hw.memsize.");
 
-  // see reference: https://stackoverflow.com/a/1911863
-  auto page_size = vm_size_t{};
-  auto vm_statistics = vm_statistics64_data_t{};
-  auto count = mach_msg_type_number_t{sizeof(vm_statistics) / sizeof(natural_t)};
-  ret = host_page_size(mach_host_self(), &page_size);
-  Assert(ret == KERN_SUCCESS, "Failed to get page size.");
-  ret = host_statistics64(mach_host_self(), HOST_VM_INFO, reinterpret_cast<host_info64_t>(&vm_statistics), &count);
-  Assert(ret == KERN_SUCCESS, "Failed to get host_statistics64.");
+    // see reference: https://stackoverflow.com/a/1911863
+    auto page_size = vm_size_t{};
+    auto vm_statistics = vm_statistics64_data_t{};
+    auto count = mach_msg_type_number_t{sizeof(vm_statistics) / sizeof(natural_t)};
+    ret = host_page_size(mach_host_self(), &page_size);
+    Assert(ret == KERN_SUCCESS, "Failed to get page size.");
+    ret = host_statistics64(mach_host_self(), HOST_VM_INFO, reinterpret_cast<host_info64_t>(&vm_statistics), &count);
+    Assert(ret == KERN_SUCCESS, "Failed to get host_statistics64.");
 
-  auto memory_usage = MetaSystemUtilizationTable::SystemMemoryUsage{};
-  memory_usage.free_memory = vm_statistics.free_count * page_size;
-  memory_usage.available_memory = (vm_statistics.inactive_count + vm_statistics.free_count) * page_size;
+    auto memory_usage = MetaSystemUtilizationTable::SystemMemoryUsage{};
+    memory_usage.free_memory = vm_statistics.free_count * page_size;
+    memory_usage.available_memory = (vm_statistics.inactive_count + vm_statistics.free_count) * page_size;
 
-  return memory_usage;
+    return memory_usage;
 #endif
 
-  Fail("Method not implemented for this platform.");
+    Fail("Method not implemented for this platform.");
 }
 
 /**
@@ -242,41 +260,49 @@ MetaSystemUtilizationTable::SystemMemoryUsage MetaSystemUtilizationTable::_get_s
  * - Virtual Memory is the total memory usage of the process.
  * - Physical Memory is the resident set size (RSS), the portion of memory that is held in RAM.
  */
-MetaSystemUtilizationTable::ProcessMemoryUsage MetaSystemUtilizationTable::_get_process_memory_usage() {
+MetaSystemUtilizationTable::ProcessMemoryUsage MetaSystemUtilizationTable::_get_process_memory_usage()
+{
 #ifdef __linux__
-  auto self_status_file = std::ifstream{};
-  auto memory_usage = MetaSystemUtilizationTable::ProcessMemoryUsage{};
-  try {
-    self_status_file.open("/proc/self/status", std::ifstream::in);
+    auto self_status_file = std::ifstream{};
+    auto memory_usage = MetaSystemUtilizationTable::ProcessMemoryUsage{};
+    try
+    {
+        self_status_file.open("/proc/self/status", std::ifstream::in);
 
-    auto self_status_line = std::string{};
-    while (std::getline(self_status_file, self_status_line)) {
-      if (self_status_line.starts_with("VmSize")) {
-        memory_usage.virtual_memory = _parse_value_string(self_status_line)[0] * 1024;
-      } else if (self_status_line.starts_with("VmRSS")) {
-        memory_usage.physical_memory = _parse_value_string(self_status_line)[0] * 1024;
-      }
+        auto self_status_line = std::string{};
+        while (std::getline(self_status_file, self_status_line))
+        {
+            if (self_status_line.starts_with("VmSize"))
+            {
+                memory_usage.virtual_memory = _parse_value_string(self_status_line)[0] * 1024;
+            }
+            else if (self_status_line.starts_with("VmRSS"))
+            {
+                memory_usage.physical_memory = _parse_value_string(self_status_line)[0] * 1024;
+            }
+        }
+
+        self_status_file.close();
+    }
+    catch (std::ios_base::failure &fail)
+    {
+        Fail("Failed to read /proc/self/status (" + fail.what() + ").");
     }
 
-    self_status_file.close();
-  } catch (std::ios_base::failure& fail) {
-    Fail("Failed to read /proc/self/status (" + fail.what() + ").");
-  }
-
-  return memory_usage;
+    return memory_usage;
 #endif
 
 #ifdef __APPLE__
-  struct task_basic_info info{};
+    struct task_basic_info info{};
 
-  auto count = mach_msg_type_number_t{TASK_BASIC_INFO_COUNT};
-  const auto ret = task_info(mach_task_self(), TASK_BASIC_INFO, reinterpret_cast<task_info_t>(&info), &count);
-  Assert(ret == KERN_SUCCESS, "Failed to get task_info.");
+    auto count = mach_msg_type_number_t{TASK_BASIC_INFO_COUNT};
+    const auto ret = task_info(mach_task_self(), TASK_BASIC_INFO, reinterpret_cast<task_info_t>(&info), &count);
+    Assert(ret == KERN_SUCCESS, "Failed to get task_info.");
 
-  return {.virtual_memory = info.virtual_size, .physical_memory = info.resident_size};
+    return {.virtual_memory = info.virtual_size, .physical_memory = info.resident_size};
 #endif
 
-  Fail("Method not implemented for this platform.");
+    Fail("Method not implemented for this platform.");
 }
 
 /**
@@ -303,61 +329,66 @@ MetaSystemUtilizationTable::ProcessMemoryUsage MetaSystemUtilizationTable::_get_
  *
  * Reference: https://www.freebsd.org/cgi/man.cgi?jemalloc(3)
  */
-std::optional<size_t> MetaSystemUtilizationTable::_get_allocated_memory() {
+std::optional<size_t> MetaSystemUtilizationTable::_get_allocated_memory()
+{
 #ifdef HYRISE_WITH_JEMALLOC
-  if constexpr (HYRISE_DEBUG) {
-    // Check that jemalloc was built with statistics support.
+    if constexpr (HYRISE_DEBUG)
+    {
+        // Check that jemalloc was built with statistics support.
 
-    auto stats_enabled = false;
-    auto stats_enabled_size = sizeof(stats_enabled);
+        auto stats_enabled = false;
+        auto stats_enabled_size = sizeof(stats_enabled);
 
-    const auto error_code = mallctl("config.stats", &stats_enabled, &stats_enabled_size, nullptr, 0);
-    Assert(!error_code, "Cannot check if jemalloc was built with --stats_enabled.");
-    Assert(stats_enabled, "Hyrise's jemalloc was not build with --stats_enabled.");
-  }
+        const auto error_code = mallctl("config.stats", &stats_enabled, &stats_enabled_size, nullptr, 0);
+        Assert(!error_code, "Cannot check if jemalloc was built with --stats_enabled.");
+        Assert(stats_enabled, "Hyrise's jemalloc was not build with --stats_enabled.");
+    }
 
-  // Before retrieving the statistics, we need to update jemalloc's epoch to get current values. See the mallctl
-  // documentation for details.
-  {
-    auto epoch = uint64_t{1};
-    auto epoch_size = sizeof(epoch);
-    const auto error_code = mallctl("epoch", &epoch, &epoch_size, &epoch, epoch_size);
-    Assert(!error_code, "Setting epoch failed.");
-  }
+    // Before retrieving the statistics, we need to update jemalloc's epoch to get current values. See the mallctl
+    // documentation for details.
+    {
+        auto epoch = uint64_t{1};
+        auto epoch_size = sizeof(epoch);
+        const auto error_code = mallctl("epoch", &epoch, &epoch_size, &epoch, epoch_size);
+        Assert(!error_code, "Setting epoch failed.");
+    }
 
-  auto allocated = size_t{0};
-  auto allocated_size = sizeof(allocated);
+    auto allocated = size_t{0};
+    auto allocated_size = sizeof(allocated);
 
-  const auto error_code = mallctl("stats.allocated", &allocated, &allocated_size, nullptr, 0);
-  Assert(!error_code, std::string{"mallctl failed with error code "} + std::to_string(error_code) + ".");
+    const auto error_code = mallctl("stats.allocated", &allocated, &allocated_size, nullptr, 0);
+    Assert(!error_code, std::string{"mallctl failed with error code "} + std::to_string(error_code) + ".");
 
-  return allocated;
+    return allocated;
 #else
-  // Hyrise is compiled with jemalloc unless tsan is used (see src/lib/CMakeLists.txt). To maintain compatibility with
-  // other allocators, we return nullopt here.
-  return std::nullopt;
+    // Hyrise is compiled with jemalloc unless tsan is used (see src/lib/CMakeLists.txt). To maintain compatibility with
+    // other allocators, we return nullopt here.
+    return std::nullopt;
 #endif
 }
 
 #ifdef __linux__
-std::vector<int64_t> MetaSystemUtilizationTable::_parse_value_string(std::string& input_string) {
-  auto input_stream = std::stringstream{};
-  input_stream << input_string;
-  auto output_values = std::vector<int64_t>{};
+std::vector<int64_t> MetaSystemUtilizationTable::_parse_value_string(std::string &input_string)
+{
+    auto input_stream = std::stringstream{};
+    input_stream << input_string;
+    auto output_values = std::vector<int64_t>{};
 
-  auto token = std::string{};
-  auto value = int64_t{0};
-  while (!input_stream.eof()) {
-    input_stream >> token;
-    if (std::stringstream(token) >> value) {
-      output_values.push_back(value);
+    auto token = std::string{};
+    auto value = int64_t{0};
+    while (!input_stream.eof())
+    {
+        input_stream >> token;
+        if (std::stringstream(token) >> value)
+        {
+            output_values.push_back(value);
+        }
     }
-  }
 
-  return output_values;
+    return output_values;
 }
 #endif
 
 // NOLINTEND(misc-include-cleaner)
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -13,16 +13,20 @@
 #include "optimizer/strategy/abstract_rule.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::string JoinToSemiJoinRule::name() const {
-  static const auto name = std::string{"JoinToSemiJoinRule"};
-  return name;
+std::string JoinToSemiJoinRule::name() const
+{
+    static const auto name = std::string{"JoinToSemiJoinRule"};
+    return name;
 }
 
-void JoinToSemiJoinRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                                           OptimizationContext& optimization_context) const {
-  visit_lqp(lqp_root, [&](const auto& node) {
+void JoinToSemiJoinRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                                           OptimizationContext &optimization_context) const
+{
+    visit_lqp(lqp_root, [&](const auto &node)
+              {
     // Sometimes, joins are not actually used to combine tables but only to check the existence of a tuple in a second
     // table. Example: SELECT c_name FROM customer, nation WHERE c_nationkey = n_nationkey AND n_name = 'GERMANY'
     // If the join is on a unique/primary key column, we can rewrite these joins into semi joins. If, however, the
@@ -103,8 +107,7 @@ void JoinToSemiJoinRule::_apply_to_plan_without_subqueries(const std::shared_ptr
       }
     }
 
-    return LQPVisitation::VisitInputs;
-  });
+    return LQPVisitation::VisitInputs; });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

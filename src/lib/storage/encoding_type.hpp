@@ -19,13 +19,22 @@
 #include "storage/vector_compression/vector_compression.hpp"
 #include "utils/enum_constant.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 namespace hana = boost::hana;
 
-enum class EncodingType : uint8_t { Unencoded, Dictionary, RunLength, FixedStringDictionary, FrameOfReference, LZ4 };
+enum class EncodingType : uint8_t
+{
+    Unencoded,
+    Dictionary,
+    RunLength,
+    FixedStringDictionary,
+    FrameOfReference,
+    LZ4
+};
 
-std::ostream& operator<<(std::ostream& stream, const EncodingType encoding_type);
+std::ostream &operator<<(std::ostream &stream, const EncodingType encoding_type);
 
 /**
  * @brief Maps each encoding type to its supported data types
@@ -50,33 +59,36 @@ constexpr auto supported_data_types_for_encoding_type = hana::make_map(
  *       in a constant expression such as constexpr-if.
  */
 template <typename SegmentEncodingType, typename ColumnDataType>
-constexpr auto encoding_supports_data_type(SegmentEncodingType encoding_type, ColumnDataType data_type) {
-  return hana::contains(hana::at_key(supported_data_types_for_encoding_type, encoding_type), data_type);
+constexpr auto encoding_supports_data_type(SegmentEncodingType encoding_type, ColumnDataType data_type)
+{
+    return hana::contains(hana::at_key(supported_data_types_for_encoding_type, encoding_type), data_type);
 }
 
 // Version for when EncodingType and DataType are only known at runtime
 bool encoding_supports_data_type(EncodingType encoding_type, DataType data_type);
 
-struct SegmentEncodingSpec {
-  explicit constexpr SegmentEncodingSpec(EncodingType init_encoding_type) : encoding_type{init_encoding_type} {}
+struct SegmentEncodingSpec
+{
+    explicit constexpr SegmentEncodingSpec(EncodingType init_encoding_type) : encoding_type{init_encoding_type} {}
 
-  constexpr SegmentEncodingSpec(EncodingType init_encoding_type,
-                                std::optional<VectorCompressionType> init_vector_compression_type)
-      : encoding_type{init_encoding_type}, vector_compression_type{init_vector_compression_type} {}
+    constexpr SegmentEncodingSpec(EncodingType init_encoding_type,
+                                  std::optional<VectorCompressionType> init_vector_compression_type)
+        : encoding_type{init_encoding_type}, vector_compression_type{init_vector_compression_type} {}
 
-  EncodingType encoding_type;
-  std::optional<VectorCompressionType> vector_compression_type;
+    EncodingType encoding_type;
+    std::optional<VectorCompressionType> vector_compression_type;
 };
 
-inline bool operator==(const SegmentEncodingSpec& lhs, const SegmentEncodingSpec& rhs) {
-  return std::tie(lhs.encoding_type, lhs.vector_compression_type) ==
-         std::tie(rhs.encoding_type, rhs.vector_compression_type);
+inline bool operator==(const SegmentEncodingSpec &lhs, const SegmentEncodingSpec &rhs)
+{
+    return std::tie(lhs.encoding_type, lhs.vector_compression_type) ==
+           std::tie(rhs.encoding_type, rhs.vector_compression_type);
 }
 
-std::ostream& operator<<(std::ostream& stream, const SegmentEncodingSpec& spec);
+std::ostream &operator<<(std::ostream &stream, const SegmentEncodingSpec &spec);
 
 using ChunkEncodingSpec = std::vector<SegmentEncodingSpec>;
 
 inline constexpr auto encoding_types = magic_enum::enum_values<EncodingType>();
 
-}  // namespace hyrise
+} // namespace hyrise

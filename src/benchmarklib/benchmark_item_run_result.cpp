@@ -6,10 +6,11 @@
 #include "benchmark_config.hpp"
 #include "sql/sql_pipeline.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 BenchmarkItemRunResult::BenchmarkItemRunResult(Duration init_begin, Duration init_duration,
                                                std::vector<SQLPipelineMetrics> init_metrics)
     : begin(init_begin), duration(init_duration), metrics(std::move(init_metrics)) {}
 
-}  // namespace hyrise
+} // namespace hyrise

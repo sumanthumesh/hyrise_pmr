@@ -30,97 +30,110 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;  // NOLINT(build/namespaces)
+using namespace hyrise; // NOLINT(build/namespaces)
 
 template <typename T>
-pmr_vector<T> create_typed_segment_values(const std::vector<int>& values) {
-  auto result = pmr_vector<T>(values.size());
+pmr_vector<T> create_typed_segment_values(const std::vector<int> &values)
+{
+    auto result = pmr_vector<T>(values.size());
 
-  auto insert_position = size_t{0};
-  for (const auto& value : values) {
-    result[insert_position] = SyntheticTableGenerator::generate_value<T>(value);
-    ++insert_position;
-  }
+    auto insert_position = size_t{0};
+    for (const auto &value : values)
+    {
+        result[insert_position] = SyntheticTableGenerator::generate_value<T>(value);
+        ++insert_position;
+    }
 
-  return result;
+    return result;
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-ColumnDataDistribution ColumnDataDistribution::make_uniform_config(const double min, const double max) {
-  auto config = ColumnDataDistribution{};
-  config.min_value = min;
-  config.max_value = max;
-  config.num_different_values = static_cast<int>(std::floor(max - min));
-  return config;
+ColumnDataDistribution ColumnDataDistribution::make_uniform_config(const double min, const double max)
+{
+    auto config = ColumnDataDistribution{};
+    config.min_value = min;
+    config.max_value = max;
+    config.num_different_values = static_cast<int>(std::floor(max - min));
+    return config;
 }
 
 ColumnDataDistribution ColumnDataDistribution::make_pareto_config(const double pareto_scale,
-                                                                  const double pareto_shape) {
-  auto config = ColumnDataDistribution{};
-  config.pareto_scale = pareto_scale;
-  config.pareto_shape = pareto_shape;
-  config.distribution_type = DataDistributionType::Pareto;
-  return config;
+                                                                  const double pareto_shape)
+{
+    auto config = ColumnDataDistribution{};
+    config.pareto_scale = pareto_scale;
+    config.pareto_shape = pareto_shape;
+    config.distribution_type = DataDistributionType::Pareto;
+    return config;
 }
 
 ColumnDataDistribution ColumnDataDistribution::make_skewed_normal_config(const double skew_location,
                                                                          const double skew_scale,
-                                                                         const double skew_shape) {
-  auto config = ColumnDataDistribution{};
-  config.skew_location = skew_location;
-  config.skew_scale = skew_scale;
-  config.skew_shape = skew_shape;
-  config.distribution_type = DataDistributionType::NormalSkewed;
-  return config;
+                                                                         const double skew_shape)
+{
+    auto config = ColumnDataDistribution{};
+    config.skew_location = skew_location;
+    config.skew_scale = skew_scale;
+    config.skew_shape = skew_shape;
+    config.distribution_type = DataDistributionType::NormalSkewed;
+    return config;
 }
 
 std::shared_ptr<Table> SyntheticTableGenerator::generate_table(const size_t num_columns, const size_t num_rows,
                                                                const ChunkOffset chunk_size,
-                                                               const SegmentEncodingSpec segment_encoding_spec) const {
-  const auto column_specification = ColumnSpecification{
-      {ColumnDataDistribution::make_uniform_config(0.0, _max_different_value)}, DataType::Int, segment_encoding_spec};
-  return generate_table({num_columns, column_specification}, num_rows, chunk_size, UseMvcc::No);
+                                                               const SegmentEncodingSpec segment_encoding_spec) const
+{
+    const auto column_specification = ColumnSpecification{
+        {ColumnDataDistribution::make_uniform_config(0.0, _max_different_value)}, DataType::Int, segment_encoding_spec};
+    return generate_table({num_columns, column_specification}, num_rows, chunk_size, UseMvcc::No);
 }
 
 std::shared_ptr<Table> SyntheticTableGenerator::generate_table(
-    const std::vector<ColumnSpecification>& column_specifications, const size_t num_rows, const ChunkOffset chunk_size,
-    const UseMvcc use_mvcc) {
-  Assert(chunk_size != 0, "Cannot generate table with chunk size 0.");
+    const std::vector<ColumnSpecification> &column_specifications, const size_t num_rows, const ChunkOffset chunk_size,
+    const UseMvcc use_mvcc)
+{
+    Assert(chunk_size != 0, "Cannot generate table with chunk size 0.");
 
-  // To speed up the table generation, the node scheduler is used. To not interfere with any settings for the actual
-  // Hyrise process (e.g., the test runner or the calibration), the current scheduler is stored, replaced, and
-  // eventually set again.
-  Hyrise::get().scheduler()->wait_for_all_tasks();
-  const auto previous_scheduler = Hyrise::get().scheduler();
-  Hyrise::get().set_scheduler(std::make_shared<NodeQueueScheduler>());
+    // To speed up the table generation, the node scheduler is used. To not interfere with any settings for the actual
+    // Hyrise process (e.g., the test runner or the calibration), the current scheduler is stored, replaced, and
+    // eventually set again.
+    Hyrise::get().scheduler()->wait_for_all_tasks();
+    const auto previous_scheduler = Hyrise::get().scheduler();
+    Hyrise::get().set_scheduler(std::make_shared<NodeQueueScheduler>());
 
-  const auto num_columns = column_specifications.size();
-  const auto num_chunks =
-      static_cast<size_t>(std::ceil(static_cast<double>(num_rows) / static_cast<double>(chunk_size)));
+    const auto num_columns = column_specifications.size();
+    const auto num_chunks =
+        static_cast<size_t>(std::ceil(static_cast<double>(num_rows) / static_cast<double>(chunk_size)));
 
-  // Add column definitions and initialize each value vector.
-  auto column_definitions = TableColumnDefinitions{};
-  for (auto column_id = size_t{0}; column_id < num_columns; ++column_id) {
-    const auto column_name = column_specifications[column_id].name ? *column_specifications[column_id].name
-                                                                   : "column_" + std::to_string(column_id + 1);
-    column_definitions.emplace_back(column_name, column_specifications[column_id].data_type, false);
-  }
-  auto table = std::make_shared<Table>(column_definitions, TableType::Data, chunk_size, use_mvcc);
+    // Add column definitions and initialize each value vector.
+    auto column_definitions = TableColumnDefinitions{};
+    for (auto column_id = size_t{0}; column_id < num_columns; ++column_id)
+    {
+        const auto column_name = column_specifications[column_id].name ? *column_specifications[column_id].name
+                                                                       : "column_" + std::to_string(column_id + 1);
+        column_definitions.emplace_back(column_name, column_specifications[column_id].data_type, false);
+    }
+    auto table = std::make_shared<Table>(column_definitions, TableType::Data, chunk_size, use_mvcc);
 
-  for (auto chunk_index = ChunkOffset{0}; chunk_index < num_chunks; ++chunk_index) {
-    auto jobs = std::vector<std::shared_ptr<AbstractTask>>{};
-    jobs.reserve(static_cast<size_t>(num_chunks));
+    for (auto chunk_index = ChunkOffset{0}; chunk_index < num_chunks; ++chunk_index)
+    {
+        auto jobs = std::vector<std::shared_ptr<AbstractTask>>{};
+        jobs.reserve(static_cast<size_t>(num_chunks));
 
-    auto segments = Segments(num_columns);
+        auto segments = Segments(num_columns);
 
-    for (auto column_index = ColumnID{0}; column_index < num_columns; ++column_index) {
-      jobs.emplace_back(std::make_shared<JobTask>([&, column_index]() {
-        resolve_data_type(column_specifications[column_index].data_type, [&](const auto column_data_type) {
+        for (auto column_index = ColumnID{0}; column_index < num_columns; ++column_index)
+        {
+            jobs.emplace_back(std::make_shared<JobTask>([&, column_index]()
+                                                        { resolve_data_type(column_specifications[column_index].data_type, [&](const auto column_data_type)
+                                                                            {
           using ColumnDataType = typename decltype(column_data_type)::type;
 
           auto values = std::vector<int>{};
@@ -214,31 +227,32 @@ std::shared_ptr<Table> SyntheticTableGenerator::generate_table(
             segments[column_index] =
                 ChunkEncoder::encode_segment(value_segment, column_specifications[column_index].data_type,
                                              *column_specifications[column_index].segment_encoding_spec);
-          }
-        });
-      }));
-      jobs.back()->schedule();
+          } }); }));
+            jobs.back()->schedule();
+        }
+        Hyrise::get().scheduler()->wait_for_tasks(jobs);
+
+        if (use_mvcc == UseMvcc::Yes)
+        {
+            const auto mvcc_data = std::make_shared<MvccData>(segments.front()->size(), CommitID{0});
+            table->append_chunk(segments, mvcc_data);
+        }
+        else
+        {
+            table->append_chunk(segments);
+        }
+
+        // Get added chunk, mark it as immutable and add statistics.
+        const auto &added_chunk = table->last_chunk();
+        added_chunk->set_immutable();
+        generate_chunk_pruning_statistics(added_chunk);
     }
-    Hyrise::get().scheduler()->wait_for_tasks(jobs);
 
-    if (use_mvcc == UseMvcc::Yes) {
-      const auto mvcc_data = std::make_shared<MvccData>(segments.front()->size(), CommitID{0});
-      table->append_chunk(segments, mvcc_data);
-    } else {
-      table->append_chunk(segments);
-    }
+    Hyrise::get().scheduler()->wait_for_all_tasks();
+    // Set scheduler back to previous one.
+    Hyrise::get().set_scheduler(previous_scheduler);
 
-    // Get added chunk, mark it as immutable and add statistics.
-    const auto& added_chunk = table->last_chunk();
-    added_chunk->set_immutable();
-    generate_chunk_pruning_statistics(added_chunk);
-  }
-
-  Hyrise::get().scheduler()->wait_for_all_tasks();
-  // Set scheduler back to previous one.
-  Hyrise::get().set_scheduler(previous_scheduler);
-
-  return table;
+    return table;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

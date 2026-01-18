@@ -9,7 +9,8 @@
 #include "expression/abstract_expression.hpp"
 #include "expression/logical_expression.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class AbstractLQPNode;
 
@@ -49,43 +50,44 @@ class AbstractLQPNode;
  *   rules can benefit from the simpler predicate (looking at you, JoinToPredicateRewriteRule).
  *   E.g., `a (NOT) IN ('abc')` becomes `a (Not)Equals 'abc'`.
  */
-class ExpressionReductionRule : public AbstractRule {
- public:
-  std::string name() const override;
+class ExpressionReductionRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
-  /**
-   * Use the law of boolean distributivity to reduce an expression: `(a AND b) OR (a AND c)` becomes `a AND (b OR c)`.
-   */
-  static const std::shared_ptr<AbstractExpression>& reduce_distributivity(
-      std::shared_ptr<AbstractExpression>& input_expression);
+    /**
+     * Use the law of boolean distributivity to reduce an expression: `(a AND b) OR (a AND c)` becomes `a AND (b OR c)`.
+     */
+    static const std::shared_ptr<AbstractExpression> &reduce_distributivity(
+        std::shared_ptr<AbstractExpression> &input_expression);
 
-  /**
-   * Rewrite `5 + 3` to `8`
-   */
-  static void reduce_constant_expression(std::shared_ptr<AbstractExpression>& input_expression);
+    /**
+     * Rewrite `5 + 3` to `8`
+     */
+    static void reduce_constant_expression(std::shared_ptr<AbstractExpression> &input_expression);
 
-  /**
-   * Rewrite `a LIKE 'abc%'` to `a BetweenUpperExclusive 'abc' AND 'abd'`.
-   * Rewrite `a NOT LIKE 'abc%'` to `a < 'abc' OR a >= 'abd'`.
-   * Rewrite `a (NOT) LIKE 'abc'` to `a (Not)Equals 'abc'`.
-   */
-  static void rewrite_like_prefix_wildcard(std::shared_ptr<AbstractExpression>& input_expression);
+    /**
+     * Rewrite `a LIKE 'abc%'` to `a BetweenUpperExclusive 'abc' AND 'abd'`.
+     * Rewrite `a NOT LIKE 'abc%'` to `a < 'abc' OR a >= 'abd'`.
+     * Rewrite `a (NOT) LIKE 'abc'` to `a (Not)Equals 'abc'`.
+     */
+    static void rewrite_like_prefix_wildcard(std::shared_ptr<AbstractExpression> &input_expression);
 
-  /**
-   * Rewrite `SELECT SUM(a), COUNT(a), AVG(a)` to `SELECT SUM(a), COUNT(a), SUM(a) / COUNT(a) AS AVG(a)`.
-   */
-  static void remove_duplicate_aggregate(std::vector<std::shared_ptr<AbstractExpression>>& input_expressions,
-                                         const std::shared_ptr<AbstractLQPNode>& aggregate_node,
-                                         const std::shared_ptr<AbstractLQPNode>& root_node);
+    /**
+     * Rewrite `SELECT SUM(a), COUNT(a), AVG(a)` to `SELECT SUM(a), COUNT(a), SUM(a) / COUNT(a) AS AVG(a)`.
+     */
+    static void remove_duplicate_aggregate(std::vector<std::shared_ptr<AbstractExpression>> &input_expressions,
+                                           const std::shared_ptr<AbstractLQPNode> &aggregate_node,
+                                           const std::shared_ptr<AbstractLQPNode> &root_node);
 
-  /**
-   * Rewrite `a (NOT) IN ('abc')` to `a (Not)Equals 'abc'`.
-   */
-  static void unnest_unary_in_expression(std::shared_ptr<AbstractExpression>& input_expression);
+    /**
+     * Rewrite `a (NOT) IN ('abc')` to `a (Not)Equals 'abc'`.
+     */
+    static void unnest_unary_in_expression(std::shared_ptr<AbstractExpression> &input_expression);
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -5,7 +5,8 @@
 
 #include "utils/meta_tables/abstract_meta_table.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * This is a class for showing information of all stored segments via a meta table. Here, we provide
@@ -14,14 +15,15 @@ namespace hyrise {
  * MetaSegmentsTable provides similar information, but more efficiently. It uses only cached distinct value counts and
  * estimates the memory usage by sampling.
  */
-class MetaSegmentsAccurateTable : public AbstractMetaTable {
- public:
-  MetaSegmentsAccurateTable();
+class MetaSegmentsAccurateTable : public AbstractMetaTable
+{
+  public:
+    MetaSegmentsAccurateTable();
 
-  const std::string& name() const final;
+    const std::string &name() const final;
 
- protected:
-  std::shared_ptr<Table> _on_generate() const final;
+  protected:
+    std::shared_ptr<Table> _on_generate() const final;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

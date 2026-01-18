@@ -10,28 +10,34 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::vector<std::shared_ptr<AbstractExpression>> AbstractNonQueryNode::output_expressions() const {
-  return {};
+std::vector<std::shared_ptr<AbstractExpression>> AbstractNonQueryNode::output_expressions() const
+{
+    return {};
 }
 
-UniqueColumnCombinations AbstractNonQueryNode::unique_column_combinations() const {
-  Fail("Node does not support unique column combinations.");
+UniqueColumnCombinations AbstractNonQueryNode::unique_column_combinations() const
+{
+    Fail("Node does not support unique column combinations.");
 }
 
-OrderDependencies AbstractNonQueryNode::order_dependencies() const {
-  Fail("Node does not support order depedencies.");
+OrderDependencies AbstractNonQueryNode::order_dependencies() const
+{
+    Fail("Node does not support order depedencies.");
 }
 
-FunctionalDependencies AbstractNonQueryNode::non_trivial_functional_dependencies() const {
-  Fail("Node does not support functional dependencies.");
+FunctionalDependencies AbstractNonQueryNode::non_trivial_functional_dependencies() const
+{
+    Fail("Node does not support functional dependencies.");
 }
 
-bool AbstractNonQueryNode::is_column_nullable(const ColumnID /*column_id*/) const {
-  // The majority of non-query nodes output no column (CreateTable, DropTable, ...). Non-query nodes that return
-  // columns (ShowColumns, ...) need to override this function.
-  Fail("Node does not return any column");
+bool AbstractNonQueryNode::is_column_nullable(const ColumnID /*column_id*/) const
+{
+    // The majority of non-query nodes output no column (CreateTable, DropTable, ...). Non-query nodes that return
+    // columns (ShowColumns, ...) need to override this function.
+    Fail("Node does not return any column");
 }
 
-}  // namespace hyrise
+} // namespace hyrise

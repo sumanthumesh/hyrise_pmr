@@ -5,7 +5,8 @@
 
 #include "abstract_rule.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * A rule that tries to split up joins into local table scans with subquery expressions.
@@ -20,13 +21,14 @@ namespace hyrise {
  * There is a dependency to the ColumnPruningRule which discovers and marks unused sides of join nodes. Thus, the
  * ColumnPruningRule must be executed in advance.
  */
-class JoinToPredicateRewriteRule : public AbstractRule {
- public:
-  std::string name() const override;
+class JoinToPredicateRewriteRule : public AbstractRule
+{
+  public:
+    std::string name() const override;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                         OptimizationContext& optimization_context) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                           OptimizationContext &optimization_context) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

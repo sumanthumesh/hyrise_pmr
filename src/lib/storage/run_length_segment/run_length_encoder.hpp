@@ -9,21 +9,25 @@
 #include "types.hpp"
 #include "utils/enum_constant.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class RunLengthEncoder : public SegmentEncoder<RunLengthEncoder> {
- public:
-  static constexpr auto _encoding_type = enum_c<EncodingType, EncodingType::RunLength>;
-  static constexpr auto _uses_vector_compression = false;
+class RunLengthEncoder : public SegmentEncoder<RunLengthEncoder>
+{
+  public:
+    static constexpr auto _encoding_type = enum_c<EncodingType, EncodingType::RunLength>;
+    static constexpr auto _uses_vector_compression = false;
 
-  template <typename T>
-  std::shared_ptr<AbstractEncodedSegment> _on_encode(const AnySegmentIterable<T> segment_iterable,
-                                                     const PolymorphicAllocator<T>& allocator) {
-    auto values = std::make_shared<pmr_vector<T>>(allocator);
-    auto null_values = std::make_shared<pmr_vector<bool>>(allocator);
-    auto end_positions = std::make_shared<pmr_vector<ChunkOffset>>(allocator);
+    template <typename T>
+    std::shared_ptr<AbstractEncodedSegment> _on_encode(const AnySegmentIterable<T> segment_iterable,
+                                                       const PolymorphicAllocator<T> &allocator)
+    {
+        auto values = std::make_shared<pmr_vector<T>>(allocator);
+        auto null_values = std::make_shared<pmr_vector<bool>>(allocator);
+        auto end_positions = std::make_shared<pmr_vector<ChunkOffset>>(allocator);
 
-    segment_iterable.with_iterators([&](auto it, auto end) {
+        segment_iterable.with_iterators([&](auto it, auto end)
+                                        {
       // Early out for empty segments, code below assumes it to be non-empty
       if (it == end) {
         return;
@@ -52,16 +56,15 @@ class RunLengthEncoder : public SegmentEncoder<RunLengthEncoder> {
         }
 
         ++current_index;
-      }
-    });
+      } });
 
-    // The resize method of the vector might have overallocated memory - hand that memory back to the system
-    values->shrink_to_fit();
-    null_values->shrink_to_fit();
-    end_positions->shrink_to_fit();
+        // The resize method of the vector might have overallocated memory - hand that memory back to the system
+        values->shrink_to_fit();
+        null_values->shrink_to_fit();
+        end_positions->shrink_to_fit();
 
-    return std::make_shared<RunLengthSegment<T>>(values, null_values, end_positions);
-  }
+        return std::make_shared<RunLengthSegment<T>>(values, null_values, end_positions);
+    }
 };
 
-}  // namespace hyrise
+} // namespace hyrise

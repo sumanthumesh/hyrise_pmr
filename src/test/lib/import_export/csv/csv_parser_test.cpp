@@ -6,340 +6,375 @@
 #include "scheduler/operator_task.hpp"
 #include "storage/table.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class CsvParserTest : public BaseTest {};
+class CsvParserTest : public BaseTest
+{
+};
 
-TEST_F(CsvParserTest, SingleFloatColumn) {
-  const auto csv_file = std::string{"resources/test_data/csv/float.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float.tbl", ChunkOffset{5});
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+TEST_F(CsvParserTest, SingleFloatColumn)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float.tbl", ChunkOffset{5});
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, WindowsEncoding) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_crlf.csv"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::exception);
+TEST_F(CsvParserTest, WindowsEncoding)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_crlf.csv"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::exception);
 }
 
-TEST_F(CsvParserTest, FloatIntTable) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_int.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float_int.tbl", ChunkOffset{2});
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+TEST_F(CsvParserTest, FloatIntTable)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_int.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float_int.tbl", ChunkOffset{2});
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, StringNoQuotes) {
-  const auto csv_file = std::string{"resources/test_data/csv/string.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/string.tbl", ChunkOffset{5});
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+TEST_F(CsvParserTest, StringNoQuotes)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/string.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/string.tbl", ChunkOffset{5});
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, StringQuotes) {
-  const auto csv_file = std::string{"resources/test_data/csv/string_quotes.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/string.tbl", ChunkOffset{5});
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+TEST_F(CsvParserTest, StringQuotes)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/string_quotes.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/string.tbl", ChunkOffset{5});
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, StringEscaping) {
-  const auto csv_file = std::string{"resources/test_data/csv/string_escaped.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+TEST_F(CsvParserTest, StringEscaping)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/string_escaped.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
 
-  auto expected_table =
-      std::make_shared<Table>(TableColumnDefinitions{{"a", DataType::String, false}}, TableType::Data, ChunkOffset{5});
-  expected_table->append({"aa\"\"aa"});
-  expected_table->append({"xx\"x"});
-  expected_table->append({"yy,y"});
-  expected_table->append({"zz\nz"});
+    auto expected_table =
+        std::make_shared<Table>(TableColumnDefinitions{{"a", DataType::String, false}}, TableType::Data, ChunkOffset{5});
+    expected_table->append({"aa\"\"aa"});
+    expected_table->append({"xx\"x"});
+    expected_table->append({"yy,y"});
+    expected_table->append({"zz\nz"});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, NoRows) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_int_empty.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float_int_empty.tbl", ChunkOffset{2});
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+TEST_F(CsvParserTest, NoRows)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_int_empty.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float_int_empty.tbl", ChunkOffset{2});
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, NoRowsNoColumns) {
-  const auto csv_file = std::string{"resources/test_data/csv/no_columns.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  std::shared_ptr<Table> expected_table = std::make_shared<Table>(TableColumnDefinitions{}, TableType::Data);
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+TEST_F(CsvParserTest, NoRowsNoColumns)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/no_columns.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    std::shared_ptr<Table> expected_table = std::make_shared<Table>(TableColumnDefinitions{}, TableType::Data);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, TrailingNewline) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_int_trailing_newline.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float_int.tbl", ChunkOffset{2});
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+TEST_F(CsvParserTest, TrailingNewline)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_int_trailing_newline.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    std::shared_ptr<Table> expected_table = load_table("resources/test_data/tbl/float_int.tbl", ChunkOffset{2});
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, FileDoesNotExist) {
-  const auto csv_file = std::string{"not_existing_file"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::exception);
+TEST_F(CsvParserTest, FileDoesNotExist)
+{
+    const auto csv_file = std::string{"not_existing_file"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::exception);
 }
 
-TEST_F(CsvParserTest, EmptyStrings) {
-  const auto csv_file = std::string{"resources/test_data/csv/empty_strings.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
-  TableColumnDefinitions column_definitions{
-      {"a", DataType::String, false}, {"b", DataType::String, false}, {"c", DataType::String, false}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
-  for (int i = 0; i < 8; ++i) {
-    expected_table->append({"", "", ""});
-  }
+TEST_F(CsvParserTest, EmptyStrings)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/empty_strings.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    TableColumnDefinitions column_definitions{
+        {"a", DataType::String, false}, {"b", DataType::String, false}, {"c", DataType::String, false}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
+    for (int i = 0; i < 8; ++i)
+    {
+        expected_table->append({"", "", ""});
+    }
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, SemicolonSeparator) {
-  const auto csv_file = std::string{"resources/test_data/csv/ints_semicolon_separator.csv"};
-  auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
-  csv_meta.config.separator = ';';
-  const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
+TEST_F(CsvParserTest, SemicolonSeparator)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/ints_semicolon_separator.csv"};
+    auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
+    csv_meta.config.separator = ';';
+    const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
 
-  TableColumnDefinitions column_definitions{
-      {"a", DataType::Int, false}, {"b", DataType::Int, false}, {"c", DataType::Int, false}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
-  for (int i = 0; i < 8; ++i) {
-    expected_table->append({1, 2, 3});
-  }
+    TableColumnDefinitions column_definitions{
+        {"a", DataType::Int, false}, {"b", DataType::Int, false}, {"c", DataType::Int, false}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
+    for (int i = 0; i < 8; ++i)
+    {
+        expected_table->append({1, 2, 3});
+    }
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, ChunkSize) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_int_large.csv"};
-  const auto table =
-      CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION), ChunkOffset{20});
+TEST_F(CsvParserTest, ChunkSize)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_int_large.csv"};
+    const auto table =
+        CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION), ChunkOffset{20});
 
-  // Check if chunk_size property is correct.
-  EXPECT_EQ(table->target_chunk_size(), 20);
+    // Check if chunk_size property is correct.
+    EXPECT_EQ(table->target_chunk_size(), 20);
 
-  // Check if actual chunk_size is correct.
-  EXPECT_EQ(table->get_chunk(ChunkID{0})->size(), 20);
-  EXPECT_EQ(table->get_chunk(ChunkID{1})->size(), 20);
+    // Check if actual chunk_size is correct.
+    EXPECT_EQ(table->get_chunk(ChunkID{0})->size(), 20);
+    EXPECT_EQ(table->get_chunk(ChunkID{1})->size(), 20);
 }
 
-TEST_F(CsvParserTest, TargetChunkSize) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_int_large_chunksize_max.csv"};
-  const auto table =
-      CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION), Chunk::DEFAULT_SIZE);
+TEST_F(CsvParserTest, TargetChunkSize)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_int_large_chunksize_max.csv"};
+    const auto table =
+        CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION), Chunk::DEFAULT_SIZE);
 
-  // Check if chunk_size property is correct (target chunk size).
-  EXPECT_EQ(table->target_chunk_size(), Chunk::DEFAULT_SIZE);
+    // Check if chunk_size property is correct (target chunk size).
+    EXPECT_EQ(table->target_chunk_size(), Chunk::DEFAULT_SIZE);
 
-  // Check if actual chunk_size and chunk_count is correct.
-  EXPECT_EQ(table->get_chunk(ChunkID{0})->size(), 100);
-  EXPECT_EQ(table->chunk_count(), ChunkID{1});
+    // Check if actual chunk_size and chunk_count is correct.
+    EXPECT_EQ(table->get_chunk(ChunkID{0})->size(), 100);
+    EXPECT_EQ(table->chunk_count(), ChunkID{1});
 
-  TableColumnDefinitions column_definitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{20});
+    TableColumnDefinitions column_definitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{20});
 
-  for (auto i = uint32_t{0}; i < 100; ++i) {
-    expected_table->append({458.7f, 12345});
-  }
+    for (auto i = uint32_t{0}; i < 100; ++i)
+    {
+        expected_table->append({458.7f, 12345});
+    }
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, StringEscapingNonRfc) {
-  const auto csv_file = std::string{"resources/test_data/csv/string_escaped_unsafe.csv"};
-  auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
-  csv_meta.config.rfc_mode = false;
-  const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
+TEST_F(CsvParserTest, StringEscapingNonRfc)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/string_escaped_unsafe.csv"};
+    auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
+    csv_meta.config.rfc_mode = false;
+    const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
 
-  TableColumnDefinitions column_definitions{{"a", DataType::String, false}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
-  expected_table->append({"aa\"\"aa"});
-  expected_table->append({"xx\"x"});
-  expected_table->append({"yy,y"});
-  expected_table->append({"zz\nz"});
+    TableColumnDefinitions column_definitions{{"a", DataType::String, false}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
+    expected_table->append({"aa\"\"aa"});
+    expected_table->append({"xx\"x"});
+    expected_table->append({"yy,y"});
+    expected_table->append({"zz\nz"});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, ImportNumericNullValues) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_int_with_null.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+TEST_F(CsvParserTest, ImportNumericNullValues)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_int_with_null.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
 
-  TableColumnDefinitions column_definitions{
-      {"a", DataType::Float, true}, {"b", DataType::Int, false}, {"c", DataType::Int, true}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{3});
+    TableColumnDefinitions column_definitions{
+        {"a", DataType::Float, true}, {"b", DataType::Int, false}, {"c", DataType::Int, true}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{3});
 
-  expected_table->append({458.7f, 12345, NULL_VALUE});
-  expected_table->append({NULL_VALUE, 123, 456});
-  expected_table->append({457.7f, 1234, 675});
+    expected_table->append({458.7f, 12345, NULL_VALUE});
+    expected_table->append({NULL_VALUE, 123, 456});
+    expected_table->append({457.7f, 1234, 675});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, ImportStringNullValues) {
-  const auto csv_file = std::string{"resources/test_data/csv/string_with_null.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+TEST_F(CsvParserTest, ImportStringNullValues)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/string_with_null.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
 
-  TableColumnDefinitions column_definitions{{"a", DataType::String, true}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
+    TableColumnDefinitions column_definitions{{"a", DataType::String, true}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
 
-  expected_table->append({"xxx"});
-  expected_table->append({"www"});
-  expected_table->append({"null"});
-  expected_table->append({"zzz"});
-  expected_table->append({NULL_VALUE});
+    expected_table->append({"xxx"});
+    expected_table->append({"www"});
+    expected_table->append({"null"});
+    expected_table->append({"zzz"});
+    expected_table->append({NULL_VALUE});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, ImportUnquotedNullStringAsNull) {
-  const auto csv_file = std::string{"resources/test_data/csv/null_literal.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+TEST_F(CsvParserTest, ImportUnquotedNullStringAsNull)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/null_literal.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
 
-  TableColumnDefinitions column_definitions{{"a", DataType::Int, true}, {"b", DataType::String, true}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{3});
+    TableColumnDefinitions column_definitions{{"a", DataType::Int, true}, {"b", DataType::String, true}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{3});
 
-  expected_table->append({1, "Hello"});
-  expected_table->append({NULL_VALUE, "World"});
-  expected_table->append({3, NULL_VALUE});
-  expected_table->append({4, NULL_VALUE});
-  expected_table->append({5, NULL_VALUE});
-  expected_table->append({6, "!"});
+    expected_table->append({1, "Hello"});
+    expected_table->append({NULL_VALUE, "World"});
+    expected_table->append({3, NULL_VALUE});
+    expected_table->append({4, NULL_VALUE});
+    expected_table->append({5, NULL_VALUE});
+    expected_table->append({6, "!"});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, ImportUnquotedNullStringAsValue) {
-  const auto csv_file = std::string{"resources/test_data/csv/null_literal_as_string.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+TEST_F(CsvParserTest, ImportUnquotedNullStringAsValue)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/null_literal_as_string.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
 
-  TableColumnDefinitions column_definitions{{"a", DataType::Int, true}, {"b", DataType::String, true}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{3});
+    TableColumnDefinitions column_definitions{{"a", DataType::Int, true}, {"b", DataType::String, true}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{3});
 
-  expected_table->append({1, "Hello"});
-  expected_table->append({NULL_VALUE, "World"});
-  expected_table->append({3, "null"});
-  expected_table->append({4, "Null"});
-  expected_table->append({5, "NULL"});
-  expected_table->append({6, "!"});
+    expected_table->append({1, "Hello"});
+    expected_table->append({NULL_VALUE, "World"});
+    expected_table->append({3, "null"});
+    expected_table->append({4, "Null"});
+    expected_table->append({5, "NULL"});
+    expected_table->append({6, "!"});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, ImportUnquotedNullStringThrows) {
-  const auto csv_file = std::string{"resources/test_data/csv/string_with_bad_null.csv"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::exception);
+TEST_F(CsvParserTest, ImportUnquotedNullStringThrows)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/string_with_bad_null.csv"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::exception);
 }
 
-TEST_F(CsvParserTest, ImportUnquotedNullStringWithNullStringAsNullThrows) {
-  const auto csv_file = std::string{"resources/test_data/csv/null_as_string_with_bad_null.csv"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::exception);
+TEST_F(CsvParserTest, ImportUnquotedNullStringWithNullStringAsNullThrows)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/null_as_string_with_bad_null.csv"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::exception);
 }
 
-TEST_F(CsvParserTest, WithAndWithoutQuotes) {
-  const auto csv_file = std::string{"resources/test_data/csv/with_and_without_quotes.csv"};
-  auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
-  csv_meta.config.reject_quoted_nonstrings = false;
-  const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
+TEST_F(CsvParserTest, WithAndWithoutQuotes)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/with_and_without_quotes.csv"};
+    auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
+    csv_meta.config.reject_quoted_nonstrings = false;
+    const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
 
-  TableColumnDefinitions column_definitions;
-  column_definitions.emplace_back("a", DataType::String, false);
-  column_definitions.emplace_back("b", DataType::Int, false);
-  column_definitions.emplace_back("c", DataType::Float, false);
-  column_definitions.emplace_back("d", DataType::Double, false);
-  column_definitions.emplace_back("e", DataType::String, false);
-  column_definitions.emplace_back("f", DataType::Int, false);
-  column_definitions.emplace_back("g", DataType::Float, false);
-  column_definitions.emplace_back("h", DataType::Double, false);
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
+    TableColumnDefinitions column_definitions;
+    column_definitions.emplace_back("a", DataType::String, false);
+    column_definitions.emplace_back("b", DataType::Int, false);
+    column_definitions.emplace_back("c", DataType::Float, false);
+    column_definitions.emplace_back("d", DataType::Double, false);
+    column_definitions.emplace_back("e", DataType::String, false);
+    column_definitions.emplace_back("f", DataType::Int, false);
+    column_definitions.emplace_back("g", DataType::Float, false);
+    column_definitions.emplace_back("h", DataType::Double, false);
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
 
-  expected_table->append({"xxx", 23, 0.5f, 24.23, "xxx", 23, 0.5f, 24.23});
-  expected_table->append({"yyy", 56, 7.4f, 2.123, "yyy", 23, 7.4f, 2.123});
+    expected_table->append({"xxx", 23, 0.5f, 24.23, "xxx", 23, 0.5f, 24.23});
+    expected_table->append({"yyy", 56, 7.4f, 2.123, "yyy", 23, 7.4f, 2.123});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, StringDoubleEscape) {
-  const auto csv_file = std::string{"resources/test_data/csv/string_double_escape.csv"};
-  auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
-  csv_meta.config.escape = '\\';
-  const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
+TEST_F(CsvParserTest, StringDoubleEscape)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/string_double_escape.csv"};
+    auto csv_meta = process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION);
+    csv_meta.config.escape = '\\';
+    const auto table = CsvParser::parse(csv_file, csv_meta, Chunk::DEFAULT_SIZE);
 
-  TableColumnDefinitions column_definitions{{"a", DataType::String, false}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
+    TableColumnDefinitions column_definitions{{"a", DataType::String, false}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{5});
 
-  expected_table->append({R"(xxx\"xyz\")"});
+    expected_table->append({R"(xxx\"xyz\")"});
 
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
 }
 
-TEST_F(CsvParserTest, ImportQuotedInt) {
-  const auto csv_file = std::string{"resources/test_data/csv/quoted_int.csv"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::exception);
+TEST_F(CsvParserTest, ImportQuotedInt)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/quoted_int.csv"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::exception);
 }
 
-TEST_F(CsvParserTest, UnconvertedCharactersThrows) {
-  auto csv_file = std::string{"resources/test_data/csv/unconverted_characters_int.csv"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::logic_error);
+TEST_F(CsvParserTest, UnconvertedCharactersThrows)
+{
+    auto csv_file = std::string{"resources/test_data/csv/unconverted_characters_int.csv"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::logic_error);
 
-  csv_file = std::string{"resources/test_data/csv/unconverted_characters_float.csv"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::logic_error);
+    csv_file = std::string{"resources/test_data/csv/unconverted_characters_float.csv"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::logic_error);
 
-  csv_file = std::string{"resources/test_data/csv/unconverted_characters_double.csv"};
-  EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
-               std::logic_error);
+    csv_file = std::string{"resources/test_data/csv/unconverted_characters_double.csv"};
+    EXPECT_THROW(CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION)),
+                 std::logic_error);
 }
 
-TEST_F(CsvParserTest, EmptyTableFromMetaFile) {
-  const auto csv_meta_table =
-      hyrise::CsvParser::create_table_from_meta_file("resources/test_data/csv/float_int.csv.json");
-  const auto expected_table = std::make_shared<Table>(
-      TableColumnDefinitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}}, TableType::Data);
+TEST_F(CsvParserTest, EmptyTableFromMetaFile)
+{
+    const auto csv_meta_table =
+        hyrise::CsvParser::create_table_from_meta_file("resources/test_data/csv/float_int.csv.json");
+    const auto expected_table = std::make_shared<Table>(
+        TableColumnDefinitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}}, TableType::Data);
 
-  EXPECT_EQ(csv_meta_table->row_count(), 0);
-  EXPECT_TABLE_EQ_UNORDERED(csv_meta_table, expected_table);
+    EXPECT_EQ(csv_meta_table->row_count(), 0);
+    EXPECT_TABLE_EQ_UNORDERED(csv_meta_table, expected_table);
 }
 
-TEST_F(CsvParserTest, WithScheduler) {
-  Hyrise::get().topology.use_fake_numa_topology(8, 4);
-  auto scheduler = Hyrise::get().scheduler();
-  Hyrise::get().set_scheduler(std::make_shared<NodeQueueScheduler>());
+TEST_F(CsvParserTest, WithScheduler)
+{
+    Hyrise::get().topology.use_fake_numa_topology(8, 4);
+    auto scheduler = Hyrise::get().scheduler();
+    Hyrise::get().set_scheduler(std::make_shared<NodeQueueScheduler>());
 
-  const auto csv_file = std::string{"resources/test_data/csv/float_int_large.csv"};
-  const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
+    const auto csv_file = std::string{"resources/test_data/csv/float_int_large.csv"};
+    const auto table = CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION));
 
-  auto column_definitions = TableColumnDefinitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}};
-  auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{20});
+    auto column_definitions = TableColumnDefinitions{{"b", DataType::Float, false}, {"a", DataType::Int, false}};
+    auto expected_table = std::make_shared<Table>(column_definitions, TableType::Data, ChunkOffset{20});
 
-  for (auto i = uint32_t{0}; i < 100; ++i) {
-    expected_table->append({458.7f, 12345});
-  }
+    for (auto i = uint32_t{0}; i < 100; ++i)
+    {
+        expected_table->append({458.7f, 12345});
+    }
 
-  Hyrise::get().scheduler()->finish();
-  EXPECT_TABLE_EQ_ORDERED(table, expected_table);
-  Hyrise::get().set_scheduler(scheduler);
+    Hyrise::get().scheduler()->finish();
+    EXPECT_TABLE_EQ_ORDERED(table, expected_table);
+    Hyrise::get().set_scheduler(scheduler);
 }
 
-TEST_F(CsvParserTest, ImmutableChunks) {
-  const auto csv_file = std::string{"resources/test_data/csv/float_int_large.csv"};
-  const auto table =
-      CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION), ChunkOffset{40});
+TEST_F(CsvParserTest, ImmutableChunks)
+{
+    const auto csv_file = std::string{"resources/test_data/csv/float_int_large.csv"};
+    const auto table =
+        CsvParser::parse(csv_file, process_csv_meta_file(csv_file + CsvMeta::META_FILE_EXTENSION), ChunkOffset{40});
 
-  EXPECT_EQ(table->chunk_count(), 3);
+    EXPECT_EQ(table->chunk_count(), 3);
 
-  // Check if all chunks are marked as immmutable.
-  EXPECT_FALSE(table->get_chunk(ChunkID{0})->is_mutable());
-  EXPECT_FALSE(table->get_chunk(ChunkID{1})->is_mutable());
-  EXPECT_FALSE(table->get_chunk(ChunkID{2})->is_mutable());
+    // Check if all chunks are marked as immmutable.
+    EXPECT_FALSE(table->get_chunk(ChunkID{0})->is_mutable());
+    EXPECT_FALSE(table->get_chunk(ChunkID{1})->is_mutable());
+    EXPECT_FALSE(table->get_chunk(ChunkID{2})->is_mutable());
 }
 
-}  // namespace hyrise
+} // namespace hyrise

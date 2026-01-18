@@ -10,59 +10,70 @@
 #include "utils/assert.hpp"
 #include "utils/print_utils.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-UniqueColumnCombination::UniqueColumnCombination(ExpressionUnorderedSet&& init_expressions, bool is_genuine)
-    : expressions{std::move(init_expressions)}, _is_genuine{is_genuine} {
-  Assert(!expressions.empty(), "UniqueColumnCombination cannot be empty.");
+UniqueColumnCombination::UniqueColumnCombination(ExpressionUnorderedSet &&init_expressions, bool is_genuine)
+    : expressions{std::move(init_expressions)}, _is_genuine{is_genuine}
+{
+    Assert(!expressions.empty(), "UniqueColumnCombination cannot be empty.");
 }
 
-bool UniqueColumnCombination::operator==(const UniqueColumnCombination& rhs) const {
-  if (expressions.size() != rhs.expressions.size()) {
-    return false;
-  }
+bool UniqueColumnCombination::operator==(const UniqueColumnCombination &rhs) const
+{
+    if (expressions.size() != rhs.expressions.size())
+    {
+        return false;
+    }
 
-  return std::ranges::all_of(expressions, [&rhs](const auto& column_expression) {
-    return rhs.expressions.contains(column_expression);
-  });
+    return std::ranges::all_of(expressions, [&rhs](const auto &column_expression)
+                               { return rhs.expressions.contains(column_expression); });
 }
 
-bool UniqueColumnCombination::operator!=(const UniqueColumnCombination& rhs) const {
-  return !(rhs == *this);
+bool UniqueColumnCombination::operator!=(const UniqueColumnCombination &rhs) const
+{
+    return !(rhs == *this);
 }
 
-bool UniqueColumnCombination::is_genuine() const {
-  return _is_genuine;
+bool UniqueColumnCombination::is_genuine() const
+{
+    return _is_genuine;
 }
 
-void UniqueColumnCombination::set_genuine() const {
-  _is_genuine = true;
+void UniqueColumnCombination::set_genuine() const
+{
+    _is_genuine = true;
 }
 
-size_t UniqueColumnCombination::hash() const {
-  auto hash = size_t{0};
-  for (const auto& expression : expressions) {
-    // To make the hash independent of the expressions' order, we have to use a commutative operator like XOR.
-    hash = hash ^ expression->hash();
-  }
+size_t UniqueColumnCombination::hash() const
+{
+    auto hash = size_t{0};
+    for (const auto &expression : expressions)
+    {
+        // To make the hash independent of the expressions' order, we have to use a commutative operator like XOR.
+        hash = hash ^ expression->hash();
+    }
 
-  return std::hash<size_t>{}(hash - expressions.size());
+    return std::hash<size_t>{}(hash - expressions.size());
 }
 
-std::ostream& operator<<(std::ostream& stream, const UniqueColumnCombination& ucc) {
-  stream << "{";
-  print_expressions(ucc.expressions, stream);
-  stream << "}";
+std::ostream &operator<<(std::ostream &stream, const UniqueColumnCombination &ucc)
+{
+    stream << "{";
+    print_expressions(ucc.expressions, stream);
+    stream << "}";
 
-  return stream;
+    return stream;
 }
 
-}  // namespace hyrise
+} // namespace hyrise
 
-namespace std {
+namespace std
+{
 
-size_t hash<hyrise::UniqueColumnCombination>::operator()(const hyrise::UniqueColumnCombination& ucc) const {
-  return ucc.hash();
+size_t hash<hyrise::UniqueColumnCombination>::operator()(const hyrise::UniqueColumnCombination &ucc) const
+{
+    return ucc.hash();
 }
 
-}  // namespace std
+} // namespace std

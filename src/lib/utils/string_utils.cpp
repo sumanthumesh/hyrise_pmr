@@ -12,66 +12,76 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::vector<std::string> trim_and_split(const std::string& input) {
-  auto converted = input;
+std::vector<std::string> trim_and_split(const std::string &input)
+{
+    auto converted = input;
 
-  boost::algorithm::trim_all<std::string>(converted);
-  auto arguments = std::vector<std::string>{};
-  boost::algorithm::split(arguments, converted, boost::is_space());
+    boost::algorithm::trim_all<std::string>(converted);
+    auto arguments = std::vector<std::string>{};
+    boost::algorithm::split(arguments, converted, boost::is_space());
 
-  return arguments;
+    return arguments;
 }
 
-std::vector<std::string> split_string_by_delimiter(const std::string& str, const char delimiter) {
-  auto internal = std::vector<std::string>{};
-  auto sstream = std::stringstream(str);
-  auto token = std::string{};
+std::vector<std::string> split_string_by_delimiter(const std::string &str, const char delimiter)
+{
+    auto internal = std::vector<std::string>{};
+    auto sstream = std::stringstream(str);
+    auto token = std::string{};
 
-  while (std::getline(sstream, token, delimiter)) {
-    internal.push_back(token);
-  }
+    while (std::getline(sstream, token, delimiter))
+    {
+        internal.push_back(token);
+    }
 
-  return internal;
+    return internal;
 }
 
-std::string plugin_name_from_path(const std::filesystem::path& path) {
-  const auto filename = path.stem().string();
+std::string plugin_name_from_path(const std::filesystem::path &path)
+{
+    const auto filename = path.stem().string();
 
-  // Remove "lib" prefix of shared library file
-  auto plugin_name = filename.substr(3);
+    // Remove "lib" prefix of shared library file
+    auto plugin_name = filename.substr(3);
 
-  return plugin_name;
+    return plugin_name;
 }
 
-std::string trim_source_file_path(const std::string& path) {
-  const auto src_pos = path.find("/src/");
-  if (src_pos == std::string::npos) {
-    return path;
-  }
+std::string trim_source_file_path(const std::string &path)
+{
+    const auto src_pos = path.find("/src/");
+    if (src_pos == std::string::npos)
+    {
+        return path;
+    }
 
-  // "+ 1", since we want "src/lib/file.cpp" and not "/src/lib/file.cpp"
-  return path.substr(src_pos + 1);
+    // "+ 1", since we want "src/lib/file.cpp" and not "/src/lib/file.cpp"
+    return path.substr(src_pos + 1);
 }
 
-std::string replace_addresses(const std::string& input) {
-  return std::regex_replace(input, std::regex{"0x[0-9A-Fa-f]{4,}"}, "0x00000000");
+std::string replace_addresses(const std::string &input)
+{
+    return std::regex_replace(input, std::regex{"0x[0-9A-Fa-f]{4,}"}, "0x00000000");
 }
 
 template <typename String>
-pmr_string string_to_lower(const String& input) {
-  auto lower_string = pmr_string{};
-  lower_string.reserve(input.size());
+pmr_string string_to_lower(const String &input)
+{
+    auto lower_string = pmr_string{};
+    lower_string.reserve(input.size());
 
-  for (const auto character : input) {
-    lower_string.push_back(static_cast<char>(std::tolower(character)));
-  }
-  return lower_string;
+    for (const auto character : input)
+    {
+        lower_string.push_back(static_cast<char>(std::tolower(character)));
+    }
+    return lower_string;
 }
 
-template pmr_string string_to_lower(const pmr_string& input);
-template pmr_string string_to_lower(const std::string& input);
-template pmr_string string_to_lower(const std::string_view& input);
+template pmr_string string_to_lower(const pmr_string &input);
+template pmr_string string_to_lower(const std::string &input);
+template pmr_string string_to_lower(const std::string_view &input);
 
-}  // namespace hyrise
+} // namespace hyrise

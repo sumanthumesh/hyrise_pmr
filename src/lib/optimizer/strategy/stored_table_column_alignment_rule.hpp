@@ -60,17 +60,19 @@
  * Please note that this rule aligns the columns of StoredTableNodes across a given plan and all of its subqueries.
  */
 
-namespace hyrise {
+namespace hyrise
+{
 
-class StoredTableColumnAlignmentRule : public AbstractRule {
- public:
-  void apply_to_plan(const std::shared_ptr<LogicalPlanRootNode>& root_node,
-                     OptimizationContext& optimization_context) const override;
-  std::string name() const override;
+class StoredTableColumnAlignmentRule : public AbstractRule
+{
+  public:
+    void apply_to_plan(const std::shared_ptr<LogicalPlanRootNode> &root_node,
+                       OptimizationContext &optimization_context) const override;
+    std::string name() const override;
 
- protected:
-  void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& /*lqp_root*/,
-                                         OptimizationContext& /*optimization_context*/) const override;
+  protected:
+    void _apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> & /*lqp_root*/,
+                                           OptimizationContext & /*optimization_context*/) const override;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

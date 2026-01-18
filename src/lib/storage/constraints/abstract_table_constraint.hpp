@@ -2,9 +2,15 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-enum class TableConstraintType { Key, ForeignKey, Order };
+enum class TableConstraintType
+{
+    Key,
+    ForeignKey,
+    Order
+};
 
 /**
  * Abstract container class for the definition of table constraints. Subclasses should leverage the OOP structure to add
@@ -16,31 +22,32 @@ enum class TableConstraintType { Key, ForeignKey, Order };
  * data dependencies on the LQP level. Using these data dependencies, we perform dedicated dependency-based query
  * optimization techniques (see optimizer.cpp).
  */
-class AbstractTableConstraint {
- public:
-  explicit AbstractTableConstraint(const TableConstraintType type);
-  AbstractTableConstraint(const AbstractTableConstraint&) = default;
-  AbstractTableConstraint(AbstractTableConstraint&&) = default;
+class AbstractTableConstraint
+{
+  public:
+    explicit AbstractTableConstraint(const TableConstraintType type);
+    AbstractTableConstraint(const AbstractTableConstraint &) = default;
+    AbstractTableConstraint(AbstractTableConstraint &&) = default;
 
-  virtual ~AbstractTableConstraint() = default;
+    virtual ~AbstractTableConstraint() = default;
 
-  AbstractTableConstraint& operator=(const AbstractTableConstraint&) = default;
-  AbstractTableConstraint& operator=(AbstractTableConstraint&&) = default;
+    AbstractTableConstraint &operator=(const AbstractTableConstraint &) = default;
+    AbstractTableConstraint &operator=(AbstractTableConstraint &&) = default;
 
-  bool operator==(const AbstractTableConstraint& rhs) const;
-  bool operator!=(const AbstractTableConstraint& rhs) const;
+    bool operator==(const AbstractTableConstraint &rhs) const;
+    bool operator!=(const AbstractTableConstraint &rhs) const;
 
-  virtual size_t hash() const = 0;
+    virtual size_t hash() const = 0;
 
-  TableConstraintType type() const;
+    TableConstraintType type() const;
 
- protected:
-  /**
-   * Compare two table constraints of the same type.
-   */
-  virtual bool _on_equals(const AbstractTableConstraint& table_constraint) const = 0;
+  protected:
+    /**
+     * Compare two table constraints of the same type.
+     */
+    virtual bool _on_equals(const AbstractTableConstraint &table_constraint) const = 0;
 
-  TableConstraintType _type;
+    TableConstraintType _type;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

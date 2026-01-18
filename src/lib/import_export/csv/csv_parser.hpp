@@ -7,7 +7,8 @@
 
 #include "import_export/csv/csv_meta.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Table;
 class Chunk;
@@ -23,48 +24,49 @@ class Chunk;
  * csv rows.
  * Each data chunk is parsed and converted into a Hyrise chunk. In the end all chunks are combined to the final table.
  */
-class CsvParser {
- public:
-  /*
-   * @param filename      Path to the input file.
-   * @param csv_meta      Custom csv meta information, which is usually constained in the file "filename" + ".json".
-   * @returns             The table that was created from the csv file.
-   */
-  static std::shared_ptr<Table> parse(const std::string& filename, const CsvMeta& csv_meta,
-                                      const ChunkOffset chunk_size = Chunk::DEFAULT_SIZE);
-  static std::shared_ptr<Table> create_table_from_meta_file(const std::string& filename,
-                                                            const ChunkOffset chunk_size = Chunk::DEFAULT_SIZE);
+class CsvParser
+{
+  public:
+    /*
+     * @param filename      Path to the input file.
+     * @param csv_meta      Custom csv meta information, which is usually constained in the file "filename" + ".json".
+     * @returns             The table that was created from the csv file.
+     */
+    static std::shared_ptr<Table> parse(const std::string &filename, const CsvMeta &csv_meta,
+                                        const ChunkOffset chunk_size = Chunk::DEFAULT_SIZE);
+    static std::shared_ptr<Table> create_table_from_meta_file(const std::string &filename,
+                                                              const ChunkOffset chunk_size = Chunk::DEFAULT_SIZE);
 
- protected:
-  /*
-   * Use the meta information stored in _meta to create a new table with according column description.
-   */
-  static std::shared_ptr<Table> _create_table_from_meta(const ChunkOffset chunk_size, const CsvMeta& meta);
+  protected:
+    /*
+     * Use the meta information stored in _meta to create a new table with according column description.
+     */
+    static std::shared_ptr<Table> _create_table_from_meta(const ChunkOffset chunk_size, const CsvMeta &meta);
 
-  /*
-   * @param      csv_content String_view on the remaining content of the CSV.
-   * @param      table       Empty table created by _process_meta_file.
-   * @param[out] field_ends  Empty vector, to be filled with positions of the field ends for one chunk found in \p
-   * csv_content.
-   * @returns                False if \p csv_content is empty or chunk_size set to 0, True otherwise.
-   */
-  static bool _find_fields_in_chunk(std::string_view csv_content, const Table& table, std::vector<size_t>& field_ends,
-                                    const CsvMeta& meta);
+    /*
+     * @param      csv_content String_view on the remaining content of the CSV.
+     * @param      table       Empty table created by _process_meta_file.
+     * @param[out] field_ends  Empty vector, to be filled with positions of the field ends for one chunk found in \p
+     * csv_content.
+     * @returns                False if \p csv_content is empty or chunk_size set to 0, True otherwise.
+     */
+    static bool _find_fields_in_chunk(std::string_view csv_content, const Table &table, std::vector<size_t> &field_ends,
+                                      const CsvMeta &meta);
 
-  /*
-   * @param      csv_chunk  String_view on one chunk of the CSV.
-   * @param      field_ends Positions of the field ends of the given \p csv_chunk.
-   * @param      table      Empty table created by _process_meta_file.
-   * @param[out] segments   The segments of the chunk, to be populated with data
-   * @returns               The number of rows in the chunk
-   */
-  static size_t _parse_into_chunk(std::string_view csv_chunk, const std::vector<size_t>& field_ends, const Table& table,
-                                  Segments& segments, const CsvMeta& meta, const std::string& escaped_linebreak,
-                                  std::mutex& append_chunk_mutex);
+    /*
+     * @param      csv_chunk  String_view on one chunk of the CSV.
+     * @param      field_ends Positions of the field ends of the given \p csv_chunk.
+     * @param      table      Empty table created by _process_meta_file.
+     * @param[out] segments   The segments of the chunk, to be populated with data
+     * @returns               The number of rows in the chunk
+     */
+    static size_t _parse_into_chunk(std::string_view csv_chunk, const std::vector<size_t> &field_ends, const Table &table,
+                                    Segments &segments, const CsvMeta &meta, const std::string &escaped_linebreak,
+                                    std::mutex &append_chunk_mutex);
 
-  /*
-   * @param field The field that needs to be modified to be RFC 4180 compliant.
-   */
-  static void _sanitize_field(std::string& field, const CsvMeta& meta, const std::string& escaped_linebreak);
+    /*
+     * @param field The field that needs to be modified to be RFC 4180 compliant.
+     */
+    static void _sanitize_field(std::string &field, const CsvMeta &meta, const std::string &escaped_linebreak);
 };
-}  // namespace hyrise
+} // namespace hyrise

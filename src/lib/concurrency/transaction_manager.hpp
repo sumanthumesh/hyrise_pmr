@@ -37,7 +37,8 @@
  * a new commit ID that is used to make its changes visible to others.
  */
 
-namespace hyrise {
+namespace hyrise
+{
 
 class CommitContext;
 class TransactionContext;
@@ -48,55 +49,56 @@ class TransactionContext;
  * which represents the current global visibility of records.
  * The TransactionManager is thread-safe.
  */
-class TransactionManager : public Noncopyable {
-  friend class TransactionManagerTest;
+class TransactionManager : public Noncopyable
+{
+    friend class TransactionManagerTest;
 
- public:
-  CommitID last_commit_id() const;
+  public:
+    CommitID last_commit_id() const;
 
-  /**
-   * Creates a new transaction context
-   * @param is_auto_commit declares whether the transaction is created (and will also commit) automatically. The
-   * alternative would be that it was created through a user command (BEGIN). This information is used by the
-   * SQLPipelineStatement to auto-commit the transaction - the transaction does not commit itself.
-   */
-  std::shared_ptr<TransactionContext> new_transaction_context(const AutoCommit auto_commit);
+    /**
+     * Creates a new transaction context
+     * @param is_auto_commit declares whether the transaction is created (and will also commit) automatically. The
+     * alternative would be that it was created through a user command (BEGIN). This information is used by the
+     * SQLPipelineStatement to auto-commit the transaction - the transaction does not commit itself.
+     */
+    std::shared_ptr<TransactionContext> new_transaction_context(const AutoCommit auto_commit);
 
-  /**
-   * Returns the lowest snapshot-commit-id currently used by a transaction.
-   */
-  std::optional<CommitID> get_lowest_active_snapshot_commit_id() const;
+    /**
+     * Returns the lowest snapshot-commit-id currently used by a transaction.
+     */
+    std::optional<CommitID> get_lowest_active_snapshot_commit_id() const;
 
- private:
-  TransactionManager();
-  ~TransactionManager();
+  private:
+    TransactionManager();
+    ~TransactionManager();
 
-  friend class Hyrise;
-  friend class TransactionContext;
+    friend class Hyrise;
+    friend class TransactionContext;
 
-  TransactionManager& operator=(TransactionManager&& transaction_manager) noexcept;
+    TransactionManager &operator=(TransactionManager &&transaction_manager) noexcept;
 
-  std::shared_ptr<CommitContext> _new_commit_context();
-  void _try_increment_last_commit_id(const std::shared_ptr<CommitContext>& context);
+    std::shared_ptr<CommitContext> _new_commit_context();
+    void _try_increment_last_commit_id(const std::shared_ptr<CommitContext> &context);
 
-  /**
-   * The TransactionManager keeps track of issued snapshot-commit-ids,
-   * which are in use by unfinished transactions.
-   * The following two functions are used to keep the multiset of active
-   * snapshot-commit-ids up to date.
-   */
-  void _register_transaction(CommitID snapshot_commit_id);
-  void _deregister_transaction(CommitID snapshot_commit_id);
+    /**
+     * The TransactionManager keeps track of issued snapshot-commit-ids,
+     * which are in use by unfinished transactions.
+     * The following two functions are used to keep the multiset of active
+     * snapshot-commit-ids up to date.
+     */
+    void _register_transaction(CommitID snapshot_commit_id);
+    void _deregister_transaction(CommitID snapshot_commit_id);
 
-  // We use the base type here, as `_next_transaction_id` is not passed further around and atomic operations such as
-  // `++_next_transactions_id` are not directly possible with an `std::atomic<TransactionID>`.
-  std::atomic<TransactionID::base_type> _next_transaction_id;
+    // We use the base type here, as `_next_transaction_id` is not passed further around and atomic operations such as
+    // `++_next_transactions_id` are not directly possible with an `std::atomic<TransactionID>`.
+    std::atomic<TransactionID::base_type> _next_transaction_id;
 
-  std::atomic<CommitID> _last_commit_id;
+    std::atomic<CommitID> _last_commit_id;
 
-  std::shared_ptr<CommitContext> _last_commit_context;
+    std::shared_ptr<CommitContext> _last_commit_context;
 
-  mutable std::mutex _active_snapshot_commit_ids_mutex;
-  std::unordered_multiset<CommitID> _active_snapshot_commit_ids;
+    mutable std::mutex _active_snapshot_commit_ids_mutex;
+    std::unordered_multiset<CommitID> _active_snapshot_commit_ids;
 };
-}  // namespace hyrise
+} // namespace hyrise

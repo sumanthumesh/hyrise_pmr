@@ -8,19 +8,22 @@
 #include "storage/pos_lists/row_id_pos_list.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 ExpressionEvaluatorTableScanImpl::ExpressionEvaluatorTableScanImpl(
-    const std::shared_ptr<const Table>& in_table, const std::shared_ptr<const AbstractExpression>& expression)
+    const std::shared_ptr<const Table> &in_table, const std::shared_ptr<const AbstractExpression> &expression)
     : _in_table(in_table), _expression(expression) {}
 
-std::string ExpressionEvaluatorTableScanImpl::description() const {
-  return "ExpressionEvaluator";
+std::string ExpressionEvaluatorTableScanImpl::description() const
+{
+    return "ExpressionEvaluator";
 }
 
-std::shared_ptr<RowIDPosList> ExpressionEvaluatorTableScanImpl::scan_chunk(ChunkID chunk_id) {
-  return std::make_shared<RowIDPosList>(
-      ExpressionEvaluator{_in_table, chunk_id}.evaluate_expression_to_pos_list(*_expression));
+std::shared_ptr<RowIDPosList> ExpressionEvaluatorTableScanImpl::scan_chunk(ChunkID chunk_id)
+{
+    return std::make_shared<RowIDPosList>(
+        ExpressionEvaluator{_in_table, chunk_id}.evaluate_expression_to_pos_list(*_expression));
 }
 
-}  // namespace hyrise
+} // namespace hyrise

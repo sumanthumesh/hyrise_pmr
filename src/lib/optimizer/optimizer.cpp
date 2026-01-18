@@ -41,49 +41,55 @@
 #include "utils/assert.hpp"
 #include "utils/timer.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;  // NOLINT(build/namespaces)
+using namespace hyrise; // NOLINT(build/namespaces)
 
 using LQPNodesByLQP = std::unordered_map<std::shared_ptr<const AbstractLQPNode>,
                                          std::unordered_set<std::shared_ptr<const AbstractLQPNode>>>;
 
 std::vector<std::shared_ptr<const AbstractLQPNode>> uncorrelated_subqueries_per_node(
-    const std::shared_ptr<const AbstractLQPNode>& node) {
-  auto uncorrelated_subqueries = std::vector<std::shared_ptr<const AbstractLQPNode>>{};
-  for (const auto& expression : node->node_expressions) {
-    visit_expression(expression, [&](const auto& sub_expression) {
+    const std::shared_ptr<const AbstractLQPNode> &node)
+{
+    auto uncorrelated_subqueries = std::vector<std::shared_ptr<const AbstractLQPNode>>{};
+    for (const auto &expression : node->node_expressions)
+    {
+        visit_expression(expression, [&](const auto &sub_expression)
+                         {
       const auto subquery_expression = std::dynamic_pointer_cast<LQPSubqueryExpression>(sub_expression);
       if (subquery_expression && !subquery_expression->is_correlated()) {
         uncorrelated_subqueries.emplace_back(subquery_expression->lqp);
       }
 
-      return ExpressionVisitation::VisitArguments;
-    });
-  }
+      return ExpressionVisitation::VisitArguments; });
+    }
 
-  return uncorrelated_subqueries;
+    return uncorrelated_subqueries;
 }
 
-void assign_node_to_lqp_recursively(const std::shared_ptr<const AbstractLQPNode>& subquery_root_node,
-                                    const std::shared_ptr<const AbstractLQPNode>& root_node,
-                                    LQPNodesByLQP& nodes_by_lqp) {
-  visit_lqp(subquery_root_node, [&](auto& node) {
+void assign_node_to_lqp_recursively(const std::shared_ptr<const AbstractLQPNode> &subquery_root_node,
+                                    const std::shared_ptr<const AbstractLQPNode> &root_node,
+                                    LQPNodesByLQP &nodes_by_lqp)
+{
+    visit_lqp(subquery_root_node, [&](auto &node)
+              {
     nodes_by_lqp[root_node].emplace(node);
     for (const auto& uncorrelated_subquery : uncorrelated_subqueries_per_node(node)) {
       assign_node_to_lqp_recursively(uncorrelated_subquery, root_node, nodes_by_lqp);
     }
-    return LQPVisitation::VisitInputs;
-  });
+    return LQPVisitation::VisitInputs; });
 }
 
-void validate_lqp_with_uncorrelated_subqueries(const std::shared_ptr<const AbstractLQPNode>& lqp,
-                                               const std::shared_ptr<const AbstractLQPNode>& root_lqp,
-                                               const LQPNodesByLQP& nodes_by_lqp) {
-  // (1) Make sure that all outputs found in an LQP are also part of the same LQP (excluding uncorrelated subqueries).
-  // (2) Make sure each node has the number of inputs expected for that node type.
-  // (3) Make sure that for all LQPColumnExpressions, the original_node is part of the LQP.
-  visit_lqp(lqp, [&](const auto& node) {
+void validate_lqp_with_uncorrelated_subqueries(const std::shared_ptr<const AbstractLQPNode> &lqp,
+                                               const std::shared_ptr<const AbstractLQPNode> &root_lqp,
+                                               const LQPNodesByLQP &nodes_by_lqp)
+{
+    // (1) Make sure that all outputs found in an LQP are also part of the same LQP (excluding uncorrelated subqueries).
+    // (2) Make sure each node has the number of inputs expected for that node type.
+    // (3) Make sure that for all LQPColumnExpressions, the original_node is part of the LQP.
+    visit_lqp(lqp, [&](const auto &node)
+              {
     // Check that all outputs are part of the LQP.
     const auto outputs = node->outputs();
     for (const auto& output : outputs) {
@@ -176,15 +182,15 @@ void validate_lqp_with_uncorrelated_subqueries(const std::shared_ptr<const Abstr
       validate_lqp_with_uncorrelated_subqueries(uncorrelated_subquery, root_lqp, nodes_by_lqp);
     }
 
-    return LQPVisitation::VisitInputs;
-  });
+    return LQPVisitation::VisitInputs; });
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-OptimizerRuleMetrics::OptimizerRuleMetrics(const std::string& init_rule_name,
+OptimizerRuleMetrics::OptimizerRuleMetrics(const std::string &init_rule_name,
                                            const std::chrono::nanoseconds init_duration)
     : rule_name{init_rule_name}, duration{init_duration} {}
 
@@ -193,167 +199,179 @@ OptimizerRuleMetrics::OptimizerRuleMetrics(const std::string& init_rule_name,
  * earlier rule. In the future, it might make sense to bring back iterative groups of rules, but we should keep
  * optimization costs reasonable.
  */
-std::shared_ptr<Optimizer> Optimizer::create_default_optimizer() {
-  auto optimizer = std::make_shared<Optimizer>();
+std::shared_ptr<Optimizer> Optimizer::create_default_optimizer()
+{
+    auto optimizer = std::make_shared<Optimizer>();
 
-  optimizer->add_rule(std::make_unique<ExpressionReductionRule>());
+    optimizer->add_rule(std::make_unique<ExpressionReductionRule>());
 
-  // Run before the JoinOrderingRule so that the latter has simple (non-conjunctive) predicates. However, as the
-  // JoinOrderingRule cannot handle UnionNodes (#1829), do not split disjunctions just yet.
-  optimizer->add_rule(std::make_unique<PredicateSplitUpRule>(false));
+    // Run before the JoinOrderingRule so that the latter has simple (non-conjunctive) predicates. However, as the
+    // JoinOrderingRule cannot handle UnionNodes (#1829), do not split disjunctions just yet.
+    optimizer->add_rule(std::make_unique<PredicateSplitUpRule>(false));
 
-  // The JoinOrderingRule cannot proceed past semi-/anti-joins. These may be part of the initial query plan (in which
-  // case we are out of luck and the join ordering will be sub-optimal) but many of them are also introduced by the
-  // SubqueryToJoinRule. As such, we run the JoinOrderingRule before the SubqueryToJoinRule.
-  optimizer->add_rule(std::make_unique<JoinOrderingRule>());
+    // The JoinOrderingRule cannot proceed past semi-/anti-joins. These may be part of the initial query plan (in which
+    // case we are out of luck and the join ordering will be sub-optimal) but many of them are also introduced by the
+    // SubqueryToJoinRule. As such, we run the JoinOrderingRule before the SubqueryToJoinRule.
+    optimizer->add_rule(std::make_unique<JoinOrderingRule>());
 
-  // Run Group-By Reduction after the JoinOrderingRule ran. The actual join order is not important, but the matching
-  // of cross joins with predicates that is done by that rule is needed to create some of the functional dependencies
-  // (FDs) used by the DependentGroupByReductionRule.
-  optimizer->add_rule(std::make_unique<DependentGroupByReductionRule>());
+    // Run Group-By Reduction after the JoinOrderingRule ran. The actual join order is not important, but the matching
+    // of cross joins with predicates that is done by that rule is needed to create some of the functional dependencies
+    // (FDs) used by the DependentGroupByReductionRule.
+    optimizer->add_rule(std::make_unique<DependentGroupByReductionRule>());
 
-  optimizer->add_rule(std::make_unique<BetweenCompositionRule>());
+    optimizer->add_rule(std::make_unique<BetweenCompositionRule>());
 
-  optimizer->add_rule(std::make_unique<PredicatePlacementRule>());
+    optimizer->add_rule(std::make_unique<PredicatePlacementRule>());
 
-  optimizer->add_rule(std::make_unique<PredicateSplitUpRule>());
+    optimizer->add_rule(std::make_unique<PredicateSplitUpRule>());
 
-  optimizer->add_rule(std::make_unique<NullScanRemovalRule>());
+    optimizer->add_rule(std::make_unique<NullScanRemovalRule>());
 
-  optimizer->add_rule(std::make_unique<SubqueryToJoinRule>());
+    optimizer->add_rule(std::make_unique<SubqueryToJoinRule>());
 
-  optimizer->add_rule(std::make_unique<ColumnPruningRule>());
+    optimizer->add_rule(std::make_unique<ColumnPruningRule>());
 
-  // Run the JoinToSemiJoinRule and the JoinToPredicateRewriteRule before the PredicatePlacementRule, as they might turn
-  // joins into semi-joins (which are treated as predicates) or predicates that can be pushed further down. For the same
-  // reason, run them after the JoinOrderingRule, which does not like semi-joins (see above). Furthermore, these two
-  // rules depend on the ColumnPruningRule that flags joins where one input is not used later in the query plan.
-  optimizer->add_rule(std::make_unique<JoinToSemiJoinRule>());
+    // Run the JoinToSemiJoinRule and the JoinToPredicateRewriteRule before the PredicatePlacementRule, as they might turn
+    // joins into semi-joins (which are treated as predicates) or predicates that can be pushed further down. For the same
+    // reason, run them after the JoinOrderingRule, which does not like semi-joins (see above). Furthermore, these two
+    // rules depend on the ColumnPruningRule that flags joins where one input is not used later in the query plan.
+    optimizer->add_rule(std::make_unique<JoinToSemiJoinRule>());
 
-  optimizer->add_rule(std::make_unique<JoinToPredicateRewriteRule>());
+    optimizer->add_rule(std::make_unique<JoinToPredicateRewriteRule>());
 
-  // Run the PredicatePlacementRule a second time so that semi-/anti-joins created by the SubqueryToJoinRule, the
-  // JoinToSemiJoinRule, or predicates created by the JoinToPredicateRewriteRule are properly placed, too. Also run the
-  // PredicateReorderingRule before the SemiJoinReductionRule to order semi-/anti-joins before we add semi-join
-  // reductions. Otherwise, we might add unnecessary reductions.
-  optimizer->add_rule(std::make_unique<PredicatePlacementRule>());
+    // Run the PredicatePlacementRule a second time so that semi-/anti-joins created by the SubqueryToJoinRule, the
+    // JoinToSemiJoinRule, or predicates created by the JoinToPredicateRewriteRule are properly placed, too. Also run the
+    // PredicateReorderingRule before the SemiJoinReductionRule to order semi-/anti-joins before we add semi-join
+    // reductions. Otherwise, we might add unnecessary reductions.
+    optimizer->add_rule(std::make_unique<PredicatePlacementRule>());
 
-  optimizer->add_rule(std::make_unique<PredicateReorderingRule>());
+    optimizer->add_rule(std::make_unique<PredicateReorderingRule>());
 
-  optimizer->add_rule(std::make_unique<SemiJoinReductionRule>());
+    optimizer->add_rule(std::make_unique<SemiJoinReductionRule>());
 
-  // Run the PredicatePlacementRule a third time to place semi-joins created by the SemiJoinReductionRule.
-  optimizer->add_rule(std::make_unique<PredicatePlacementRule>());
+    // Run the PredicatePlacementRule a third time to place semi-joins created by the SemiJoinReductionRule.
+    optimizer->add_rule(std::make_unique<PredicatePlacementRule>());
 
-  // Prune chunks after the BetweenCompositionRule ran, as `a >= 5 AND a <= 7` may not be prunable predicates while
-  // `a BETWEEN 5 and 7` is. Also, run it after the PredicatePlacementRule, so that predicates are as close to the
-  // StoredTableNode as possible where the ChunkPruningRule can work with them.
-  optimizer->add_rule(std::make_unique<ChunkPruningRule>());
+    // Prune chunks after the BetweenCompositionRule ran, as `a >= 5 AND a <= 7` may not be prunable predicates while
+    // `a BETWEEN 5 and 7` is. Also, run it after the PredicatePlacementRule, so that predicates are as close to the
+    // StoredTableNode as possible where the ChunkPruningRule can work with them.
+    optimizer->add_rule(std::make_unique<ChunkPruningRule>());
 
-  // The LQPTranslator may translate two individual but equivalent LQP nodes into the same PQP operator. The
-  // StoredTableColumnAlignmentRule supports this effort by aligning the list of pruned column ids across nodes that
-  // could become deduplicated. For this, the ColumnPruningRule needs to have been executed.
-  optimizer->add_rule(std::make_unique<StoredTableColumnAlignmentRule>());
+    // The LQPTranslator may translate two individual but equivalent LQP nodes into the same PQP operator. The
+    // StoredTableColumnAlignmentRule supports this effort by aligning the list of pruned column ids across nodes that
+    // could become deduplicated. For this, the ColumnPruningRule needs to have been executed.
+    optimizer->add_rule(std::make_unique<StoredTableColumnAlignmentRule>());
 
-  // Order join predicates (again) by their selectivity. Do that after predicate placement and chunk pruning because
-  // both can impact the join predicates' selectivities.
-  optimizer->add_rule(std::make_unique<JoinPredicateOrderingRule>());
+    // Order join predicates (again) by their selectivity. Do that after predicate placement and chunk pruning because
+    // both can impact the join predicates' selectivities.
+    optimizer->add_rule(std::make_unique<JoinPredicateOrderingRule>());
 
-  // Bring predicates into the desired order once the PredicatePlacementRule has positioned them as desired.
-  optimizer->add_rule(std::make_unique<PredicateReorderingRule>());
+    // Bring predicates into the desired order once the PredicatePlacementRule has positioned them as desired.
+    optimizer->add_rule(std::make_unique<PredicateReorderingRule>());
 
-  // Before the IN predicate is rewritten, it should have been moved to a good position. Also, while the IN predicate
-  // might become a join, it is semantically more similar to a predicate. If we run this rule too early, it might
-  // hinder other optimizations that stop at joins. For example, the join ordering currently does not know about semi
-  // joins and would not recognize such a rewritten predicate.
-  optimizer->add_rule(std::make_unique<InExpressionRewriteRule>());
+    // Before the IN predicate is rewritten, it should have been moved to a good position. Also, while the IN predicate
+    // might become a join, it is semantically more similar to a predicate. If we run this rule too early, it might
+    // hinder other optimizations that stop at joins. For example, the join ordering currently does not know about semi
+    // joins and would not recognize such a rewritten predicate.
+    optimizer->add_rule(std::make_unique<InExpressionRewriteRule>());
 
-  optimizer->add_rule(std::make_unique<IndexScanRule>());
+    optimizer->add_rule(std::make_unique<IndexScanRule>());
 
-  optimizer->add_rule(std::make_unique<PredicateMergeRule>());
+    optimizer->add_rule(std::make_unique<PredicateMergeRule>());
 
-  return optimizer;
+    return optimizer;
 }
 
-Optimizer::Optimizer(const std::shared_ptr<AbstractCostEstimator>& cost_estimator) : _cost_estimator(cost_estimator) {}
+Optimizer::Optimizer(const std::shared_ptr<AbstractCostEstimator> &cost_estimator) : _cost_estimator(cost_estimator) {}
 
-void Optimizer::add_rule(std::unique_ptr<AbstractRule> rule) {
-  _rules.emplace_back(std::move(rule));
+void Optimizer::add_rule(std::unique_ptr<AbstractRule> rule)
+{
+    _rules.emplace_back(std::move(rule));
 }
 
 std::shared_ptr<AbstractLQPNode> Optimizer::optimize(
     std::shared_ptr<AbstractLQPNode> input,
-    const std::shared_ptr<std::vector<OptimizerRuleMetrics>>& rule_durations) const {
-  return optimize_with_context(std::move(input), rule_durations).first;
+    const std::shared_ptr<std::vector<OptimizerRuleMetrics>> &rule_durations) const
+{
+    return optimize_with_context(std::move(input), rule_durations).first;
 }
 
 std::pair<std::shared_ptr<AbstractLQPNode>, std::unique_ptr<OptimizationContext>> Optimizer::optimize_with_context(
     std::shared_ptr<AbstractLQPNode> input,
-    const std::shared_ptr<std::vector<OptimizerRuleMetrics>>& rule_durations) const {
-  // We cannot allow multiple owners of the LQP as one owner could decide to optimize the plan and others might hold a
-  // pointer to a node that is not even part of the plan anymore after optimization. Thus, callers of this method need
-  // to relinquish their ownership (i.e., move their shared_ptr into the method) and take ownership of the resulting
-  // optimized plan.
-  Assert(input.use_count() == 1, "Optimizer should have exclusive ownership of plan.");
+    const std::shared_ptr<std::vector<OptimizerRuleMetrics>> &rule_durations) const
+{
+    // We cannot allow multiple owners of the LQP as one owner could decide to optimize the plan and others might hold a
+    // pointer to a node that is not even part of the plan anymore after optimization. Thus, callers of this method need
+    // to relinquish their ownership (i.e., move their shared_ptr into the method) and take ownership of the resulting
+    // optimized plan.
+    Assert(input.use_count() == 1, "Optimizer should have exclusive ownership of plan.");
 
-  // Add explicit root node, so the rules can freely change the tree below it without having to maintain a root node
-  // to return to the Optimizer
-  const auto root_node = LogicalPlanRootNode::make(std::move(input));
-  input = nullptr;
+    // Add explicit root node, so the rules can freely change the tree below it without having to maintain a root node
+    // to return to the Optimizer
+    const auto root_node = LogicalPlanRootNode::make(std::move(input));
+    input = nullptr;
 
-  if constexpr (HYRISE_DEBUG) {
-    validate_lqp(root_node);
-  }
-
-  auto optimization_context = std::make_unique<OptimizationContext>();
-  optimization_context->cost_estimator = _cost_estimator;
-
-  for (const auto& rule : _rules) {
-    auto rule_timer = Timer{};
-    rule->apply_to_plan(root_node, *optimization_context);
-
-    if (rule_durations) {
-      rule_durations->emplace_back(rule->name(), rule_timer.lap());
+    if constexpr (HYRISE_DEBUG)
+    {
+        validate_lqp(root_node);
     }
 
-    if constexpr (HYRISE_DEBUG) {
-      validate_lqp(root_node);
+    auto optimization_context = std::make_unique<OptimizationContext>();
+    optimization_context->cost_estimator = _cost_estimator;
 
-      // Ensure that the rule did not pollute the caches of the shared CardinalityEstimator instance.
-      const auto& estimation_cache = _cost_estimator->cardinality_estimator->cardinality_estimation_cache;
-      Assert(!estimation_cache.join_graph_statistics_cache && !estimation_cache.statistics_by_lqp,
-             "CardinalityEstimator caches should be empty. Did you call `new_instance()`?");
+    for (const auto &rule : _rules)
+    {
+        auto rule_timer = Timer{};
+        rule->apply_to_plan(root_node, *optimization_context);
+
+        if (rule_durations)
+        {
+            rule_durations->emplace_back(rule->name(), rule_timer.lap());
+        }
+
+        if constexpr (HYRISE_DEBUG)
+        {
+            validate_lqp(root_node);
+
+            // Ensure that the rule did not pollute the caches of the shared CardinalityEstimator instance.
+            const auto &estimation_cache = _cost_estimator->cardinality_estimator->cardinality_estimation_cache;
+            Assert(!estimation_cache.join_graph_statistics_cache && !estimation_cache.statistics_by_lqp,
+                   "CardinalityEstimator caches should be empty. Did you call `new_instance()`?");
+        }
     }
-  }
 
-  // Remove LogicalPlanRootNode.
-  auto optimized_node = root_node->left_input();
-  root_node->set_left_input(nullptr);
+    // Remove LogicalPlanRootNode.
+    auto optimized_node = root_node->left_input();
+    root_node->set_left_input(nullptr);
 
-  return {optimized_node, std::move(optimization_context)};
+    return {optimized_node, std::move(optimization_context)};
 }
 
-void Optimizer::validate_lqp(const std::shared_ptr<AbstractLQPNode>& root_node) {
-  // If you can think of a way in which an LQP can be corrupt, please add it!
-  // First, collect all LQPs (the main LQP and all uncorrelated subqueries).
-  auto lqps = std::vector<std::shared_ptr<AbstractLQPNode>>{root_node};
-  for (const auto& [lqp, _] : collect_lqp_subquery_expressions_by_lqp(root_node, true)) {
-    lqps.emplace_back(lqp);
-  }
+void Optimizer::validate_lqp(const std::shared_ptr<AbstractLQPNode> &root_node)
+{
+    // If you can think of a way in which an LQP can be corrupt, please add it!
+    // First, collect all LQPs (the main LQP and all uncorrelated subqueries).
+    auto lqps = std::vector<std::shared_ptr<AbstractLQPNode>>{root_node};
+    for (const auto &[lqp, _] : collect_lqp_subquery_expressions_by_lqp(root_node, true))
+    {
+        lqps.emplace_back(lqp);
+    }
 
-  auto nodes_by_lqp = LQPNodesByLQP{};
-  // Second, assign each LQPNode to its LQP. Since the results of uncorrelated subquery LQPs do not depend on correlated
-  // parameters, we can use them in multiple LQPSubqueryExpressions and treat them like normal LQPNodes. However,
-  // correlated subqueries must not share nodes with any other (sub-)LQP. Correlated subquery LQPs must not be reused,
-  // they are completely managed by the ExpressionEvaluator, which deep copies them for each row.
-  for (const auto& lqp : lqps) {
-    assign_node_to_lqp_recursively(lqp, lqp, nodes_by_lqp);
-  }
+    auto nodes_by_lqp = LQPNodesByLQP{};
+    // Second, assign each LQPNode to its LQP. Since the results of uncorrelated subquery LQPs do not depend on correlated
+    // parameters, we can use them in multiple LQPSubqueryExpressions and treat them like normal LQPNodes. However,
+    // correlated subqueries must not share nodes with any other (sub-)LQP. Correlated subquery LQPs must not be reused,
+    // they are completely managed by the ExpressionEvaluator, which deep copies them for each row.
+    for (const auto &lqp : lqps)
+    {
+        assign_node_to_lqp_recursively(lqp, lqp, nodes_by_lqp);
+    }
 
-  // Third, check that each of the LQPs is valid.
-  for (const auto& lqp : lqps) {
-    validate_lqp_with_uncorrelated_subqueries(lqp, lqp, nodes_by_lqp);
-  }
+    // Third, check that each of the LQPs is valid.
+    for (const auto &lqp : lqps)
+    {
+        validate_lqp_with_uncorrelated_subqueries(lqp, lqp, nodes_by_lqp);
+    }
 }
 
-}  // namespace hyrise
+} // namespace hyrise

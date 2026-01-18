@@ -1,9 +1,11 @@
 #include "job_task.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-void JobTask::_on_execute() {
-  _fn();
+void JobTask::_on_execute()
+{
+    _fn();
 }
 
-}  // namespace hyrise
+} // namespace hyrise

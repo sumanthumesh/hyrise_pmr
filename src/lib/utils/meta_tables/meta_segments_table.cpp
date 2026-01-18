@@ -10,7 +10,8 @@
 #include "utils/meta_tables/abstract_meta_table.hpp"
 #include "utils/meta_tables/segment_meta_data.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 MetaSegmentsTable::MetaSegmentsTable()
     : AbstractMetaTable(TableColumnDefinitions{{"table_name", DataType::String, false},
@@ -28,16 +29,18 @@ MetaSegmentsTable::MetaSegmentsTable()
                                                {"random_accesses", DataType::Long, false},
                                                {"dictionary_accesses", DataType::Long, false}}) {}
 
-const std::string& MetaSegmentsTable::name() const {
-  static const auto name = std::string{"segments"};
-  return name;
+const std::string &MetaSegmentsTable::name() const
+{
+    static const auto name = std::string{"segments"};
+    return name;
 }
 
-std::shared_ptr<Table> MetaSegmentsTable::_on_generate() const {
-  auto output_table = std::make_shared<Table>(_column_definitions, TableType::Data);
-  gather_segment_meta_data(output_table, MemoryUsageCalculationMode::Sampled);
+std::shared_ptr<Table> MetaSegmentsTable::_on_generate() const
+{
+    auto output_table = std::make_shared<Table>(_column_definitions, TableType::Data);
+    gather_segment_meta_data(output_table, MemoryUsageCalculationMode::Sampled);
 
-  return output_table;
+    return output_table;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

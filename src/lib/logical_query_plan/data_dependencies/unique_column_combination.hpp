@@ -5,7 +5,8 @@
 #include "expression/abstract_expression.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Container structure to define uniqueness for subsets of LQP output expressions. Analogous to SQL's UNIQUE
@@ -20,35 +21,38 @@ namespace hyrise {
  * This information is important because query plans that were optimized using a non-genuine UCC are not safely
  * cacheable.
  */
-struct UniqueColumnCombination final {
-  explicit UniqueColumnCombination(ExpressionUnorderedSet&& init_expressions, bool is_genuine = true);
+struct UniqueColumnCombination final
+{
+    explicit UniqueColumnCombination(ExpressionUnorderedSet &&init_expressions, bool is_genuine = true);
 
-  bool operator==(const UniqueColumnCombination& rhs) const;
-  bool operator!=(const UniqueColumnCombination& rhs) const;
+    bool operator==(const UniqueColumnCombination &rhs) const;
+    bool operator!=(const UniqueColumnCombination &rhs) const;
 
-  bool is_genuine() const;
-  void set_genuine() const;
-  size_t hash() const;
+    bool is_genuine() const;
+    void set_genuine() const;
+    size_t hash() const;
 
-  ExpressionUnorderedSet expressions;
+    ExpressionUnorderedSet expressions;
 
- private:
-  // `_is_genuine` is mutable to allow setting a UCC as genuine (with set_genuine()`) after its
-  // creation, e.g. in an AggregateNode.
-  mutable bool _is_genuine;
+  private:
+    // `_is_genuine` is mutable to allow setting a UCC as genuine (with set_genuine()`) after its
+    // creation, e.g. in an AggregateNode.
+    mutable bool _is_genuine;
 };
 
-std::ostream& operator<<(std::ostream& stream, const UniqueColumnCombination& ucc);
+std::ostream &operator<<(std::ostream &stream, const UniqueColumnCombination &ucc);
 
 using UniqueColumnCombinations = std::unordered_set<UniqueColumnCombination>;
 
-}  // namespace hyrise
+} // namespace hyrise
 
-namespace std {
+namespace std
+{
 
 template <>
-struct hash<hyrise::UniqueColumnCombination> {
-  size_t operator()(const hyrise::UniqueColumnCombination& ucc) const;
+struct hash<hyrise::UniqueColumnCombination>
+{
+    size_t operator()(const hyrise::UniqueColumnCombination &ucc) const;
 };
 
-}  // namespace std
+} // namespace std

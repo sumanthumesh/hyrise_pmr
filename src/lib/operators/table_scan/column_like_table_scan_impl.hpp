@@ -13,7 +13,8 @@
 #include "expression/evaluation/like_matcher.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 class Table;
 
@@ -27,32 +28,33 @@ class Table;
  *   enables us to detect if all or none of the values in the segment satisfy the expression.
  *
  * Performance Notes: Uses std::regex as a slow fallback and resorts to much faster Pattern matchers for special cases,
- *                    e.g., StartsWithPattern. 
+ *                    e.g., StartsWithPattern.
  */
-class ColumnLikeTableScanImpl : public AbstractDereferencedColumnTableScanImpl {
- public:
-  ColumnLikeTableScanImpl(const std::shared_ptr<const Table>& in_table, const ColumnID column_id,
-                          const PredicateCondition init_predicate_condition, const pmr_string& pattern);
+class ColumnLikeTableScanImpl : public AbstractDereferencedColumnTableScanImpl
+{
+  public:
+    ColumnLikeTableScanImpl(const std::shared_ptr<const Table> &in_table, const ColumnID column_id,
+                            const PredicateCondition init_predicate_condition, const pmr_string &pattern);
 
-  std::string description() const override;
+    std::string description() const override;
 
- protected:
-  void _scan_non_reference_segment(const AbstractSegment& segment, const ChunkID chunk_id, RowIDPosList& matches,
-                                   const std::shared_ptr<const AbstractPosList>& position_filter) override;
+  protected:
+    void _scan_non_reference_segment(const AbstractSegment &segment, const ChunkID chunk_id, RowIDPosList &matches,
+                                     const std::shared_ptr<const AbstractPosList> &position_filter) override;
 
-  void _scan_generic_segment(const AbstractSegment& segment, const ChunkID chunk_id, RowIDPosList& matches,
-                             const std::shared_ptr<const AbstractPosList>& position_filter) const;
-  void _scan_dictionary_segment(const BaseDictionarySegment& segment, const ChunkID chunk_id, RowIDPosList& matches,
-                                const std::shared_ptr<const AbstractPosList>& position_filter);
+    void _scan_generic_segment(const AbstractSegment &segment, const ChunkID chunk_id, RowIDPosList &matches,
+                               const std::shared_ptr<const AbstractPosList> &position_filter) const;
+    void _scan_dictionary_segment(const BaseDictionarySegment &segment, const ChunkID chunk_id, RowIDPosList &matches,
+                                  const std::shared_ptr<const AbstractPosList> &position_filter);
 
-  /**
-   * Used for dictionary segments
-   * @returns number of matches and the result of each dictionary entry
-   */
-  template <typename D>
-  std::pair<size_t, std::vector<bool>> _find_matches_in_dictionary(const D& dictionary) const;
+    /**
+     * Used for dictionary segments
+     * @returns number of matches and the result of each dictionary entry
+     */
+    template <typename D>
+    std::pair<size_t, std::vector<bool>> _find_matches_in_dictionary(const D &dictionary) const;
 
-  const LikeMatcher _matcher;
+    const LikeMatcher _matcher;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

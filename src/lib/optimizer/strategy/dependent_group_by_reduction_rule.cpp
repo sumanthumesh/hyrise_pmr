@@ -20,69 +20,79 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;                 // NOLINT(build/namespaces)
-using namespace expression_functional;  // NOLINT(build/namespaces)
+using namespace hyrise;                // NOLINT(build/namespaces)
+using namespace expression_functional; // NOLINT(build/namespaces)
 
 /**
  * This function reduces the group-by columns of @param aggregate_node for a given functional dependency (@param fd).
  *
  * @returns Boolean value, denoting whether the group-by list of @param aggregate_node has changed.
  */
-bool remove_dependent_group_by_columns(const FunctionalDependency& fd, AggregateNode& aggregate_node,
-                                       const ExpressionUnorderedSet& group_by_columns) {
-  auto group_by_list_changed = false;
+bool remove_dependent_group_by_columns(const FunctionalDependency &fd, AggregateNode &aggregate_node,
+                                       const ExpressionUnorderedSet &group_by_columns)
+{
+    auto group_by_list_changed = false;
 
-  // To benefit from this rule, the FD's columns have to be part of the group-by list.
-  if (!std::ranges::all_of(fd.determinants, [&group_by_columns](const std::shared_ptr<AbstractExpression>& expression) {
-        return group_by_columns.contains(expression);
-      })) {
-    return false;
-  }
-
-  // Every column that is functionally dependent gets moved from the group-by list to the aggregate list. For this
-  // purpose it is wrapped in an ANY() expression.
-  for (const auto& group_by_column : group_by_columns) {
-    if (fd.dependents.contains(group_by_column)) {
-      // Remove column from group-by list.
-      // Further, decrement the aggregate's index which denotes the end of group-by expressions.
-      const auto begin_idx_before = aggregate_node.aggregate_expressions_begin_idx;
-      const auto [erase_begin, erase_end] =
-          std::ranges::remove_if(aggregate_node.node_expressions.begin(), aggregate_node.node_expressions.end(),
-                                 [&](const auto& node_expression) {
-                                   if (*node_expression == *group_by_column) {
-                                     // Adjust the number of group by expressions.
-                                     --aggregate_node.aggregate_expressions_begin_idx;
-                                     group_by_list_changed = true;
-                                     return true;
-                                   }
-                                   return false;
-                                 });
-      aggregate_node.node_expressions.erase(erase_begin, erase_end);
-      Assert(aggregate_node.aggregate_expressions_begin_idx < begin_idx_before,
-             "Failed to remove column from group-by list.");
-      // Add the ANY() aggregate to the list of aggregate columns.
-      const auto aggregate_any_expression = any_(group_by_column);
-      aggregate_node.node_expressions.emplace_back(aggregate_any_expression);
+    // To benefit from this rule, the FD's columns have to be part of the group-by list.
+    if (!std::ranges::all_of(fd.determinants, [&group_by_columns](const std::shared_ptr<AbstractExpression> &expression)
+                             { return group_by_columns.contains(expression); }))
+    {
+        return false;
     }
-  }
 
-  return group_by_list_changed;
+    // Every column that is functionally dependent gets moved from the group-by list to the aggregate list. For this
+    // purpose it is wrapped in an ANY() expression.
+    for (const auto &group_by_column : group_by_columns)
+    {
+        if (fd.dependents.contains(group_by_column))
+        {
+            // Remove column from group-by list.
+            // Further, decrement the aggregate's index which denotes the end of group-by expressions.
+            const auto begin_idx_before = aggregate_node.aggregate_expressions_begin_idx;
+            const auto [erase_begin, erase_end] =
+                std::ranges::remove_if(aggregate_node.node_expressions.begin(), aggregate_node.node_expressions.end(),
+                                       [&](const auto &node_expression)
+                                       {
+                                           if (*node_expression == *group_by_column)
+                                           {
+                                               // Adjust the number of group by expressions.
+                                               --aggregate_node.aggregate_expressions_begin_idx;
+                                               group_by_list_changed = true;
+                                               return true;
+                                           }
+                                           return false;
+                                       });
+            aggregate_node.node_expressions.erase(erase_begin, erase_end);
+            Assert(aggregate_node.aggregate_expressions_begin_idx < begin_idx_before,
+                   "Failed to remove column from group-by list.");
+            // Add the ANY() aggregate to the list of aggregate columns.
+            const auto aggregate_any_expression = any_(group_by_column);
+            aggregate_node.node_expressions.emplace_back(aggregate_any_expression);
+        }
+    }
+
+    return group_by_list_changed;
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::string DependentGroupByReductionRule::name() const {
-  static const auto name = std::string{"DependentGroupByReductionRule"};
-  return name;
+std::string DependentGroupByReductionRule::name() const
+{
+    static const auto name = std::string{"DependentGroupByReductionRule"};
+    return name;
 }
 
-void DependentGroupByReductionRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode>& lqp_root,
-                                                                      OptimizationContext& optimization_context) const {
-  visit_lqp(lqp_root, [&](const auto& node) {
+void DependentGroupByReductionRule::_apply_to_plan_without_subqueries(const std::shared_ptr<AbstractLQPNode> &lqp_root,
+                                                                      OptimizationContext &optimization_context) const
+{
+    visit_lqp(lqp_root, [&](const auto &node)
+              {
     if (node->type != LQPNodeType::Aggregate) {
       return LQPVisitation::VisitInputs;
     }
@@ -213,8 +223,7 @@ void DependentGroupByReductionRule::_apply_to_plan_without_subqueries(const std:
       lqp_insert_node(lqp_root, LQPInputSide::Left, projection_node);
     }
 
-    return LQPVisitation::VisitInputs;
-  });
+    return LQPVisitation::VisitInputs; });
 }
 
-}  // namespace hyrise
+} // namespace hyrise

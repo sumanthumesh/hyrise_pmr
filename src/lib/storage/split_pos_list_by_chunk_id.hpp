@@ -9,14 +9,16 @@
 #include "storage/pos_lists/row_id_pos_list.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 // A SubPosList is a part of a PosList. In the case of split_pos_list_by_chunk_id, we have multiple SubPosLists, each
 // of which references only a single chunk. For each entry in that SubPosList, we need to keep its position in the
 // original PosList so that we can reassemble that PosList if needed.
-struct SubPosList {
-  std::shared_ptr<RowIDPosList> row_ids;
-  std::vector<ChunkOffset> original_positions;
+struct SubPosList
+{
+    std::shared_ptr<RowIDPosList> row_ids;
+    std::vector<ChunkOffset> original_positions;
 };
 
 using PosListsByChunkID = std::vector<SubPosList>;
@@ -30,7 +32,7 @@ using PosListsByChunkID = std::vector<SubPosList>;
 // SubPosList. When include_null_row_ids is true, PosListsByChunkID has a guaranteed size of `number_of_chunks + 1`.
 
 template <bool include_null_row_ids>
-PosListsByChunkID split_pos_list_by_chunk_id(const std::shared_ptr<const AbstractPosList>& input_pos_list,
+PosListsByChunkID split_pos_list_by_chunk_id(const std::shared_ptr<const AbstractPosList> &input_pos_list,
                                              size_t number_of_chunks);
 
-}  // namespace hyrise
+} // namespace hyrise

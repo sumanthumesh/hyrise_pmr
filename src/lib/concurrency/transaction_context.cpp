@@ -6,13 +6,14 @@
 #include <mutex>
 #include <ostream>
 
-#include "commit_context.hpp"  // IWYU pragma: keep
+#include "commit_context.hpp" // IWYU pragma: keep
 #include "hyrise.hpp"
 #include "operators/abstract_read_write_operator.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 TransactionContext::TransactionContext(const TransactionID transaction_id, const CommitID snapshot_commit_id,
                                        const AutoCommit is_auto_commit)
@@ -20,152 +21,186 @@ TransactionContext::TransactionContext(const TransactionID transaction_id, const
       _snapshot_commit_id{snapshot_commit_id},
       _is_auto_commit{is_auto_commit},
       _phase{TransactionPhase::Active},
-      _num_active_operators{0} {
-  Hyrise::get().transaction_manager._register_transaction(snapshot_commit_id);
+      _num_active_operators{0}
+{
+    Hyrise::get().transaction_manager._register_transaction(snapshot_commit_id);
 }
 
-TransactionContext::~TransactionContext() {
-  if constexpr (HYRISE_DEBUG) {
-    // Note: When thrown during stack unwinding, exceptions from the following assertions might hide previous
-    // exceptions. If you are seeing this, either use a debugger and break on exceptions or turn off these assertions as
-    // a trial.
-    const auto is_rolled_back_after_conflict = _phase == TransactionPhase::RolledBackAfterConflict;
-    for (const auto& op : _read_write_operators) {
-      const auto operator_has_conflict = op->state() == ReadWriteOperatorState::Conflicted;
-      Assert(!operator_has_conflict || is_rolled_back_after_conflict,
-             "A registered operator failed but the transaction has not been rolled back. You may also see this "
-             "exception if an operator threw an uncaught exception.");
+TransactionContext::~TransactionContext()
+{
+    if constexpr (HYRISE_DEBUG)
+    {
+        // Note: When thrown during stack unwinding, exceptions from the following assertions might hide previous
+        // exceptions. If you are seeing this, either use a debugger and break on exceptions or turn off these assertions as
+        // a trial.
+        const auto is_rolled_back_after_conflict = _phase == TransactionPhase::RolledBackAfterConflict;
+        for (const auto &op : _read_write_operators)
+        {
+            const auto operator_has_conflict = op->state() == ReadWriteOperatorState::Conflicted;
+            Assert(!operator_has_conflict || is_rolled_back_after_conflict,
+                   "A registered operator failed but the transaction has not been rolled back. You may also see this "
+                   "exception if an operator threw an uncaught exception.");
+        }
+
+        const auto has_registered_operators = !_read_write_operators.empty();
+        const auto committed_or_rolled_back = _phase == TransactionPhase::Committed ||
+                                              _phase == TransactionPhase::RolledBackByUser ||
+                                              _phase == TransactionPhase::RolledBackAfterConflict;
+        Assert(!has_registered_operators || committed_or_rolled_back,
+               "Has registered operators but has neither been committed nor rolled back (see comment in code).");
     }
 
-    const auto has_registered_operators = !_read_write_operators.empty();
-    const auto committed_or_rolled_back = _phase == TransactionPhase::Committed ||
-                                          _phase == TransactionPhase::RolledBackByUser ||
-                                          _phase == TransactionPhase::RolledBackAfterConflict;
-    Assert(!has_registered_operators || committed_or_rolled_back,
-           "Has registered operators but has neither been committed nor rolled back (see comment in code).");
-  }
-
-  // Tell the TransactionManager, which keeps track of active snapshot-commit-ids, that this transaction has finished.
-  Hyrise::get().transaction_manager._deregister_transaction(_snapshot_commit_id);
+    // Tell the TransactionManager, which keeps track of active snapshot-commit-ids, that this transaction has finished.
+    Hyrise::get().transaction_manager._deregister_transaction(_snapshot_commit_id);
 }
 
-TransactionID TransactionContext::transaction_id() const {
-  return _transaction_id;
+TransactionID TransactionContext::transaction_id() const
+{
+    return _transaction_id;
 }
 
-CommitID TransactionContext::snapshot_commit_id() const {
-  return _snapshot_commit_id;
+CommitID TransactionContext::snapshot_commit_id() const
+{
+    return _snapshot_commit_id;
 }
 
-AutoCommit TransactionContext::is_auto_commit() const {
-  return _is_auto_commit;
+AutoCommit TransactionContext::is_auto_commit() const
+{
+    return _is_auto_commit;
 }
 
-CommitID TransactionContext::commit_id() const {
-  Assert(_commit_context, "TransactionContext CommitID only available after commit context has been created.");
+CommitID TransactionContext::commit_id() const
+{
+    Assert(_commit_context, "TransactionContext CommitID only available after commit context has been created.");
 
-  return _commit_context->commit_id();
+    return _commit_context->commit_id();
 }
 
-TransactionPhase TransactionContext::phase() const {
-  return _phase;
+TransactionPhase TransactionContext::phase() const
+{
+    return _phase;
 }
 
-bool TransactionContext::aborted() const {
-  const auto phase = _phase.load();
-  return (phase == TransactionPhase::Conflicted) || (phase == TransactionPhase::RolledBackAfterConflict);
+bool TransactionContext::aborted() const
+{
+    const auto phase = _phase.load();
+    return (phase == TransactionPhase::Conflicted) || (phase == TransactionPhase::RolledBackAfterConflict);
 }
 
-void TransactionContext::rollback(RollbackReason rollback_reason) {
-  if (rollback_reason == RollbackReason::Conflict) {
-    _mark_as_conflicted();
-  } else {
-    // We directly go to RolledBackByUser, skipping Conflicted
-    Assert(_num_active_operators == 0, "For a user-initiated rollback, no operators should be active.");
-  }
-
-  for (const auto& op : _read_write_operators) {
-    op->rollback_records();
-  }
-
-  _mark_as_rolled_back(rollback_reason);
-}
-
-void TransactionContext::commit_async(const std::function<void(TransactionID)>& callback) {
-  _prepare_commit();
-
-  for (const auto& op : _read_write_operators) {
-    op->commit_records(commit_id());
-  }
-
-  _mark_as_pending_and_try_commit(callback);
-}
-
-void TransactionContext::commit() {
-  Assert(_phase == TransactionPhase::Active, "TransactionContext must be active to be committed.");
-
-  // No modifications made, nothing to commit, no need to acquire a commit ID
-  if (_read_write_operators.empty()) {
-    _transition(TransactionPhase::Active, TransactionPhase::Committed);
-    return;
-  }
-
-  auto committed = std::promise<void>{};
-  const auto committed_future = committed.get_future();
-  const auto callback = [&committed](TransactionID /*unused*/) {
-    committed.set_value();
-  };
-
-  commit_async(callback);
-
-  committed_future.wait();
-}
-
-void TransactionContext::_mark_as_conflicted() {
-  _transition(TransactionPhase::Active, TransactionPhase::Conflicted);
-
-  _wait_for_active_operators_to_finish();
-}
-
-void TransactionContext::_mark_as_rolled_back(RollbackReason rollback_reason) {
-  if constexpr (HYRISE_DEBUG) {
-    for (const auto& op : _read_write_operators) {
-      Assert(op->state() == ReadWriteOperatorState::RolledBack, "All read/write operators must have been rolled back.");
+void TransactionContext::rollback(RollbackReason rollback_reason)
+{
+    if (rollback_reason == RollbackReason::Conflict)
+    {
+        _mark_as_conflicted();
     }
-  }
+    else
+    {
+        // We directly go to RolledBackByUser, skipping Conflicted
+        Assert(_num_active_operators == 0, "For a user-initiated rollback, no operators should be active.");
+    }
 
-  if (rollback_reason == RollbackReason::User) {
-    _transition(TransactionPhase::Active, TransactionPhase::RolledBackByUser);
-  } else {
-    DebugAssert(rollback_reason == RollbackReason::Conflict, "Invalid RollbackReason.");
-    _transition(TransactionPhase::Conflicted, TransactionPhase::RolledBackAfterConflict);
-  }
+    for (const auto &op : _read_write_operators)
+    {
+        op->rollback_records();
+    }
+
+    _mark_as_rolled_back(rollback_reason);
 }
 
-void TransactionContext::_prepare_commit() {
-  if constexpr (HYRISE_DEBUG) {
-    for (const auto& op : _read_write_operators) {
-      Assert(op->state() == ReadWriteOperatorState::Executed,
-             "All read/write operators must have been executed (especially not failed).");
+void TransactionContext::commit_async(const std::function<void(TransactionID)> &callback)
+{
+    _prepare_commit();
+
+    for (const auto &op : _read_write_operators)
+    {
+        op->commit_records(commit_id());
     }
-  }
 
-  _transition(TransactionPhase::Active, TransactionPhase::Committing);
-
-  _wait_for_active_operators_to_finish();
-
-  _commit_context = Hyrise::get().transaction_manager._new_commit_context();
+    _mark_as_pending_and_try_commit(callback);
 }
 
-void TransactionContext::_mark_as_pending_and_try_commit(const std::function<void(TransactionID)>& callback) {
-  if constexpr (HYRISE_DEBUG) {
-    for (const auto& op : _read_write_operators) {
-      Assert(op->state() == ReadWriteOperatorState::Committed, "All read/write operators must have been committed.");
-    }
-  }
+void TransactionContext::commit()
+{
+    Assert(_phase == TransactionPhase::Active, "TransactionContext must be active to be committed.");
 
-  auto context_weak_ptr = std::weak_ptr<TransactionContext>{this->shared_from_this()};
-  _commit_context->make_pending(_transaction_id, [context_weak_ptr, callback](auto transaction_id) {
+    // No modifications made, nothing to commit, no need to acquire a commit ID
+    if (_read_write_operators.empty())
+    {
+        _transition(TransactionPhase::Active, TransactionPhase::Committed);
+        return;
+    }
+
+    auto committed = std::promise<void>{};
+    const auto committed_future = committed.get_future();
+    const auto callback = [&committed](TransactionID /*unused*/)
+    {
+        committed.set_value();
+    };
+
+    commit_async(callback);
+
+    committed_future.wait();
+}
+
+void TransactionContext::_mark_as_conflicted()
+{
+    _transition(TransactionPhase::Active, TransactionPhase::Conflicted);
+
+    _wait_for_active_operators_to_finish();
+}
+
+void TransactionContext::_mark_as_rolled_back(RollbackReason rollback_reason)
+{
+    if constexpr (HYRISE_DEBUG)
+    {
+        for (const auto &op : _read_write_operators)
+        {
+            Assert(op->state() == ReadWriteOperatorState::RolledBack, "All read/write operators must have been rolled back.");
+        }
+    }
+
+    if (rollback_reason == RollbackReason::User)
+    {
+        _transition(TransactionPhase::Active, TransactionPhase::RolledBackByUser);
+    }
+    else
+    {
+        DebugAssert(rollback_reason == RollbackReason::Conflict, "Invalid RollbackReason.");
+        _transition(TransactionPhase::Conflicted, TransactionPhase::RolledBackAfterConflict);
+    }
+}
+
+void TransactionContext::_prepare_commit()
+{
+    if constexpr (HYRISE_DEBUG)
+    {
+        for (const auto &op : _read_write_operators)
+        {
+            Assert(op->state() == ReadWriteOperatorState::Executed,
+                   "All read/write operators must have been executed (especially not failed).");
+        }
+    }
+
+    _transition(TransactionPhase::Active, TransactionPhase::Committing);
+
+    _wait_for_active_operators_to_finish();
+
+    _commit_context = Hyrise::get().transaction_manager._new_commit_context();
+}
+
+void TransactionContext::_mark_as_pending_and_try_commit(const std::function<void(TransactionID)> &callback)
+{
+    if constexpr (HYRISE_DEBUG)
+    {
+        for (const auto &op : _read_write_operators)
+        {
+            Assert(op->state() == ReadWriteOperatorState::Committed, "All read/write operators must have been committed.");
+        }
+    }
+
+    auto context_weak_ptr = std::weak_ptr<TransactionContext>{this->shared_from_this()};
+    _commit_context->make_pending(_transaction_id, [context_weak_ptr, callback](auto transaction_id)
+                                  {
     // If the transaction context still exists, set its phase to Committed.
     if (auto context_ptr = context_weak_ptr.lock()) {
       context_ptr->_transition(TransactionPhase::Committing, TransactionPhase::Committed);
@@ -173,68 +208,75 @@ void TransactionContext::_mark_as_pending_and_try_commit(const std::function<voi
 
     if (callback) {
       callback(transaction_id);
+    } });
+
+    Hyrise::get().transaction_manager._try_increment_last_commit_id(_commit_context);
+}
+
+void TransactionContext::on_operator_started()
+{
+    ++_num_active_operators;
+}
+
+void TransactionContext::on_operator_finished()
+{
+    DebugAssert(_num_active_operators > 0, "Unexpected number of active operators.");
+    const auto num_before = _num_active_operators--;
+
+    if (num_before == 1)
+    {
+        _active_operators_cv.notify_all();
     }
-  });
-
-  Hyrise::get().transaction_manager._try_increment_last_commit_id(_commit_context);
 }
 
-void TransactionContext::on_operator_started() {
-  ++_num_active_operators;
+bool TransactionContext::is_auto_commit()
+{
+    return _is_auto_commit == AutoCommit::Yes;
 }
 
-void TransactionContext::on_operator_finished() {
-  DebugAssert(_num_active_operators > 0, "Unexpected number of active operators.");
-  const auto num_before = _num_active_operators--;
-
-  if (num_before == 1) {
-    _active_operators_cv.notify_all();
-  }
+void TransactionContext::_wait_for_active_operators_to_finish() const
+{
+    std::unique_lock<std::mutex> lock(_active_operators_mutex);
+    if (_num_active_operators == 0)
+    {
+        return;
+    }
+    _active_operators_cv.wait(lock, [&]
+                              { return _num_active_operators != 0; });
 }
 
-bool TransactionContext::is_auto_commit() {
-  return _is_auto_commit == AutoCommit::Yes;
+void TransactionContext::_transition(TransactionPhase from_phase, TransactionPhase to_phase)
+{
+    DebugAssert(_is_auto_commit == AutoCommit::No || to_phase != TransactionPhase::RolledBackByUser,
+                "Auto-commit transactions cannot be manually rolled back.");
+    const auto success = _phase.compare_exchange_strong(from_phase, to_phase);
+    Assert(success, "Illegal phase transition.");
 }
 
-void TransactionContext::_wait_for_active_operators_to_finish() const {
-  std::unique_lock<std::mutex> lock(_active_operators_mutex);
-  if (_num_active_operators == 0) {
-    return;
-  }
-  _active_operators_cv.wait(lock, [&] {
-    return _num_active_operators != 0;
-  });
-}
-
-void TransactionContext::_transition(TransactionPhase from_phase, TransactionPhase to_phase) {
-  DebugAssert(_is_auto_commit == AutoCommit::No || to_phase != TransactionPhase::RolledBackByUser,
-              "Auto-commit transactions cannot be manually rolled back.");
-  const auto success = _phase.compare_exchange_strong(from_phase, to_phase);
-  Assert(success, "Illegal phase transition.");
-}
-
-std::ostream& operator<<(std::ostream& stream, const TransactionPhase& phase) {
-  switch (phase) {
+std::ostream &operator<<(std::ostream &stream, const TransactionPhase &phase)
+{
+    switch (phase)
+    {
     case TransactionPhase::Active:
-      stream << "Active";
-      break;
+        stream << "Active";
+        break;
     case TransactionPhase::Conflicted:
-      stream << "Conflicted";
-      break;
+        stream << "Conflicted";
+        break;
     case TransactionPhase::RolledBackAfterConflict:
-      stream << "RolledBackAfterConflict";
-      break;
+        stream << "RolledBackAfterConflict";
+        break;
     case TransactionPhase::RolledBackByUser:
-      stream << "RolledBackByUser";
-      break;
+        stream << "RolledBackByUser";
+        break;
     case TransactionPhase::Committing:
-      stream << "Committing";
-      break;
+        stream << "Committing";
+        break;
     case TransactionPhase::Committed:
-      stream << "Committed";
-      break;
-  }
-  return stream;
+        stream << "Committed";
+        break;
+    }
+    return stream;
 }
 
-}  // namespace hyrise
+} // namespace hyrise

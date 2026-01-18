@@ -49,7 +49,8 @@
  * Because (copy) constructors cannot be virtual, runtime polymorphism does not work in this situation.
  */
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * FlatMapIterator that implements an iterator interface and holds a pointer to an BaseIteratorImpl. This class
@@ -59,36 +60,38 @@ namespace hyrise {
  * iterator, not a random access iterator. When using a forward iterator with functions such as std::distance, a copy
  * of the iterator must be created before the manipulation.
  */
-class FlatMapIterator {
- public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = const RowID;
-  using difference_type = std::ptrdiff_t;
-  using pointer = const RowID*;
-  using reference = const RowID&;
+class FlatMapIterator
+{
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const RowID;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const RowID *;
+    using reference = const RowID &;
 
-  FlatMapIterator() = default;
-  explicit FlatMapIterator(std::unique_ptr<BaseFlatMapIteratorImpl>&& index_iterator);
-  FlatMapIterator(const FlatMapIterator& other);
-  FlatMapIterator& operator=(const FlatMapIterator& other);
-  reference operator*() const;
-  FlatMapIterator& operator++();
-  bool operator==(const FlatMapIterator& other) const;
-  bool operator!=(const FlatMapIterator& other) const;
+    FlatMapIterator() = default;
+    explicit FlatMapIterator(std::unique_ptr<BaseFlatMapIteratorImpl> &&index_iterator);
+    FlatMapIterator(const FlatMapIterator &other);
+    FlatMapIterator &operator=(const FlatMapIterator &other);
+    reference operator*() const;
+    FlatMapIterator &operator++();
+    bool operator==(const FlatMapIterator &other) const;
+    bool operator!=(const FlatMapIterator &other) const;
 
- private:
-  std::unique_ptr<BaseFlatMapIteratorImpl> _impl;
+  private:
+    std::unique_ptr<BaseFlatMapIteratorImpl> _impl;
 };
 
 // We want to instantiate from_map_iterator() for all data types, but our EXPLICITLY_INSTANTIATE_DATA_TYPES macro
 // only supports classes. So we wrap from_map_iterator() in this class and instantiate the class in the .cpp.
 template <typename DataType>
-class CreateFlatMapIterator {
- public:
-  // Creates and returns an FlatMapIterator holding an instance of FlatMapIteratorImpl initialized using the passed
-  // MapIterator.
-  static FlatMapIterator from_map_iterator(
-      const typename tsl::sparse_map<DataType, std::vector<RowID>>::const_iterator& it);
+class CreateFlatMapIterator
+{
+  public:
+    // Creates and returns an FlatMapIterator holding an instance of FlatMapIteratorImpl initialized using the passed
+    // MapIterator.
+    static FlatMapIterator from_map_iterator(
+        const typename tsl::sparse_map<DataType, std::vector<RowID>>::const_iterator &it);
 };
 
-}  // namespace hyrise
+} // namespace hyrise

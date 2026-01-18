@@ -10,26 +10,30 @@
 #include "storage/table.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-TableWrapper::TableWrapper(const std::shared_ptr<const Table>& init_table)
+TableWrapper::TableWrapper(const std::shared_ptr<const Table> &init_table)
     : AbstractReadOnlyOperator(OperatorType::TableWrapper), table(init_table) {}
 
-const std::string& TableWrapper::name() const {
-  static const auto name = std::string{"TableWrapper"};
-  return name;
+const std::string &TableWrapper::name() const
+{
+    static const auto name = std::string{"TableWrapper"};
+    return name;
 }
 
 std::shared_ptr<AbstractOperator> TableWrapper::_on_deep_copy(
-    const std::shared_ptr<AbstractOperator>& /*copied_left_input*/,
-    const std::shared_ptr<AbstractOperator>& /*copied_right_input*/,
-    std::unordered_map<const AbstractOperator*, std::shared_ptr<AbstractOperator>>& /*copied_ops*/) const {
-  return std::make_shared<TableWrapper>(table);
+    const std::shared_ptr<AbstractOperator> & /*copied_left_input*/,
+    const std::shared_ptr<AbstractOperator> & /*copied_right_input*/,
+    std::unordered_map<const AbstractOperator *, std::shared_ptr<AbstractOperator>> & /*copied_ops*/) const
+{
+    return std::make_shared<TableWrapper>(table);
 }
 
-void TableWrapper::_on_set_parameters(const std::unordered_map<ParameterID, AllTypeVariant>& parameters) {}
+void TableWrapper::_on_set_parameters(const std::unordered_map<ParameterID, AllTypeVariant> &parameters) {}
 
-std::shared_ptr<const Table> TableWrapper::_on_execute() {
-  return table;
+std::shared_ptr<const Table> TableWrapper::_on_execute()
+{
+    return table;
 }
-}  // namespace hyrise
+} // namespace hyrise

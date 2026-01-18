@@ -9,7 +9,8 @@
 #include "abstract_histogram.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * "Scaled" histogram for temporary statistics objects, e.g., during cardinality estimation. This class is a wrapper
@@ -25,46 +26,48 @@ namespace hyrise {
  *               string domains.
  */
 template <typename T>
-class ScaledHistogram : public AbstractHistogram<T> {
- public:
-  using AbstractHistogram<T>::AbstractHistogram;
+class ScaledHistogram : public AbstractHistogram<T>
+{
+  public:
+    using AbstractHistogram<T>::AbstractHistogram;
 
-  ScaledHistogram(const AbstractHistogram<T>& referenced_histogram, const Selectivity selectivity,
-                  const HistogramDomain<T>& domain = {});
+    ScaledHistogram(const AbstractHistogram<T> &referenced_histogram, const Selectivity selectivity,
+                    const HistogramDomain<T> &domain = {});
 
-  // Convenience builder for a ScaledHistogram from the referenced histogram. Ensures exactly one indirection.
-  static std::shared_ptr<ScaledHistogram<T>> from_referenced_histogram(const AbstractHistogram<T>& referenced_histogram,
-                                                                       const Selectivity selectivity);
+    // Convenience builder for a ScaledHistogram from the referenced histogram. Ensures exactly one indirection.
+    static std::shared_ptr<ScaledHistogram<T>> from_referenced_histogram(const AbstractHistogram<T> &referenced_histogram,
+                                                                         const Selectivity selectivity);
 
-  std::string name() const override;
-  std::shared_ptr<AbstractHistogram<T>> clone() const override;
-  HistogramCountType total_distinct_count() const override;
-  HistogramCountType total_count() const override;
+    std::string name() const override;
+    std::shared_ptr<AbstractHistogram<T>> clone() const override;
+    HistogramCountType total_distinct_count() const override;
+    HistogramCountType total_count() const override;
 
-  BinID bin_count() const override;
+    BinID bin_count() const override;
 
-  const T& bin_minimum(const BinID index) const override;
-  const T& bin_maximum(const BinID index) const override;
-  HistogramCountType bin_height(const BinID index) const override;
-  HistogramCountType bin_distinct_count(const BinID index) const override;
+    const T &bin_minimum(const BinID index) const override;
+    const T &bin_maximum(const BinID index) const override;
+    HistogramCountType bin_height(const BinID index) const override;
+    HistogramCountType bin_distinct_count(const BinID index) const override;
 
-  BinID bin_for_value(const T& value) const override;
-  BinID next_bin_for_value(const T& value) const override;
+    BinID bin_for_value(const T &value) const override;
+    BinID next_bin_for_value(const T &value) const override;
 
- private:
-  friend class ScaledHistogramTest;
+  private:
+    friend class ScaledHistogramTest;
 
-  const std::shared_ptr<const AbstractHistogram<T>> _referenced_histogram;
+    const std::shared_ptr<const AbstractHistogram<T>> _referenced_histogram;
 
-  const Selectivity _selectivity;
+    const Selectivity _selectivity;
 };
 
 // For gtest.
 template <typename T>
-std::ostream& operator<<(std::ostream& stream, const ScaledHistogram<T>& histogram) {
-  return stream << histogram.description() << '\n';
+std::ostream &operator<<(std::ostream &stream, const ScaledHistogram<T> &histogram)
+{
+    return stream << histogram.description() << '\n';
 }
 
 EXPLICITLY_DECLARE_DATA_TYPES(ScaledHistogram);
 
-}  // namespace hyrise
+} // namespace hyrise

@@ -32,7 +32,7 @@
 STRONG_TYPEDEF(uint32_t, ChunkID);
 STRONG_TYPEDEF(uint16_t, ColumnID);
 STRONG_TYPEDEF(hyrise::ColumnID::base_type, ColumnCount);
-STRONG_TYPEDEF(uint32_t, ValueID);  // Cannot be larger than ChunkOffset
+STRONG_TYPEDEF(uint32_t, ValueID); // Cannot be larger than ChunkOffset
 STRONG_TYPEDEF(uint32_t, NodeID);
 STRONG_TYPEDEF(uint32_t, CpuID);
 STRONG_TYPEDEF(uint32_t, WorkerID);
@@ -51,7 +51,8 @@ STRONG_TYPEDEF(uint32_t, TransactionID);
 // `SELECT * FROM t WHERE a > ?` or a correlated parameter in a subquery.
 STRONG_TYPEDEF(uint16_t, ParameterID);
 
-namespace hyrise {
+namespace hyrise
+{
 
 // Floating-point aliases used in cardinality estimations/statistics. Single-precision types (a.k.a, float) should be
 // used carefully because they soon reach a point where additions do not increment the value anymore (see #2676).
@@ -95,26 +96,29 @@ using pmr_vector = std::vector<T, PolymorphicAllocator<T>>;
 constexpr ChunkOffset INVALID_CHUNK_OFFSET{std::numeric_limits<ChunkOffset::base_type>::max()};
 constexpr ChunkID INVALID_CHUNK_ID{std::numeric_limits<ChunkID::base_type>::max()};
 
-struct RowID {
-  constexpr RowID(const ChunkID init_chunk_id, const ChunkOffset init_chunk_offset)
-      : chunk_id{init_chunk_id}, chunk_offset{init_chunk_offset} {}
+struct RowID
+{
+    constexpr RowID(const ChunkID init_chunk_id, const ChunkOffset init_chunk_offset)
+        : chunk_id{init_chunk_id}, chunk_offset{init_chunk_offset} {}
 
-  RowID() = default;
+    RowID() = default;
 
-  ChunkID chunk_id{INVALID_CHUNK_ID};
-  ChunkOffset chunk_offset{INVALID_CHUNK_OFFSET};
+    ChunkID chunk_id{INVALID_CHUNK_ID};
+    ChunkOffset chunk_offset{INVALID_CHUNK_OFFSET};
 
-  // Faster than row_id == NULL_ROW_ID, since we only compare the ChunkOffset.
-  bool is_null() const {
-    return chunk_offset == INVALID_CHUNK_OFFSET;
-  }
+    // Faster than row_id == NULL_ROW_ID, since we only compare the ChunkOffset.
+    bool is_null() const
+    {
+        return chunk_offset == INVALID_CHUNK_OFFSET;
+    }
 
-  auto operator<=>(const RowID&) const = default;
+    auto operator<=>(const RowID &) const = default;
 
-  friend std::ostream& operator<<(std::ostream& stream, const RowID& row_id) {
-    stream << "RowID(" << row_id.chunk_id << "," << row_id.chunk_offset << ")";
-    return stream;
-  }
+    friend std::ostream &operator<<(std::ostream &stream, const RowID &row_id)
+    {
+        stream << "RowID(" << row_id.chunk_id << "," << row_id.chunk_offset << ")";
+        return stream;
+    }
 };
 
 using CompressedVectorTypeID = uint8_t;
@@ -153,30 +157,32 @@ constexpr RowID NULL_ROW_ID = RowID{INVALID_CHUNK_ID, INVALID_CHUNK_OFFSET};
 constexpr ValueID INVALID_VALUE_ID{std::numeric_limits<ValueID::base_type>::max()};
 
 // The Scheduler currently supports just these two priorities.
-enum class SchedulePriority {
-  Default = 1,  // Schedule task of normal priority.
-  High = 0      // Schedule task of high priority, subject to be preferred in scheduling.
+enum class SchedulePriority
+{
+    Default = 1, // Schedule task of normal priority.
+    High = 0     // Schedule task of high priority, subject to be preferred in scheduling.
 };
 
-enum class PredicateCondition {
-  Equals,
-  NotEquals,
-  LessThan,
-  LessThanEquals,
-  GreaterThan,
-  GreaterThanEquals,
-  BetweenInclusive,
-  BetweenLowerExclusive,
-  BetweenUpperExclusive,
-  BetweenExclusive,
-  In,
-  NotIn,
-  Like,
-  NotLike,
-  LikeInsensitive,
-  NotLikeInsensitive,
-  IsNull,
-  IsNotNull
+enum class PredicateCondition
+{
+    Equals,
+    NotEquals,
+    LessThan,
+    LessThanEquals,
+    GreaterThan,
+    GreaterThanEquals,
+    BetweenInclusive,
+    BetweenLowerExclusive,
+    BetweenUpperExclusive,
+    BetweenExclusive,
+    In,
+    NotIn,
+    Like,
+    NotLike,
+    LikeInsensitive,
+    NotLikeInsensitive,
+    IsNull,
+    IsNotNull
 };
 
 // @return whether the PredicateCondition takes exactly two arguments
@@ -208,77 +214,148 @@ PredicateCondition conditions_to_between(PredicateCondition lower, PredicateCond
 //                      dropped. This behavior mirrors NOT IN.
 // AntiNullAsFalse:   If for a tuple Ri in R, there is a tuple Sj in S so that <condition> is TRUE, Ri is
 //                      dropped. This behavior mirrors NOT EXISTS
-enum class JoinMode { Inner, Left, Right, FullOuter, Cross, Semi, AntiNullAsTrue, AntiNullAsFalse };
+enum class JoinMode
+{
+    Inner,
+    Left,
+    Right,
+    FullOuter,
+    Cross,
+    Semi,
+    AntiNullAsTrue,
+    AntiNullAsFalse
+};
 
 bool is_semi_or_anti_join(JoinMode join_mode);
 
 // SQL set operations come in two flavors, with and without `ALL`, e.g., `UNION` and `UNION ALL`.
 // We have a third mode (Positions) that is used to intersect position lists that point to the same table,
 // see union_positions.hpp for details.
-enum class SetOperationMode { Unique, All, Positions };
+enum class SetOperationMode
+{
+    Unique,
+    All,
+    Positions
+};
 
-enum class SortMode { AscendingNullsFirst, DescendingNullsFirst, AscendingNullsLast, DescendingNullsLast };
+enum class SortMode
+{
+    AscendingNullsFirst,
+    DescendingNullsFirst,
+    AscendingNullsLast,
+    DescendingNullsLast
+};
 
-enum class TableType { References, Data };
+enum class TableType
+{
+    References,
+    Data
+};
 
-enum class DescriptionMode { SingleLine, MultiLine };
+enum class DescriptionMode
+{
+    SingleLine,
+    MultiLine
+};
 
-enum class UseMvcc : bool { Yes = true, No = false };
+enum class UseMvcc : bool
+{
+    Yes = true,
+    No = false
+};
 
-enum class RollbackReason : bool { User, Conflict };
+enum class RollbackReason : bool
+{
+    User,
+    Conflict
+};
 
-enum class MemoryUsageCalculationMode { Sampled, Full };
+enum class MemoryUsageCalculationMode
+{
+    Sampled,
+    Full
+};
 
-enum class EraseReferencedSegmentType : bool { Yes = true, No = false };
+enum class EraseReferencedSegmentType : bool
+{
+    Yes = true,
+    No = false
+};
 
-enum class MetaTableChangeType { Insert, Delete, Update };
+enum class MetaTableChangeType
+{
+    Insert,
+    Delete,
+    Update
+};
 
-enum class AutoCommit : bool { Yes = true, No = false };
+enum class AutoCommit : bool
+{
+    Yes = true,
+    No = false
+};
 
-enum class DatetimeComponent { Year, Month, Day, Hour, Minute, Second };
+enum class DatetimeComponent
+{
+    Year,
+    Month,
+    Day,
+    Hour,
+    Minute,
+    Second
+};
 
 // Used as a template parameter that is passed whenever we conditionally erase the type of a template. This is done to
 // reduce the compile time at the cost of the runtime performance. Examples are iterators, which are replaced by
 // AnySegmentIterators that use virtual method calls.
-enum class EraseTypes { OnlyInDebugBuild, Always };
-
-// Defines in which order a certain column should be or is sorted.
-struct SortColumnDefinition final {
-  explicit SortColumnDefinition(ColumnID init_column, SortMode init_sort_mode = SortMode::AscendingNullsFirst)
-      : column(init_column), sort_mode(init_sort_mode) {}
-
-  ColumnID column;
-  SortMode sort_mode;
+enum class EraseTypes
+{
+    OnlyInDebugBuild,
+    Always
 };
 
-inline bool operator==(const SortColumnDefinition& lhs, const SortColumnDefinition& rhs) {
-  return lhs.column == rhs.column && lhs.sort_mode == rhs.sort_mode;
+// Defines in which order a certain column should be or is sorted.
+struct SortColumnDefinition final
+{
+    explicit SortColumnDefinition(ColumnID init_column, SortMode init_sort_mode = SortMode::AscendingNullsFirst)
+        : column(init_column), sort_mode(init_sort_mode) {}
+
+    ColumnID column;
+    SortMode sort_mode;
+};
+
+inline bool operator==(const SortColumnDefinition &lhs, const SortColumnDefinition &rhs)
+{
+    return lhs.column == rhs.column && lhs.sort_mode == rhs.sort_mode;
 }
 
-class Noncopyable {
- public:
-  Noncopyable(const Noncopyable&) = delete;
-  const Noncopyable& operator=(const Noncopyable&) = delete;
+class Noncopyable
+{
+  public:
+    Noncopyable(const Noncopyable &) = delete;
+    const Noncopyable &operator=(const Noncopyable &) = delete;
 
- protected:
-  Noncopyable() = default;
-  Noncopyable(Noncopyable&&) noexcept = default;
-  Noncopyable& operator=(Noncopyable&&) noexcept = default;
-  ~Noncopyable() = default;
+  protected:
+    Noncopyable() = default;
+    Noncopyable(Noncopyable &&) noexcept = default;
+    Noncopyable &operator=(Noncopyable &&) noexcept = default;
+    ~Noncopyable() = default;
 };
 
 // Dummy type, can be used to overload functions with a variant accepting a Null value
-struct Null {};
+struct Null
+{
+};
 
-std::ostream& operator<<(std::ostream& stream, PredicateCondition predicate_condition);
-std::ostream& operator<<(std::ostream& stream, SortMode sort_mode);
-std::ostream& operator<<(std::ostream& stream, JoinMode join_mode);
-std::ostream& operator<<(std::ostream& stream, SetOperationMode set_operation_mode);
-std::ostream& operator<<(std::ostream& stream, TableType table_type);
+std::ostream &operator<<(std::ostream &stream, PredicateCondition predicate_condition);
+std::ostream &operator<<(std::ostream &stream, SortMode sort_mode);
+std::ostream &operator<<(std::ostream &stream, JoinMode join_mode);
+std::ostream &operator<<(std::ostream &stream, SetOperationMode set_operation_mode);
+std::ostream &operator<<(std::ostream &stream, TableType table_type);
 
 using BoolAsByteType = uint8_t;
 
-}  // namespace hyrise
+} // namespace hyrise
 
 // namespace std {
 // // The hash method for pmr_string (see above). We explicitly don't use the alias here as this allows us to write

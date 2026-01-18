@@ -5,7 +5,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * This is an abstract class for all settings objects.
@@ -23,23 +24,24 @@ namespace hyrise {
  * Settings have a unique name that consists of the name of its parent and the setting
  * name (e.g. "TaskScheduler.workers")
  */
-class AbstractSetting : public Noncopyable, public std::enable_shared_from_this<AbstractSetting> {
- public:
-  explicit AbstractSetting(const std::string& init_name);
+class AbstractSetting : public Noncopyable, public std::enable_shared_from_this<AbstractSetting>
+{
+  public:
+    explicit AbstractSetting(const std::string &init_name);
 
-  virtual ~AbstractSetting() = default;
+    virtual ~AbstractSetting() = default;
 
-  virtual const std::string& description() const = 0;
+    virtual const std::string &description() const = 0;
 
-  virtual const std::string& get() = 0;
+    virtual const std::string &get() = 0;
 
-  virtual void set(const std::string& value) = 0;
+    virtual void set(const std::string &value) = 0;
 
-  virtual void register_at_settings_manager();
+    virtual void register_at_settings_manager();
 
-  virtual void unregister_at_settings_manager();
+    virtual void unregister_at_settings_manager();
 
-  const std::string name;
+    const std::string name;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

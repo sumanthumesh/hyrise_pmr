@@ -6,7 +6,7 @@
 #include <boost/preprocessor/stringize.hpp>
 
 #include "invalid_input_exception.hpp"
-#include "utils/string_utils.hpp"  // NOLINT(misc-include-cleaner): used in macro.
+#include "utils/string_utils.hpp" // NOLINT(misc-include-cleaner): used in macro.
 
 /**
  * This file provides better assertions than the std cassert/assert.h - DebugAssert(condition, msg) and Fail(msg) can be
@@ -37,40 +37,46 @@
  *     invalid input might want to be caught.
  */
 
-namespace hyrise {
+namespace hyrise
+{
 
-namespace detail {
+namespace detail
+{
 
 // We need this indirection so that we can throw exceptions from destructors without the compiler complaining. This is
 // generally forbidden and might lead to std::terminate, but as we do not want to handle most errors anyway, this is
 // fine.
-[[noreturn]] inline void fail(const std::string& msg) {
-  throw std::logic_error(msg);
+[[noreturn]] inline void fail(const std::string &msg)
+{
+    throw std::logic_error(msg);
 }
 
-}  // namespace detail
+} // namespace detail
 
-#define Fail(msg)                                                                                             \
-  hyrise::detail::fail(hyrise::trim_source_file_path(__FILE__) + ":" BOOST_PP_STRINGIZE(__LINE__) " " + msg); \
-  static_assert(true, "End call of macro with a semicolon.")
+#define Fail(msg)                                                                                               \
+    hyrise::detail::fail(hyrise::trim_source_file_path(__FILE__) + ":" BOOST_PP_STRINGIZE(__LINE__) " " + msg); \
+    static_assert(true, "End call of macro with a semicolon.")
 
-[[noreturn]] inline void FailInput(const std::string& msg) {  // NOLINT(readability-identifier-naming)
-  throw InvalidInputException(std::string("Invalid input error: ") + msg);
+[[noreturn]] inline void FailInput(const std::string &msg)
+{ // NOLINT(readability-identifier-naming)
+    throw InvalidInputException(std::string("Invalid input error: ") + msg);
 }
 
-}  // namespace hyrise
+} // namespace hyrise
 
 #define Assert(expr, msg)         \
-  if (!static_cast<bool>(expr)) { \
-    Fail(msg);                    \
-  }                               \
-  static_assert(true, "End call of macro with a semicolon.")
+    if (!static_cast<bool>(expr)) \
+    {                             \
+        Fail(msg);                \
+    }                             \
+    static_assert(true, "End call of macro with a semicolon.")
 
-#define AssertInput(expr, msg)                                               \
-  if (!static_cast<bool>(expr)) {                                            \
-    throw InvalidInputException(std::string("Invalid input error: ") + msg); \
-  }                                                                          \
-  static_assert(true, "End call of macro with a semicolon.")
+#define AssertInput(expr, msg)                                                   \
+    if (!static_cast<bool>(expr))                                                \
+    {                                                                            \
+        throw InvalidInputException(std::string("Invalid input error: ") + msg); \
+    }                                                                            \
+    static_assert(true, "End call of macro with a semicolon.")
 
 #if HYRISE_DEBUG
 #define DebugAssert(expr, msg) Assert(expr, msg)

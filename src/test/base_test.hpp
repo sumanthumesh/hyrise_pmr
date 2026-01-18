@@ -28,9 +28,10 @@
 #include "types.hpp"
 #include "utils/load_table.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-using namespace expression_functional;  // NOLINT(build/namespaces)
+using namespace expression_functional; // NOLINT(build/namespaces)
 
 class AbstractLQPNode;
 
@@ -39,16 +40,18 @@ extern std::string test_executable_path;
 
 template <typename ParamType>
 class BaseTestWithParam
-    : public std::conditional_t<std::is_same_v<ParamType, void>, ::testing::Test, ::testing::TestWithParam<ParamType>> {
- public:
-  /**
-   * Base test uses its destructor instead of TearDown() to clean up. This way, derived test classes can override TearDown()
-   * safely without preventing the BaseTest-cleanup from happening.
-   * GTest runs the destructor right after TearDown(): https://github.com/google/googletest/blob/main/docs/faq.md#should-i-use-the-constructordestructor-of-the-test-fixture-or-setupteardown-ctorvssetup
-   */
-  ~BaseTestWithParam() override {
-    Hyrise::reset();
-  }
+    : public std::conditional_t<std::is_same_v<ParamType, void>, ::testing::Test, ::testing::TestWithParam<ParamType>>
+{
+  public:
+    /**
+     * Base test uses its destructor instead of TearDown() to clean up. This way, derived test classes can override TearDown()
+     * safely without preventing the BaseTest-cleanup from happening.
+     * GTest runs the destructor right after TearDown(): https://github.com/google/googletest/blob/main/docs/faq.md#should-i-use-the-constructordestructor-of-the-test-fixture-or-setupteardown-ctorvssetup
+     */
+    ~BaseTestWithParam() override
+    {
+        Hyrise::reset();
+    }
 };
 
 using BaseTest = BaseTestWithParam<void>;
@@ -56,47 +59,47 @@ using BaseTest = BaseTestWithParam<void>;
 // creates a dictionary segment with the given type and values
 template <typename T>
 std::shared_ptr<DictionarySegment<T>> create_dict_segment_by_type(DataType data_type,
-                                                                  const std::vector<std::optional<T>>& values);
+                                                                  const std::vector<std::optional<T>> &values);
 
-void execute_all(const std::vector<std::shared_ptr<AbstractOperator>>& operators);
+void execute_all(const std::vector<std::shared_ptr<AbstractOperator>> &operators);
 
-std::shared_ptr<AbstractExpression> get_column_expression(const std::shared_ptr<AbstractOperator>& op,
+std::shared_ptr<AbstractExpression> get_column_expression(const std::shared_ptr<AbstractOperator> &op,
                                                           const ColumnID column_id);
 
 // Utility to create table scans
-std::shared_ptr<TableScan> create_table_scan(const std::shared_ptr<AbstractOperator>& in, const ColumnID column_id,
-                                             const PredicateCondition predicate_condition, const AllTypeVariant& value,
-                                             const std::optional<AllTypeVariant>& value2 = std::nullopt);
+std::shared_ptr<TableScan> create_table_scan(const std::shared_ptr<AbstractOperator> &in, const ColumnID column_id,
+                                             const PredicateCondition predicate_condition, const AllTypeVariant &value,
+                                             const std::optional<AllTypeVariant> &value2 = std::nullopt);
 
-void set_statistics_for_mock_node(const std::shared_ptr<MockNode>& mock_node, const size_t row_count,
-                                  const std::vector<std::shared_ptr<AbstractStatisticsObject>>& statistics_objects);
+void set_statistics_for_mock_node(const std::shared_ptr<MockNode> &mock_node, const size_t row_count,
+                                  const std::vector<std::shared_ptr<AbstractStatisticsObject>> &statistics_objects);
 
 std::shared_ptr<MockNode> create_mock_node_with_statistics(
-    const MockNode::ColumnDefinitions& column_definitions, const size_t row_count,
-    const std::vector<std::shared_ptr<AbstractStatisticsObject>>& statistics_objects);
+    const MockNode::ColumnDefinitions &column_definitions, const size_t row_count,
+    const std::vector<std::shared_ptr<AbstractStatisticsObject>> &statistics_objects);
 
 // Utility to create between table scans
-std::shared_ptr<TableScan> create_between_table_scan(const std::shared_ptr<AbstractOperator>& in,
-                                                     const ColumnID column_id, const AllTypeVariant& value,
-                                                     const std::optional<AllTypeVariant>& value2,
+std::shared_ptr<TableScan> create_between_table_scan(const std::shared_ptr<AbstractOperator> &in,
+                                                     const ColumnID column_id, const AllTypeVariant &value,
+                                                     const std::optional<AllTypeVariant> &value2,
                                                      const PredicateCondition predicate_condition);
 
-ChunkEncodingSpec create_compatible_chunk_encoding_spec(const Table& table,
-                                                        const SegmentEncodingSpec& desired_segment_encoding);
+ChunkEncodingSpec create_compatible_chunk_encoding_spec(const Table &table,
+                                                        const SegmentEncodingSpec &desired_segment_encoding);
 
-void assert_chunk_encoding(const std::shared_ptr<Chunk>& chunk, const ChunkEncodingSpec& spec);
+void assert_chunk_encoding(const std::shared_ptr<Chunk> &chunk, const ChunkEncodingSpec &spec);
 
 std::vector<SegmentEncodingSpec> get_supporting_segment_encodings_specs(const DataType data_type,
                                                                         const bool include_unencoded = true);
 
-bool file_exists(const std::string& name);
+bool file_exists(const std::string &name);
 
-bool compare_files(const std::string& original_file, const std::string& created_file);
+bool compare_files(const std::string &original_file, const std::string &created_file);
 
 // Converts a data table to a reference table. Note that this does not cover all variations of ReferenceSegments.
 // Single-chunk guarantees (and the lack thereof), ordered and unordered PosLists, etc. should be tested individually
 // where necessary.
-std::shared_ptr<const Table> to_simple_reference_table(const std::shared_ptr<const Table>& table);
+std::shared_ptr<const Table> to_simple_reference_table(const std::shared_ptr<const Table> &table);
 
 const SegmentEncodingSpec all_segment_encoding_specs[]{
     SegmentEncodingSpec{EncodingType::Unencoded},
@@ -109,19 +112,22 @@ const SegmentEncodingSpec all_segment_encoding_specs[]{
     SegmentEncodingSpec{EncodingType::RunLength}};
 
 template <typename EnumType>
-inline auto enum_formatter = [](const ::testing::TestParamInfo<EnumType>& info) {
-  return std::string{magic_enum::enum_name(info.param)};
+inline auto enum_formatter = [](const ::testing::TestParamInfo<EnumType> &info)
+{
+    return std::string{magic_enum::enum_name(info.param)};
 };
 
-inline auto segment_encoding_formatter = [](const ::testing::TestParamInfo<SegmentEncodingSpec>& info) {
-  const auto& spec = info.param;
+inline auto segment_encoding_formatter = [](const ::testing::TestParamInfo<SegmentEncodingSpec> &info)
+{
+    const auto &spec = info.param;
 
-  auto result = std::string{magic_enum::enum_name(spec.encoding_type)};
-  if (spec.vector_compression_type) {
-    result += "_" + std::string{magic_enum::enum_name(*spec.vector_compression_type)};
-  }
+    auto result = std::string{magic_enum::enum_name(spec.encoding_type)};
+    if (spec.vector_compression_type)
+    {
+        result += "_" + std::string{magic_enum::enum_name(*spec.vector_compression_type)};
+    }
 
-  return result;
+    return result;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

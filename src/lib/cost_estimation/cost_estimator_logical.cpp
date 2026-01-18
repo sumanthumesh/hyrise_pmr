@@ -16,27 +16,30 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace {
+namespace
+{
 
-using namespace hyrise;  // NOLINT(build/namespaces)
+using namespace hyrise; // NOLINT(build/namespaces)
 
-Cost expression_cost_multiplier(const std::shared_ptr<AbstractExpression>& expression) {
-  auto multiplier = Cost{0};
+Cost expression_cost_multiplier(const std::shared_ptr<AbstractExpression> &expression)
+{
+    auto multiplier = Cost{0};
 
-  // Determine the number of columns accessed by the predicate to factor in expression complexity. Also add a factor for
-  // correlated subqueries as we have to evaluate the subquery for each tuple again.
-  // We start with a factor of 0 and continuously add 1 for each column to ease, e.g., the estimation of column vs.
-  // column predicates or nested predicates ('SELECT ... WHERE column_a = column_b OR column_c = 4` needs to evaluate
-  // three columns).
-  // Returning the maximum of `multiplier` and 1 accounts for tautologies (`SELECT ... WHERE 1 = 1`), which we currently
-  // do not optimize and pass to the ExpressionEvaluator.
-  //
-  // In the past, we added to the factor for each expression in the predicate. This resulted in too pessimistic cost
-  // estimations for PredicateNodes compared to (semi-)joins, which turned out to be a problem when we switched to
-  // cost-based predicate ordering (see PredicateReorderingRule) in #2590. For example, the predicate `column_c = 4`
-  // would end up with a factor of 4 (1 for the binary predicate, 1 for each argument of the predicate, and 1 additional
-  // for the LQPColumnExpression), making its cost way higher than the cost of a semi-join with worse selectivity.
-  visit_expression(expression, [&](const auto& sub_expression) {
+    // Determine the number of columns accessed by the predicate to factor in expression complexity. Also add a factor for
+    // correlated subqueries as we have to evaluate the subquery for each tuple again.
+    // We start with a factor of 0 and continuously add 1 for each column to ease, e.g., the estimation of column vs.
+    // column predicates or nested predicates ('SELECT ... WHERE column_a = column_b OR column_c = 4` needs to evaluate
+    // three columns).
+    // Returning the maximum of `multiplier` and 1 accounts for tautologies (`SELECT ... WHERE 1 = 1`), which we currently
+    // do not optimize and pass to the ExpressionEvaluator.
+    //
+    // In the past, we added to the factor for each expression in the predicate. This resulted in too pessimistic cost
+    // estimations for PredicateNodes compared to (semi-)joins, which turned out to be a problem when we switched to
+    // cost-based predicate ordering (see PredicateReorderingRule) in #2590. For example, the predicate `column_c = 4`
+    // would end up with a factor of 4 (1 for the binary predicate, 1 for each argument of the predicate, and 1 additional
+    // for the LQPColumnExpression), making its cost way higher than the cost of a semi-join with worse selectivity.
+    visit_expression(expression, [&](const auto &sub_expression)
+                     {
     if (sub_expression->type == ExpressionType::LQPColumn ||
         (sub_expression->type == ExpressionType::LQPSubquery &&
          static_cast<LQPSubqueryExpression&>(*sub_expression).is_correlated())) {
@@ -60,69 +63,75 @@ Cost expression_cost_multiplier(const std::shared_ptr<AbstractExpression>& expre
       return ExpressionVisitation::DoNotVisitArguments;
     }
 
-    return ExpressionVisitation::VisitArguments;
-  });
+    return ExpressionVisitation::VisitArguments; });
 
-  return std::max(Cost{1}, multiplier);
+    return std::max(Cost{1}, multiplier);
 }
 
-}  // namespace
+} // namespace
 
-namespace hyrise {
+namespace hyrise
+{
 
-std::shared_ptr<AbstractCostEstimator> CostEstimatorLogical::new_instance() const {
-  return std::make_shared<CostEstimatorLogical>(cardinality_estimator->new_instance());
+std::shared_ptr<AbstractCostEstimator> CostEstimatorLogical::new_instance() const
+{
+    return std::make_shared<CostEstimatorLogical>(cardinality_estimator->new_instance());
 }
 
-Cost CostEstimatorLogical::estimate_node_cost(const std::shared_ptr<AbstractLQPNode>& node,
-                                              const bool cacheable) const {
-  const auto output_row_count = cardinality_estimator->estimate_cardinality(node, cacheable);
-  const auto left_input_row_count =
-      node->left_input() ? cardinality_estimator->estimate_cardinality(node->left_input(), cacheable) : 0.0;
-  const auto right_input_row_count =
-      node->right_input() ? cardinality_estimator->estimate_cardinality(node->right_input(), cacheable) : 0.0;
+Cost CostEstimatorLogical::estimate_node_cost(const std::shared_ptr<AbstractLQPNode> &node,
+                                              const bool cacheable) const
+{
+    const auto output_row_count = cardinality_estimator->estimate_cardinality(node, cacheable);
+    const auto left_input_row_count =
+        node->left_input() ? cardinality_estimator->estimate_cardinality(node->left_input(), cacheable) : 0.0;
+    const auto right_input_row_count =
+        node->right_input() ? cardinality_estimator->estimate_cardinality(node->right_input(), cacheable) : 0.0;
 
-  switch (node->type) {
+    switch (node->type)
+    {
     case LQPNodeType::Join:
-      // Covers predicated and unpredicated joins. For cross joins, output_row_count will be
-      // left_input_row_count * right_input_row_count.
-      return left_input_row_count + right_input_row_count + output_row_count;
+        // Covers predicated and unpredicated joins. For cross joins, output_row_count will be
+        // left_input_row_count * right_input_row_count.
+        return left_input_row_count + right_input_row_count + output_row_count;
 
     case LQPNodeType::Sort:
-      // n * log(n) for sorting, plus n for output writing.
-      return (left_input_row_count * std::log(left_input_row_count)) + output_row_count;
+        // n * log(n) for sorting, plus n for output writing.
+        return (left_input_row_count * std::log(left_input_row_count)) + output_row_count;
 
-    case LQPNodeType::Union: {
-      const auto union_mode = static_cast<const UnionNode&>(*node).set_operation_mode;
+    case LQPNodeType::Union:
+    {
+        const auto union_mode = static_cast<const UnionNode &>(*node).set_operation_mode;
 
-      switch (union_mode) {
+        switch (union_mode)
+        {
         case SetOperationMode::Positions:
-          // To merge the PosLists, we have to sort them. Thus, n * log(n) for each input plus output writing.
-          return (left_input_row_count * std::log(left_input_row_count)) +
-                 (right_input_row_count * std::log(right_input_row_count)) + output_row_count;
+            // To merge the PosLists, we have to sort them. Thus, n * log(n) for each input plus output writing.
+            return (left_input_row_count * std::log(left_input_row_count)) +
+                   (right_input_row_count * std::log(right_input_row_count)) + output_row_count;
         case SetOperationMode::All:
-          // UnionAll simply appends its two inputs and does not touch the actual data.
-          return 0.0;
+            // UnionAll simply appends its two inputs and does not touch the actual data.
+            return 0.0;
         case SetOperationMode::Unique:
-          Fail("ToDo, see discussion https://github.com/hyrise/hyrise/pull/2156#discussion_r452803825");
-      }
+            Fail("ToDo, see discussion https://github.com/hyrise/hyrise/pull/2156#discussion_r452803825");
+        }
 
-      Fail("This cannot happen, but gcc thinks this is a fall-through and complains.");
+        Fail("This cannot happen, but gcc thinks this is a fall-through and complains.");
     }
 
     case LQPNodeType::StoredTable:
-      // Simply forwards segments, does not touch the data.
-      return 0.0;
+        // Simply forwards segments, does not touch the data.
+        return 0.0;
 
-    case LQPNodeType::Predicate: {
-      const auto& predicate = static_cast<const PredicateNode&>(*node).predicate();
-      // n * number of scanned columns + output writing.
-      return (left_input_row_count * expression_cost_multiplier(predicate)) + output_row_count;
+    case LQPNodeType::Predicate:
+    {
+        const auto &predicate = static_cast<const PredicateNode &>(*node).predicate();
+        // n * number of scanned columns + output writing.
+        return (left_input_row_count * expression_cost_multiplier(predicate)) + output_row_count;
     }
 
     default:
-      return left_input_row_count + output_row_count;
-  }
+        return left_input_row_count + output_row_count;
+    }
 }
 
-}  // namespace hyrise
+} // namespace hyrise

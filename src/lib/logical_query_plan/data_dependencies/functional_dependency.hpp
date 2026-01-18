@@ -4,7 +4,8 @@
 
 #include "expression/abstract_expression.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Models a functional dependency (FD), which consists out of two sets of expressions. The left set of expressions
@@ -34,21 +35,22 @@ namespace hyrise {
  * This information is important because query plans that were optimized using a non-genuine FD are not safely
  * cacheable.
  */
-struct FunctionalDependency {
-  FunctionalDependency(ExpressionUnorderedSet&& init_determinants, ExpressionUnorderedSet&& init_dependents,
-                       bool init_is_genuine = true);
+struct FunctionalDependency
+{
+    FunctionalDependency(ExpressionUnorderedSet &&init_determinants, ExpressionUnorderedSet &&init_dependents,
+                         bool init_is_genuine = true);
 
-  bool operator==(const FunctionalDependency& other) const;
-  bool operator!=(const FunctionalDependency& other) const;
-  size_t hash() const;
+    bool operator==(const FunctionalDependency &other) const;
+    bool operator!=(const FunctionalDependency &other) const;
+    size_t hash() const;
 
-  ExpressionUnorderedSet determinants;
-  ExpressionUnorderedSet dependents;
+    ExpressionUnorderedSet determinants;
+    ExpressionUnorderedSet dependents;
 
-  mutable bool is_genuine;
+    mutable bool is_genuine;
 };
 
-std::ostream& operator<<(std::ostream& stream, const FunctionalDependency& fd);
+std::ostream &operator<<(std::ostream &stream, const FunctionalDependency &fd);
 
 using FunctionalDependencies = std::unordered_set<FunctionalDependency>;
 
@@ -63,7 +65,7 @@ using FunctionalDependencies = std::unordered_set<FunctionalDependency>;
  *         Note that the second FD only produces the FD {a} => {e} because this one is not present yet while the other
  *         FDs resulting from the dependents are already present and genuine.
  */
-FunctionalDependencies inflate_fds(const FunctionalDependencies& fds);
+FunctionalDependencies inflate_fds(const FunctionalDependencies &fds);
 
 /**
  * @return Reduces the given vector of FDs, so that there are no more FD objects with the same determinant expressions.
@@ -72,25 +74,25 @@ FunctionalDependencies inflate_fds(const FunctionalDependencies& fds);
  *
  *                             {a} => {b}
  *                             {a} => {c}         -->   {a} => {b, c, d}
- *                             {a} => {d} 
+ *                             {a} => {d}
  *          (not genuine) {a} => {e}         -->   {a} => {b, c, d, e} (not genuine)
  *         Note that if we have two FDs with the same determinant expressions, but one of them is not genuine,
  *         this not genuine FD is ignored in the deflation process as it is 'shadowed' by the genuine one.
  */
-FunctionalDependencies deflate_fds(const FunctionalDependencies& fds);
+FunctionalDependencies deflate_fds(const FunctionalDependencies &fds);
 
 /**
  * @return Unified FDs from the given @param fds_a and @param fds_b sets. FDs with the same determinant expressions are
  *         merged into single objects by merging their dependent expressions. If an FD exists on both sides, but is
  *         genuine on only one side, we are currently cautious and flag the FD as not genuine.
  */
-FunctionalDependencies union_fds(const FunctionalDependencies& fds_a, const FunctionalDependencies& fds_b);
+FunctionalDependencies union_fds(const FunctionalDependencies &fds_a, const FunctionalDependencies &fds_b);
 
 /**
  * @return FDs that are included in both of the given sets. If an FD exists on both sides, but is  genuine on only one
  *         side, we are currently cautious and flag the FD as not genuine.
  */
-FunctionalDependencies intersect_fds(const FunctionalDependencies& fds_a, const FunctionalDependencies& fds_b);
+FunctionalDependencies intersect_fds(const FunctionalDependencies &fds_a, const FunctionalDependencies &fds_b);
 
 /**
  * Future Work: Transitive FDs
@@ -101,17 +103,19 @@ FunctionalDependencies intersect_fds(const FunctionalDependencies& fds_a, const 
  * set of FDs and two expressions to see if dependee is dependent on dependent.
  */
 
-}  // namespace hyrise
+} // namespace hyrise
 
-namespace std {
+namespace std
+{
 
 /**
  * Please note: FDs with the same determinant expressions are expected to be merged into single FD objects (e.g. for
  * unordered sets). Therefore, we hash the determinant expressions only.
  */
 template <>
-struct hash<hyrise::FunctionalDependency> {
-  size_t operator()(const hyrise::FunctionalDependency& fd) const;
+struct hash<hyrise::FunctionalDependency>
+{
+    size_t operator()(const hyrise::FunctionalDependency &fd) const;
 };
 
-}  // namespace std
+} // namespace std

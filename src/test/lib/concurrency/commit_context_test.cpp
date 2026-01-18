@@ -8,39 +8,44 @@
 #include "concurrency/commit_context.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class CommitContextTest : public BaseTest {
- protected:
-  void SetUp() override {}
+class CommitContextTest : public BaseTest
+{
+  protected:
+    void SetUp() override {}
 };
 
-TEST_F(CommitContextTest, HasNextReturnsFalse) {
-  auto context = std::make_unique<CommitContext>(CommitID{0});
+TEST_F(CommitContextTest, HasNextReturnsFalse)
+{
+    auto context = std::make_unique<CommitContext>(CommitID{0});
 
-  EXPECT_FALSE(context->has_next());
+    EXPECT_FALSE(context->has_next());
 }
 
-TEST_F(CommitContextTest, HasNextReturnsTrueAfterNextHasBeenSet) {
-  auto context = std::make_unique<CommitContext>(CommitID{0});
+TEST_F(CommitContextTest, HasNextReturnsTrueAfterNextHasBeenSet)
+{
+    auto context = std::make_unique<CommitContext>(CommitID{0});
 
-  auto next_context = std::make_shared<CommitContext>(CommitID{context->commit_id() + 1});
+    auto next_context = std::make_shared<CommitContext>(CommitID{context->commit_id() + 1});
 
-  EXPECT_TRUE(context->try_set_next(next_context));
+    EXPECT_TRUE(context->try_set_next(next_context));
 
-  EXPECT_TRUE(context->has_next());
+    EXPECT_TRUE(context->has_next());
 }
 
-TEST_F(CommitContextTest, TrySetNextFailsIfNotNullptr) {
-  auto context = std::make_unique<CommitContext>(CommitID{0});
+TEST_F(CommitContextTest, TrySetNextFailsIfNotNullptr)
+{
+    auto context = std::make_unique<CommitContext>(CommitID{0});
 
-  auto next_context = std::make_shared<CommitContext>(CommitID{context->commit_id() + 1});
+    auto next_context = std::make_shared<CommitContext>(CommitID{context->commit_id() + 1});
 
-  EXPECT_TRUE(context->try_set_next(next_context));
+    EXPECT_TRUE(context->try_set_next(next_context));
 
-  next_context = std::make_shared<CommitContext>(CommitID{context->commit_id() + 1});
+    next_context = std::make_shared<CommitContext>(CommitID{context->commit_id() + 1});
 
-  EXPECT_FALSE(context->try_set_next(next_context));
+    EXPECT_FALSE(context->try_set_next(next_context));
 }
 
-}  // namespace hyrise
+} // namespace hyrise

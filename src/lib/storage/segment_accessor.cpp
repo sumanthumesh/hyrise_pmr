@@ -11,12 +11,15 @@
 #include "types.hpp"
 #include "utils/assert.hpp"
 
-namespace hyrise::detail {
+namespace hyrise::detail
+{
 template <typename T>
 std::unique_ptr<AbstractSegmentAccessor<T>> CreateSegmentAccessor<T>::create(
-    const std::shared_ptr<const AbstractSegment>& segment) {
-  std::unique_ptr<AbstractSegmentAccessor<T>> accessor;
-  resolve_segment_type<T>(*segment, [&](const auto& typed_segment) {
+    const std::shared_ptr<const AbstractSegment> &segment)
+{
+    std::unique_ptr<AbstractSegmentAccessor<T>> accessor;
+    resolve_segment_type<T>(*segment, [&](const auto &typed_segment)
+                            {
     using SegmentType = std::decay_t<decltype(typed_segment)>;
     if constexpr (std::is_same_v<SegmentType, ReferenceSegment>) {
       const auto& pos_list = *typed_segment.pos_list();
@@ -50,10 +53,9 @@ std::unique_ptr<AbstractSegmentAccessor<T>> CreateSegmentAccessor<T>::create(
       }
     } else {
       accessor = std::make_unique<SegmentAccessor<T, SegmentType>>(typed_segment);
-    }
-  });
-  return accessor;
+    } });
+    return accessor;
 }
 
 EXPLICITLY_INSTANTIATE_DATA_TYPES(CreateSegmentAccessor);
-}  // namespace hyrise::detail
+} // namespace hyrise::detail

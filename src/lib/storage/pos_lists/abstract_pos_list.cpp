@@ -3,21 +3,26 @@
 #include "types.hpp"
 #include "utils/performance_warning.hpp"
 
-namespace hyrise {
-AbstractPosList::PosListIterator<> AbstractPosList::begin() const {
-  PerformanceWarning("Unresolved iterator created for AbstractPosList");
-  return {this, ChunkOffset{0}};
+namespace hyrise
+{
+AbstractPosList::PosListIterator<> AbstractPosList::begin() const
+{
+    PerformanceWarning("Unresolved iterator created for AbstractPosList");
+    return {this, ChunkOffset{0}};
 }
 
-AbstractPosList::PosListIterator<> AbstractPosList::end() const {
-  return {this, static_cast<ChunkOffset>(size())};
+AbstractPosList::PosListIterator<> AbstractPosList::end() const
+{
+    return {this, static_cast<ChunkOffset>(size())};
 }
 
-AbstractPosList::PosListIterator<> AbstractPosList::cbegin() const {
-  return begin();
+AbstractPosList::PosListIterator<> AbstractPosList::cbegin() const
+{
+    return begin();
 }
 
-AbstractPosList::PosListIterator<> AbstractPosList::cend() const {
-  return end();
+AbstractPosList::PosListIterator<> AbstractPosList::cend() const
+{
+    return end();
 }
-}  // namespace hyrise
+} // namespace hyrise

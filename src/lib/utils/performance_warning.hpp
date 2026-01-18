@@ -24,53 +24,62 @@
  * Warnings do not print in tests.
  */
 
-namespace hyrise {
+namespace hyrise
+{
 
 class PerformanceWarningDisabler;
 
-class PerformanceWarningClass {
- public:
-  explicit PerformanceWarningClass(const std::string& text) {
-    if (_disabled) {
-      return;
+class PerformanceWarningClass
+{
+  public:
+    explicit PerformanceWarningClass(const std::string &text)
+    {
+        if (_disabled)
+        {
+            return;
+        }
+        std::cerr << "[PERF] " << text << "\n\tPerformance can be affected. This warning is only shown once.\n";
     }
-    std::cerr << "[PERF] " << text << "\n\tPerformance can be affected. This warning is only shown once.\n";
-  }
 
- protected:
-  static bool _disabled;
+  protected:
+    static bool _disabled;
 
-  static bool disable() {
-    bool previous = _disabled;
-    _disabled = true;
-    return previous;
-  }
+    static bool disable()
+    {
+        bool previous = _disabled;
+        _disabled = true;
+        return previous;
+    }
 
-  static void enable() {
-    _disabled = false;
-  }
+    static void enable()
+    {
+        _disabled = false;
+    }
 
-  friend class PerformanceWarningDisabler;
+    friend class PerformanceWarningDisabler;
 };
 
-class PerformanceWarningDisabler {
-  bool _previously_disabled;
+class PerformanceWarningDisabler
+{
+    bool _previously_disabled;
 
- public:
-  PerformanceWarningDisabler() : _previously_disabled(PerformanceWarningClass::disable()) {}
+  public:
+    PerformanceWarningDisabler() : _previously_disabled(PerformanceWarningClass::disable()) {}
 
-  ~PerformanceWarningDisabler() {
-    if (!_previously_disabled) {
-      PerformanceWarningClass::enable();
+    ~PerformanceWarningDisabler()
+    {
+        if (!_previously_disabled)
+        {
+            PerformanceWarningClass::enable();
+        }
     }
-  }
 };
 
-#define PerformanceWarning(text)                                                                             \
-  {                                                                                                          \
-    static const PerformanceWarningClass warn(std::string(text) + " at " + trim_source_file_path(__FILE__) + \
-                                              ":" BOOST_PP_STRINGIZE(__LINE__));                             \
-  }                                                                                                          \
-  static_assert(true, "End call of macro with a semicolon")
+#define PerformanceWarning(text)                                                                                 \
+    {                                                                                                            \
+        static const PerformanceWarningClass warn(std::string(text) + " at " + trim_source_file_path(__FILE__) + \
+                                                  ":" BOOST_PP_STRINGIZE(__LINE__));                             \
+    }                                                                                                            \
+    static_assert(true, "End call of macro with a semicolon")
 
-}  // namespace hyrise
+} // namespace hyrise

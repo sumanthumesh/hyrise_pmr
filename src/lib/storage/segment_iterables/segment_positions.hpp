@@ -6,7 +6,8 @@
 
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * @brief Return type of segment iterators
@@ -19,25 +20,26 @@ namespace hyrise {
  * declared using `final`.
  */
 template <typename T>
-class AbstractSegmentPosition {
- public:
-  using Type = T;
+class AbstractSegmentPosition
+{
+  public:
+    using Type = T;
 
- public:
-  AbstractSegmentPosition() = default;
-  AbstractSegmentPosition(const AbstractSegmentPosition&) = default;
-  virtual ~AbstractSegmentPosition() = default;
+  public:
+    AbstractSegmentPosition() = default;
+    AbstractSegmentPosition(const AbstractSegmentPosition &) = default;
+    virtual ~AbstractSegmentPosition() = default;
 
-  virtual const T& value() const = 0;
-  virtual bool is_null() const = 0;
+    virtual const T &value() const = 0;
+    virtual bool is_null() const = 0;
 
-  /**
-   * @brief Returns the chunk offset of the current value.
-   *
-   * The chunk offset can point either into a reference segment,
-   * if returned by a point-access iterator, or into an actual data segment.
-   */
-  virtual ChunkOffset chunk_offset() const = 0;
+    /**
+     * @brief Returns the chunk offset of the current value.
+     *
+     * The chunk offset can point either into a reference segment,
+     * if returned by a point-access iterator, or into an actual data segment.
+     */
+    virtual ChunkOffset chunk_offset() const = 0;
 };
 
 /**
@@ -46,30 +48,34 @@ class AbstractSegmentPosition {
  * Used in most segment iterators.
  */
 template <typename T>
-class SegmentPosition final : public AbstractSegmentPosition<T> {
- public:
-  static constexpr bool Nullable = true;
+class SegmentPosition final : public AbstractSegmentPosition<T>
+{
+  public:
+    static constexpr bool Nullable = true;
 
-  SegmentPosition(const T& value, const bool null_value, const ChunkOffset& chunk_offset)
-      : _value{value}, _null_value{null_value}, _chunk_offset{chunk_offset} {}
+    SegmentPosition(const T &value, const bool null_value, const ChunkOffset &chunk_offset)
+        : _value{value}, _null_value{null_value}, _chunk_offset{chunk_offset} {}
 
-  const T& value() const override {
-    return _value;
-  }
+    const T &value() const override
+    {
+        return _value;
+    }
 
-  bool is_null() const override {
-    return _null_value;
-  }
+    bool is_null() const override
+    {
+        return _null_value;
+    }
 
-  ChunkOffset chunk_offset() const override {
-    return _chunk_offset;
-  }
+    ChunkOffset chunk_offset() const override
+    {
+        return _chunk_offset;
+    }
 
- private:
-  // The alignment improves the suitability of the iterator for (auto-)vectorization
-  alignas(8) const T _value;
-  alignas(8) const bool _null_value;
-  alignas(8) const ChunkOffset _chunk_offset;
+  private:
+    // The alignment improves the suitability of the iterator for (auto-)vectorization
+    alignas(8) const T _value;
+    alignas(8) const bool _null_value;
+    alignas(8) const ChunkOffset _chunk_offset;
 };
 
 /**
@@ -78,29 +84,33 @@ class SegmentPosition final : public AbstractSegmentPosition<T> {
  * Used when an underlying segment (or data structure) cannot be null.
  */
 template <typename T>
-class NonNullSegmentPosition final : public AbstractSegmentPosition<T> {
- public:
-  static constexpr bool Nullable = false;
+class NonNullSegmentPosition final : public AbstractSegmentPosition<T>
+{
+  public:
+    static constexpr bool Nullable = false;
 
-  NonNullSegmentPosition(const T& value, const ChunkOffset& chunk_offset)
-      : _value{value}, _chunk_offset{chunk_offset} {}
+    NonNullSegmentPosition(const T &value, const ChunkOffset &chunk_offset)
+        : _value{value}, _chunk_offset{chunk_offset} {}
 
-  const T& value() const override {
-    return _value;
-  }
+    const T &value() const override
+    {
+        return _value;
+    }
 
-  bool is_null() const override {
-    return false;
-  }
+    bool is_null() const override
+    {
+        return false;
+    }
 
-  ChunkOffset chunk_offset() const override {
-    return _chunk_offset;
-  }
+    ChunkOffset chunk_offset() const override
+    {
+        return _chunk_offset;
+    }
 
- private:
-  // The alignment improves the suitability of the iterator for (auto-)vectorization
-  alignas(8) const T _value;
-  alignas(8) const ChunkOffset _chunk_offset;
+  private:
+    // The alignment improves the suitability of the iterator for (auto-)vectorization
+    alignas(8) const T _value;
+    alignas(8) const ChunkOffset _chunk_offset;
 };
 
 /**
@@ -110,30 +120,34 @@ class NonNullSegmentPosition final : public AbstractSegmentPosition<T> {
  *
  * @see NullValueVectorIterable
  */
-class IsNullSegmentPosition final : public AbstractSegmentPosition<boost::blank> {
- public:
-  static constexpr bool Nullable = true;
+class IsNullSegmentPosition final : public AbstractSegmentPosition<boost::blank>
+{
+  public:
+    static constexpr bool Nullable = true;
 
-  IsNullSegmentPosition(const bool null_value, const ChunkOffset& chunk_offset)
-      : _null_value{null_value}, _chunk_offset{chunk_offset} {}
+    IsNullSegmentPosition(const bool null_value, const ChunkOffset &chunk_offset)
+        : _null_value{null_value}, _chunk_offset{chunk_offset} {}
 
-  const boost::blank& value() const override {
-    return _blank;
-  }
+    const boost::blank &value() const override
+    {
+        return _blank;
+    }
 
-  bool is_null() const override {
-    return _null_value;
-  }
+    bool is_null() const override
+    {
+        return _null_value;
+    }
 
-  ChunkOffset chunk_offset() const override {
-    return _chunk_offset;
-  }
+    ChunkOffset chunk_offset() const override
+    {
+        return _chunk_offset;
+    }
 
- private:
-  // The alignment improves the suitability of the iterator for (auto-)vectorization
-  static constexpr auto _blank = boost::blank{};
-  alignas(8) const bool _null_value;
-  alignas(8) const ChunkOffset _chunk_offset;
+  private:
+    // The alignment improves the suitability of the iterator for (auto-)vectorization
+    static constexpr auto _blank = boost::blank{};
+    alignas(8) const bool _null_value;
+    alignas(8) const ChunkOffset _chunk_offset;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

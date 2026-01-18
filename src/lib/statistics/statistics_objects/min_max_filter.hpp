@@ -8,7 +8,8 @@
 #include "all_type_variant.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 /**
  * Filters are data structures that are primarily used for probabilistic membership queries. In Hyrise, they are
@@ -25,32 +26,34 @@ namespace hyrise {
  * instead of only looking at the distinct values (which is significantly cheaper for dictionary encoding).
  */
 template <typename T>
-class MinMaxFilter : public AbstractStatisticsObject, public std::enable_shared_from_this<MinMaxFilter<T>> {
- public:
-  explicit MinMaxFilter(T init_min, T init_max);
+class MinMaxFilter : public AbstractStatisticsObject, public std::enable_shared_from_this<MinMaxFilter<T>>
+{
+  public:
+    explicit MinMaxFilter(T init_min, T init_max);
 
-  Cardinality estimate_cardinality(const PredicateCondition /*predicate_condition*/,
-                                   const AllTypeVariant& /*variant_value*/,
-                                   const std::optional<AllTypeVariant>& variant_value2 = std::nullopt) const;
+    Cardinality estimate_cardinality(const PredicateCondition /*predicate_condition*/,
+                                     const AllTypeVariant & /*variant_value*/,
+                                     const std::optional<AllTypeVariant> &variant_value2 = std::nullopt) const;
 
-  std::shared_ptr<const AbstractStatisticsObject> sliced(
-      const PredicateCondition predicate_condition, const AllTypeVariant& variant_value,
-      const std::optional<AllTypeVariant>& variant_value2 = std::nullopt) const override;
+    std::shared_ptr<const AbstractStatisticsObject> sliced(
+        const PredicateCondition predicate_condition, const AllTypeVariant &variant_value,
+        const std::optional<AllTypeVariant> &variant_value2 = std::nullopt) const override;
 
-  std::shared_ptr<const AbstractStatisticsObject> scaled(const Selectivity selectivity) const override;
+    std::shared_ptr<const AbstractStatisticsObject> scaled(const Selectivity selectivity) const override;
 
-  bool does_not_contain(const PredicateCondition predicate_condition, const AllTypeVariant& variant_value,
-                        const std::optional<AllTypeVariant>& variant_value2 = std::nullopt) const;
+    bool does_not_contain(const PredicateCondition predicate_condition, const AllTypeVariant &variant_value,
+                          const std::optional<AllTypeVariant> &variant_value2 = std::nullopt) const;
 
-  const T min;
-  const T max;
+    const T min;
+    const T max;
 };
 
 template <typename T>
-std::ostream& operator<<(std::ostream& stream, const MinMaxFilter<T>& filter) {
-  return stream << "{" << filter.min << ", " << filter.max << "}";
+std::ostream &operator<<(std::ostream &stream, const MinMaxFilter<T> &filter)
+{
+    return stream << "{" << filter.min << ", " << filter.max << "}";
 }
 
 EXPLICITLY_DECLARE_DATA_TYPES(MinMaxFilter);
 
-}  // namespace hyrise
+} // namespace hyrise

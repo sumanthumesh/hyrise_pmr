@@ -7,15 +7,17 @@
 #include "resolve_type.hpp"
 #include "types.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
-class BaseSegmentAccessor {
- public:
-  BaseSegmentAccessor() = default;
-  BaseSegmentAccessor(const BaseSegmentAccessor&) = default;
-  BaseSegmentAccessor(BaseSegmentAccessor&&) = default;
+class BaseSegmentAccessor
+{
+  public:
+    BaseSegmentAccessor() = default;
+    BaseSegmentAccessor(const BaseSegmentAccessor &) = default;
+    BaseSegmentAccessor(BaseSegmentAccessor &&) = default;
 
-  virtual ~BaseSegmentAccessor() {}
+    virtual ~BaseSegmentAccessor() {}
 };
 
 /**
@@ -23,9 +25,10 @@ class BaseSegmentAccessor {
  * It provides the common interface to access individual values of a segment.
  */
 template <typename T>
-class AbstractSegmentAccessor : public BaseSegmentAccessor {
- public:
-  virtual const std::optional<T> access(ChunkOffset offset) const = 0;
+class AbstractSegmentAccessor : public BaseSegmentAccessor
+{
+  public:
+    virtual const std::optional<T> access(ChunkOffset offset) const = 0;
 };
 
-}  // namespace hyrise
+} // namespace hyrise

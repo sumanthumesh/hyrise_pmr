@@ -2,8 +2,9 @@
 
 #include <string>
 
-namespace hyrise {
+namespace hyrise
+{
 
-const std::string build_dylib_path(const std::string& name);
+const std::string build_dylib_path(const std::string &name);
 
-}  // namespace hyrise
+} // namespace hyrise

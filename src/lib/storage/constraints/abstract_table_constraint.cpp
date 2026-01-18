@@ -1,27 +1,33 @@
 #include "abstract_table_constraint.hpp"
 
-namespace hyrise {
+namespace hyrise
+{
 
 AbstractTableConstraint::AbstractTableConstraint(const TableConstraintType type) : _type{type} {}
 
-bool AbstractTableConstraint::operator==(const AbstractTableConstraint& rhs) const {
-  if (this == &rhs) {
-    return true;
-  }
+bool AbstractTableConstraint::operator==(const AbstractTableConstraint &rhs) const
+{
+    if (this == &rhs)
+    {
+        return true;
+    }
 
-  if (_type != rhs._type) {
-    return false;
-  }
+    if (_type != rhs._type)
+    {
+        return false;
+    }
 
-  return _on_equals(rhs);
+    return _on_equals(rhs);
 }
 
-bool AbstractTableConstraint::operator!=(const AbstractTableConstraint& rhs) const {
-  return !(rhs == *this);
+bool AbstractTableConstraint::operator!=(const AbstractTableConstraint &rhs) const
+{
+    return !(rhs == *this);
 }
 
-TableConstraintType AbstractTableConstraint::type() const {
-  return _type;
+TableConstraintType AbstractTableConstraint::type() const
+{
+    return _type;
 }
 
-}  // namespace hyrise
+} // namespace hyrise
