@@ -85,10 +85,10 @@ class Topology final : public Noncopyable
 
     size_t num_cpus() const;
 
+    friend std::ostream &operator<<(std::ostream &stream, const Topology &topology);
   private:
     Topology();
 
-    friend std::ostream &operator<<(std::ostream &stream, const Topology &topology);
     friend class Hyrise;
 
     void _init_default_topology(uint32_t max_num_cores = 0);
