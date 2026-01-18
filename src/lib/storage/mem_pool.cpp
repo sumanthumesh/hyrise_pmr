@@ -4,7 +4,10 @@
 #include <iostream>
 #include <memory_resource>
 #include <numa.h>
+#include "numaif.h"
 #include <vector>
+#include <cerrno>
+#include <stdexcept>
 
 using namespace hyrise;
 
