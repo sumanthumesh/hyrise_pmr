@@ -1167,46 +1167,150 @@ int Console::_move2cxl(const std::string &args)
         // Need to copy segment and replace the original segment ptr with this new one
         // Cast to correct dictionary segment first
         auto data_type = segment_ptr->data_type();
-        auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
-        Assertf(abs_encoded_segment_ptr != nullptr, "AbstractSegment to AbstractEncodedSegment conversion failed\n");
+        // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+        // Assertf(abs_encoded_segment_ptr != nullptr, "AbstractSegment to AbstractEncodedSegment conversion failed\n");
 
-        // switch(abs_encoded_segment_ptr->encoding_type())
-        // {
-        //   case EncodingType::Unencoded:
-        //   {
-        //       Fail("An actual segment should never have this type");
-        //       break;
-        //   }
-        //     case EncodingType::Dictionary:
-        //   {
-        //       out("Dictionary Encoding\n");
-        //       break;
-        //   }
-        //   default:
-        //       Fail("Unknown encoding of type " + std::to_string(static_cast<std::underlying_type_t<EncodingType>>(abs_encoded_segment_ptr->encoding_type())) + "\n");
-        // }
-
-        switch (data_type)
+        if (auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr))
         {
-        case hyrise::DataType::Int:
-        {
-            // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
-            // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
-            auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
-            Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
-            auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<int32_t>>(base_dict_segment_ptr);
-            Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
+            switch (data_type)
+            {
+            case hyrise::DataType::Int:
+            {
+                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
+                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
+                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
+                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<int32_t>>(base_dict_segment_ptr);
+                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
 
-            // Copy to new dict segment ptr using the built in API
-            auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
+                // Copy to new dict segment ptr using the built in API
+                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
 
-            // Replace segment pointer
-            chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
 
-            break;
+                break;
+            }
+            case hyrise::DataType::Long:
+            {
+                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
+                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
+                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
+                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<int64_t>>(base_dict_segment_ptr);
+                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
+
+                // Copy to new dict segment ptr using the built in API
+                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
+
+                break;
+            }
+            case hyrise::DataType::Float:
+            {
+                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
+                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
+                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
+                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<float>>(base_dict_segment_ptr);
+                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
+
+                // Copy to new dict segment ptr using the built in API
+                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
+
+                break;
+            }
+            case hyrise::DataType::Double:
+            {
+                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
+                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
+                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
+                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<double>>(base_dict_segment_ptr);
+                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
+
+                // Copy to new dict segment ptr using the built in API
+                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
+
+                break;
+            }
+            default:
+                std::cout << "Should not have reached here\n";
+                return ReturnCode::Error;
+            }
         }
-        default:
-            std::cout << "Should not have reached here\n";
+        else if (const auto &base_value_segment_ptr = std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
+        {
+            switch (data_type)
+            {
+            case DataType::Int:
+            {
+                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<int32_t>>(base_value_segment_ptr);
+                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
+
+                // Copy to new value segment ptr using the built in API
+                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
+
+                break;
+            }
+            case DataType::Long:
+            {
+                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<int64_t>>(base_value_segment_ptr);
+                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
+
+                // Copy to new value segment ptr using the built in API
+                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
+
+                break;
+            }
+            case DataType::Float:
+            {
+                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<float>>(base_value_segment_ptr);
+                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
+
+                // Copy to new value segment ptr using the built in API
+                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
+
+                break;
+            }
+            case DataType::Double:
+            {
+                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<double>>(base_value_segment_ptr);
+                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
+
+                // Copy to new value segment ptr using the built in API
+                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
+
+                // Replace segment pointer
+                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
+
+                break;
+            }
+            default:
+                std::cout << "Should not have reached here\n";
+                return ReturnCode::Error;
+            }
+        }
+        else
+        {
+            std::cout << "Segment type not Dictionary or ValueSegment, but is instead " << Print::_segment_type(segment_ptr) << "\n";
             return ReturnCode::Error;
         }
     }
@@ -1506,7 +1610,7 @@ int Console::_dump_addr()
                         Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<int32_t> conversion failed\n");
                         const auto &vector = value_segment_ptr->values();
                         const int32_t *raw_ptr = vector.data();
-                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(int32_t)) << "\n";
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr) + (vector.size() + 1) * sizeof(int32_t) << "\n";
                         break;
                     }
                     case detail::DataType::Long:
@@ -1515,7 +1619,7 @@ int Console::_dump_addr()
                         Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<int64_t> conversion failed\n");
                         const auto &vector = value_segment_ptr->values();
                         const int64_t *raw_ptr = vector.data();
-                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(int64_t)) << "\n";
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr) + (vector.size() + 1) * sizeof(int64_t) << "\n";
                         break;
                     }
                     case detail::DataType::Float:
@@ -1524,7 +1628,7 @@ int Console::_dump_addr()
                         Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<float> conversion failed\n");
                         const auto &vector = value_segment_ptr->values();
                         const float *raw_ptr = vector.data();
-                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(float)) << "\n";
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr) + (vector.size() + 1) * sizeof(float) << "\n";
                         break;
                     }
                     case detail::DataType::Double:
@@ -1533,7 +1637,7 @@ int Console::_dump_addr()
                         Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment<double> conversion failed\n");
                         const auto &vector = value_segment_ptr->values();
                         const double *raw_ptr = vector.data();
-                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + sizeof(double)) << "\n";
+                        fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr) + (vector.size() + 1) * sizeof(double) << "\n";
                         break;
                     }
                     case detail::DataType::String:
@@ -1544,7 +1648,7 @@ int Console::_dump_addr()
                         for (auto &s : vector)
                         {
                             const char *raw_ptr = s.data();
-                            fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr + s.size() + 1) << "\n";
+                            fout << std::dec << uniq_id << "," << std::hex << reinterpret_cast<uint64_t>(raw_ptr) << "," << reinterpret_cast<uint64_t>(raw_ptr) + s.size() + 1 << "\n";
                         }
                         break;
                     }
