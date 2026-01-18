@@ -1439,6 +1439,20 @@ int Console::_hshell(const std::string &args)
 
         std::cout << column_size << "B\n";
     }
+    else if (cmd == "find_numa")
+    {
+        if (arguments.size() != 2)
+        {
+            out("Usage: ");
+            out("  hshell find_numa MEM_RESOURCE_NAME  Find the NUMA node for the given memory resource\n");
+            return ReturnCode::Error;
+        }
+        auto &pool_name = arguments[1];
+        auto &pool_manager = Hyrise::get().mem_pool_manager;
+        auto mem_pool = pool_manager.get_pool(pool_name);
+
+        std::cout << mem_pool->verify_numa_node() << "\n";
+    }
     else
     {
         out("Error: Unknown hshell command\n");
