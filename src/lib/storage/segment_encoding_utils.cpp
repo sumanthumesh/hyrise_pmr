@@ -117,9 +117,9 @@ SegmentEncodingSpec auto_select_segment_encoding_spec(const DataType type, const
 {
     // SUMANTHTODO: Reinstate FrameOfReference and Unencoded types here before finalizing
 
-    // if (segment_values_are_unique) {
-    //   return SegmentEncodingSpec{EncodingType::Unencoded};
-    // }
+    if (segment_values_are_unique) {
+      return SegmentEncodingSpec{EncodingType::Unencoded};
+    }
 
     //   if (type == DataType::Int) {
     //     return SegmentEncodingSpec{EncodingType::FrameOfReference};
