@@ -93,6 +93,7 @@ class Topology final : public Noncopyable
 
     void _init_default_topology(uint32_t max_num_cores = 0);
     void _init_numa_topology(uint32_t max_num_cores = 0);
+    void _init_restricted_numa_topology(uint32_t max_num_cores = 0);
     void _init_non_numa_topology(uint32_t max_num_cores = 0);
     void _init_fake_numa_topology(const std::vector<uint32_t> &workers_per_node);
 

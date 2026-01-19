@@ -95,7 +95,7 @@ void Topology::_init_default_topology(uint32_t max_num_cores)
 #if !HYRISE_NUMA_SUPPORT
     _init_non_numa_topology(max_num_cores);
 #else
-    _init_numa_topology(max_num_cores);
+    _init_restricted_numa_topology(max_num_cores);
 #endif
 }
 
@@ -115,6 +115,70 @@ void Topology::_init_numa_topology(uint32_t max_num_cores)
     _fake_numa_topology = false;
 
     auto max_node = numa_max_node();
+    auto num_configured_cpus = static_cast<CpuID>(numa_num_configured_cpus());
+
+    // We take the CPU affinity (set, e.g., by numactl) of our process into account.
+    // Otherwise, we would always start with the first CPU, even if a specific NUMA node was selected.
+    auto *affinity_cpu_bitmask = numa_allocate_cpumask();
+    numa_sched_getaffinity(0, affinity_cpu_bitmask);
+
+    auto *this_node_cpu_bitmask = numa_allocate_cpumask();
+    auto core_count = uint32_t{0};
+
+    for (auto node_id = 0; node_id <= max_node; ++node_id)
+    {
+        if (max_num_cores == 0 || core_count < max_num_cores)
+        {
+            auto cpus = std::vector<TopologyCpu>();
+
+            numa_node_to_cpus(node_id, this_node_cpu_bitmask);
+
+            for (auto cpu_id = CpuID{0}; cpu_id < num_configured_cpus; ++cpu_id)
+            {
+                const auto cpu_is_part_of_node = numa_bitmask_isbitset(this_node_cpu_bitmask, cpu_id);
+                const auto cpu_is_part_of_affinity = numa_bitmask_isbitset(affinity_cpu_bitmask, cpu_id);
+                if (cpu_is_part_of_node != 0 && cpu_is_part_of_affinity != 0)
+                {
+                    if (max_num_cores == 0 || core_count < max_num_cores)
+                    {
+                        cpus.emplace_back(cpu_id);
+                        ++_num_cpus;
+                    }
+                    ++core_count;
+                }
+                if (cpu_is_part_of_affinity == 0)
+                {
+                    _filtered_by_affinity = true;
+                }
+            }
+
+            auto node = TopologyNode(std::move(cpus));
+            _nodes.emplace_back(std::move(node));
+        }
+    }
+
+    numa_free_cpumask(affinity_cpu_bitmask);
+    numa_free_cpumask(this_node_cpu_bitmask);
+#endif
+}
+
+void Topology::_init_restricted_numa_topology(uint32_t max_num_cores)
+{
+#if !HYRISE_NUMA_SUPPORT
+    use_fake_numa_topology(max_num_cores);
+#else
+
+    if (numa_available() < 0)
+    {
+        use_fake_numa_topology(max_num_cores);
+        return;
+    }
+
+    _clear();
+    _fake_numa_topology = false;
+
+    // auto max_node = numa_max_node();
+    int max_node = 0;
     auto num_configured_cpus = static_cast<CpuID>(numa_num_configured_cpus());
 
     // We take the CPU affinity (set, e.g., by numactl) of our process into account.
