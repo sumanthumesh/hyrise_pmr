@@ -34,6 +34,9 @@ sigjmp_buf jmp_env; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables
 
 int main(int argc, char **argv)
 {
+
+    std::ofstream migration_log("migration_log.txt");
+
     // Make sure the TransactionManager is initialized before the console so that we don't run into destruction order
     // problems (#1635).
     hyrise::Hyrise::get();

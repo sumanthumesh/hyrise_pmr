@@ -1385,7 +1385,9 @@ int Console::_move2cxl(const std::string &args)
     // std::cout<<"Migrated "<<moved_bytes<<" in "<<duration.count()<<" ns\n";
     std::cout << moved_bytes << "," << duration.count() << "," << ((double)moved_bytes * std::pow(2, -30)) / ((double)duration.count() * 1e-9) << "GB/s\n";
     // std::cout << "Migration Duration: " << duration.count() << "ns\n";
-
+    std::ofstream migration_log("migration_log.txt", std::ios_base::app);
+    migration_log << table_name << "," << column_name << "," << pool_name << "," << moved_bytes << "," << duration.count() << "\n";
+    migration_log.close();
     return ReturnCode::Ok;
 }
 
