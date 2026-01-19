@@ -1219,6 +1219,21 @@ int Console::_move2cxl(const std::string &args)
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
 
+                // Delete original segment
+                abs_encoded_segment_ptr.reset();
+                base_dict_segment_ptr.reset();
+                dict_segment_ptr.reset();
+
+                // Reset original pointer
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
+
                 break;
             }
             case hyrise::DataType::Long:
@@ -1236,6 +1251,21 @@ int Console::_move2cxl(const std::string &args)
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
 
+                // Delete original segment
+                abs_encoded_segment_ptr.reset();
+                base_dict_segment_ptr.reset();
+                dict_segment_ptr.reset();
+
+                // Reset original pointer
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
+
                 break;
             }
             case hyrise::DataType::Float:
@@ -1252,6 +1282,21 @@ int Console::_move2cxl(const std::string &args)
 
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
+                
+                // Delete original segment
+                abs_encoded_segment_ptr.reset();
+                base_dict_segment_ptr.reset();
+                dict_segment_ptr.reset();
+
+                // Reset original pointer
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
 
                 break;
             }
@@ -1269,6 +1314,21 @@ int Console::_move2cxl(const std::string &args)
 
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
+                
+                // Delete original segment
+                abs_encoded_segment_ptr.reset();
+                base_dict_segment_ptr.reset();
+                dict_segment_ptr.reset();
+
+                // Reset original pointer
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
 
                 break;
             }
@@ -1304,6 +1364,21 @@ int Console::_move2cxl(const std::string &args)
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
 
+                // Delete original segment
+                abs_encoded_segment_ptr.reset();
+                base_dict_segment_ptr.reset();
+                dict_segment_ptr.reset();
+
+                // Reset original pointer
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
+
                 break;
             }
             default:
@@ -1311,7 +1386,7 @@ int Console::_move2cxl(const std::string &args)
                 return ReturnCode::Error;
             }
         }
-        else if (const auto &base_value_segment_ptr = std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
+        else if (auto base_value_segment_ptr = std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
         {
             switch (data_type)
             {
@@ -1326,6 +1401,18 @@ int Console::_move2cxl(const std::string &args)
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
 
+                // Delete original segment
+                base_value_segment_ptr.reset();
+                value_segment_ptr.reset();
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
+
                 break;
             }
             case DataType::Long:
@@ -1338,6 +1425,18 @@ int Console::_move2cxl(const std::string &args)
 
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
+
+                // Delete original segment
+                base_value_segment_ptr.reset();
+                value_segment_ptr.reset();
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
 
                 break;
             }
@@ -1352,6 +1451,18 @@ int Console::_move2cxl(const std::string &args)
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
 
+                // Delete original segment
+                base_value_segment_ptr.reset();
+                value_segment_ptr.reset();
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
+
                 break;
             }
             case DataType::Double:
@@ -1364,6 +1475,18 @@ int Console::_move2cxl(const std::string &args)
 
                 // Replace segment pointer
                 chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
+
+                // Delete original segment
+                base_value_segment_ptr.reset();
+                value_segment_ptr.reset();
+                if (segment_ptr.unique())
+                {
+                    segment_ptr.reset();
+                }
+                else
+                {
+                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
+                }
 
                 break;
             }
