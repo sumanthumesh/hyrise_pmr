@@ -43,6 +43,8 @@ void NodeQueueScheduler::begin()
 {
     DebugAssert(!_active, "Scheduler is already active.");
 
+    std::cout << Hyrise::get().topology << std::endl;
+
     _workers.reserve(Hyrise::get().topology.num_cpus());
     _node_count = Hyrise::get().topology.nodes().size();
     _queues.resize(_node_count);
