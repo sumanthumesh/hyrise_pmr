@@ -347,6 +347,15 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     const auto done = std::chrono::steady_clock::now();
     _metrics->plan_execution_duration = done - started;
 
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(done - started);
+
+    std::ofstream query_exec_info_file("query_exec_info_"+std::to_string(Hyrise::get().query_counter())+".txt", std::ios::app);
+    query_exec_info_file << get_sql_string() << "\n";
+    query_exec_info_file << duration.count() <<"\n";
+    query_exec_info_file.close();
+
+    Hyrise::get().query_counter()++;
+
     // Get result table, if it was not a transaction statement
     if (!_is_transaction_statement())
     {
