@@ -377,7 +377,7 @@ int Console::_eval_sql(const std::string &sql)
     const auto row_count = table ? table->row_count() : 0;
 
     // Print result to console and logfile.
-    if (table)
+    if (table && Hyrise::get().print_out())
     {
         out(table);
     }
@@ -1062,6 +1062,26 @@ int Console::_change_runtime_setting(const std::string &input)
         Assertf(num_workers > 0, "Number of workers must be greater than zero\n");
         Hyrise::get().set_scheduler(std::make_shared<NodeQueueScheduler>(num_workers));
         out("Scheduler set to use " + std::to_string(num_workers) + " workers\n");
+        return 0;
+    }
+
+    if (property == "print")
+    {
+        if (value == "on")
+        {
+            Hyrise::get().print_out() = true;
+            out("Print output turned on\n");
+        }
+        else if (value == "off")
+        {
+            Hyrise::get().print_out() = false;
+            out("Print output turned off\n");
+        }
+        else
+        {
+            out("Usage: print (on|off)\n");
+            return 1;
+        }
         return 0;
     }
 
