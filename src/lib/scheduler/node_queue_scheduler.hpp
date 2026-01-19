@@ -52,6 +52,7 @@ class NodeQueueScheduler final : public AbstractScheduler
 {
   public:
     NodeQueueScheduler();
+    NodeQueueScheduler(size_t preferred_worker_count);
     ~NodeQueueScheduler() override final;
 
     /**
@@ -108,6 +109,8 @@ class NodeQueueScheduler final : public AbstractScheduler
     std::vector<size_t> _workers_per_node;
 
     std::mutex _finish_mutex{};
+
+    size_t _preferred_worker_count{1};
 };
 
 } // namespace hyrise

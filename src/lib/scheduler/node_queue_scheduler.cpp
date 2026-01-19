@@ -29,6 +29,11 @@ NodeQueueScheduler::NodeQueueScheduler()
     _worker_id_allocator = std::make_shared<UidAllocator>();
 }
 
+NodeQueueScheduler::NodeQueueScheduler(size_t preferred_worker_count) : _preferred_worker_count(preferred_worker_count)
+{
+    _worker_id_allocator = std::make_shared<UidAllocator>();
+}
+
 NodeQueueScheduler::~NodeQueueScheduler()
 {
     if (_active)
@@ -45,7 +50,8 @@ void NodeQueueScheduler::begin()
 
     std::cout << Hyrise::get().topology << std::endl;
 
-    _workers.reserve(Hyrise::get().topology.num_cpus());
+    // _workers.reserve(Hyrise::get().topology.num_cpus());
+    _workers.reserve(_preferred_worker_count);
     _node_count = Hyrise::get().topology.nodes().size();
     _queues.resize(_node_count);
     _workers_per_node.reserve(_node_count);
@@ -66,8 +72,16 @@ void NodeQueueScheduler::begin()
             auto queue = std::make_shared<TaskQueue>(node_id);
             _queues[node_id] = queue;
 
-            for (const auto &topology_cpu : topology_node.cpus)
+            // for (const auto &topology_cpu : topology_node.cpus)
+            // {
+            //     // TODO(anybody): Place queues on the actual NUMA node once we have NUMA-aware allocators.
+            //     _workers.emplace_back(
+            //         std::make_shared<Worker>(queue, WorkerID{_worker_id_allocator->allocate()}, topology_cpu.cpu_id));
+            // }
+            for (uint32_t worker_index = 0; worker_index < _preferred_worker_count; ++worker_index)
             {
+                const auto &topology_cpu = topology_node.cpus[worker_index % topology_node.cpus.size()];
+
                 // TODO(anybody): Place queues on the actual NUMA node once we have NUMA-aware allocators.
                 _workers.emplace_back(
                     std::make_shared<Worker>(queue, WorkerID{_worker_id_allocator->allocate()}, topology_cpu.cpu_id));
