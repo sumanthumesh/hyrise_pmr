@@ -276,6 +276,7 @@ void Worker::_set_affinity()
     CPU_SET(_cpu_id, &cpuset);
     const auto return_code = pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
     Assert(return_code == 0, "Error calling pthread_setaffinity_np (return code: " + std::to_string(return_code) + ").");
+    std::cout << "Worker " << _id << " pinned to CPU " << _cpu_id << std::endl;
 #endif
 }
 
