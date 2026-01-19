@@ -60,6 +60,9 @@ class Hyrise : public Singleton<Hyrise>
     // result JSON.
     std::weak_ptr<BenchmarkRunner> benchmark_runner;
 
+    size_t& query_counter() {return _query_counter;}
+    bool& print_out() {return _print_out;}
+
   private:
     Hyrise();
     friend class Singleton;
@@ -67,6 +70,8 @@ class Hyrise : public Singleton<Hyrise>
     // (Re-)setting the scheduler requires more than just replacing the pointer. To make sure that set_scheduler is used,
     // the scheduler is private.
     std::shared_ptr<AbstractScheduler> _scheduler;
+    size_t _query_counter{0};
+    bool _print_out{true};
 };
 
 } // namespace hyrise
