@@ -1,3 +1,5 @@
+#pragma once
+
 #include "numaif.h"
 #include <cassert>
 #include <cerrno>
