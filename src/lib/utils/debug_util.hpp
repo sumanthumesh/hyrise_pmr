@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdlib>
 #include <execinfo.h>
 #include <iostream>
@@ -57,6 +59,7 @@ inline void assertf_impl(bool cond, const char* file, int line,
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wformat-nonliteral"
             std::snprintf(buf, sizeof(buf), fmt, args...);
+            oss << buf;
             #pragma GCC diagnostic pop
         }
 
