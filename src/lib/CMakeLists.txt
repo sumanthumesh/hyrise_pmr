@@ -519,6 +519,8 @@ set(
     storage/materialize.hpp
     storage/mem_pool.cpp
     storage/mem_pool.hpp
+    storage/migration.cpp
+    storage/migration.hpp
     storage/mvcc_data.cpp
     storage/mvcc_data.hpp
     storage/pos_lists/abstract_pos_list.cpp
