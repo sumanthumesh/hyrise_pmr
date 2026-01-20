@@ -1253,84 +1253,28 @@ int Console::_move2cxl(const std::string &args)
                 return ReturnCode::Error;
             }
         }
-        else if (auto base_value_segment_ptr = std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
+        else if (std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
         {
             switch (data_type)
             {
             case DataType::Int:
             {
-                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<int32_t>>(base_value_segment_ptr);
-                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
-
-                // Copy to new value segment ptr using the built in API
-                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
-
-                // Delete original segment
-                base_value_segment_ptr.reset();
-                value_segment_ptr.reset();
-                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
-                segment_ptr.reset();
-
+                migration_engine.migrate_numerical_value_segment<int32_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             case DataType::Long:
             {
-                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<int64_t>>(base_value_segment_ptr);
-                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
-
-                // Copy to new value segment ptr using the built in API
-                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
-
-                // Delete original segment
-                base_value_segment_ptr.reset();
-                value_segment_ptr.reset();
-                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
-                segment_ptr.reset();
-
+                migration_engine.migrate_numerical_value_segment<int64_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             case DataType::Float:
             {
-                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<float>>(base_value_segment_ptr);
-                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
-
-                // Copy to new value segment ptr using the built in API
-                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
-
-                // Delete original segment
-                base_value_segment_ptr.reset();
-                value_segment_ptr.reset();
-                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
-                segment_ptr.reset();
-
+                migration_engine.migrate_numerical_value_segment<float>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             case DataType::Double:
             {
-                auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<double>>(base_value_segment_ptr);
-                Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
-
-                // Copy to new value segment ptr using the built in API
-                auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
-
-                // Delete original segment
-                base_value_segment_ptr.reset();
-                value_segment_ptr.reset();
-                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
-                segment_ptr.reset();
-
+                migration_engine.migrate_numerical_value_segment<double>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             default:

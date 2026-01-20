@@ -27,6 +27,7 @@
 #include "storage/dictionary_segment.hpp"
 #include "storage/encoding_type.hpp"
 #include "storage/mem_pool.hpp"
+#include "storage/value_segment.hpp"
 #include "storage/vector_compression/fixed_width_integer/fixed_width_integer_vector.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
@@ -111,6 +112,29 @@ class MigrationEngine
         dict_segment_ptr.reset();
         base_dict_segment_ptr.reset();
         abs_encoded_segment_ptr.reset();
+        Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
+        segment_ptr.reset();
+    }
+    /**
+     * Migrate Int,Long,Float,Double ValueSegments
+     */
+    template <typename T>
+    void migrate_numerical_value_segment(std::shared_ptr<Chunk> &chunk_ptr, std::shared_ptr<AbstractSegment> &segment_ptr, ColumnID column_id, std::shared_ptr<NumaMonotonicResource> &memory_resource)
+    {
+        auto base_value_segment_ptr = std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr);
+        Assertf(base_value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
+        auto value_segment_ptr = std::dynamic_pointer_cast<const ValueSegment<int32_t>>(base_value_segment_ptr);
+        Assertf(value_segment_ptr != nullptr, "BaseValueSegment to ValueSegment conversion failed\n");
+
+        // Copy to new value segment ptr using the built in API
+        auto new_value_segment_ptr = value_segment_ptr->copy_using_memory_resource(*memory_resource);
+
+        // Replace segment pointer
+        chunk_ptr->replace_segment(column_id, new_value_segment_ptr);
+
+        // Delete original segment
+        base_value_segment_ptr.reset();
+        value_segment_ptr.reset();
         Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
         segment_ptr.reset();
     }
