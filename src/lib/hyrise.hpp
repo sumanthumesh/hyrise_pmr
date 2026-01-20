@@ -7,6 +7,7 @@
 #include "scheduler/topology.hpp"
 #include "sql/sql_plan_cache.hpp"
 #include "storage/mem_pool.hpp"
+#include "storage/migration.hpp"
 #include "storage/storage_manager.hpp"
 #include "utils/log_manager.hpp"
 #include "utils/meta_table_manager.hpp"
@@ -50,6 +51,7 @@ class Hyrise : public Singleton<Hyrise>
     LogManager log_manager;
     Topology topology;
     MemPoolManager mem_pool_manager;
+    MigrationEngine migration_engine;
 
     // Plan caches used by the SQLPipelineBuilder if `with_{l/p}qp_cache()` are not used. Both default caches can be
     // nullptr themselves. If both default_{l/p}qp_cache and _{l/p}qp_cache are nullptr, no plan caching is used.
