@@ -17,6 +17,7 @@
 #include <inttypes.h>
 #include <iomanip>
 #include <iostream>
+#include <malloc.h>
 #include <memory>
 #include <regex>
 #include <sstream>
@@ -1145,6 +1146,19 @@ int Console::_exec_script(const std::string &script_file)
     return return_code;
 }
 
+void print_memory()
+{
+    std::ifstream in("/proc/self/status");
+    std::string line;
+    while (std::getline(in, line))
+    {
+        if (line.rfind("VmRSS:", 0) == 0 || line.rfind("VmSize:", 0) == 0)
+        {
+            std::cout << line << "\n";
+        }
+    }
+}
+
 int Console::_move2cxl(const std::string &args)
 {
     const auto arguments = tokenize(args);
@@ -1180,6 +1194,11 @@ int Console::_move2cxl(const std::string &args)
     auto &pool_manager = Hyrise::get().mem_pool_manager;
     auto mem_pool = pool_manager.get_pool(pool_name);
 
+    print_memory();
+
+    // Fetch migration engine
+    auto &migration_engine = Hyrise::get().migration_engine;
+
     auto start_migration = std::chrono::system_clock::now();
 
     size_t moved_bytes = 0;
@@ -1200,140 +1219,34 @@ int Console::_move2cxl(const std::string &args)
         // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
         // Assertf(abs_encoded_segment_ptr != nullptr, "AbstractSegment to AbstractEncodedSegment conversion failed\n");
 
-        if (auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr))
+        if (std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr))
         {
             switch (data_type)
             {
             case hyrise::DataType::Int:
             {
-                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
-                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
-                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
-                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
-                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<int32_t>>(base_dict_segment_ptr);
-                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
-
-                // Copy to new dict segment ptr using the built in API
-                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
-
-                // Delete original segment
-                abs_encoded_segment_ptr.reset();
-                base_dict_segment_ptr.reset();
-                dict_segment_ptr.reset();
-
-                // Reset original pointer
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
-
+                migration_engine.migrate_numerical_dictionary_segment<int32_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             case hyrise::DataType::Long:
             {
-                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
-                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
-                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
-                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
-                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<int64_t>>(base_dict_segment_ptr);
-                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
-
-                // Copy to new dict segment ptr using the built in API
-                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
-
-                // Delete original segment
-                abs_encoded_segment_ptr.reset();
-                base_dict_segment_ptr.reset();
-                dict_segment_ptr.reset();
-
-                // Reset original pointer
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
-
+                migration_engine.migrate_numerical_dictionary_segment<int64_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             case hyrise::DataType::Float:
             {
-                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
-                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
-                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
-                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
-                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<float>>(base_dict_segment_ptr);
-                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
-
-                // Copy to new dict segment ptr using the built in API
-                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
-                
-                // Delete original segment
-                abs_encoded_segment_ptr.reset();
-                base_dict_segment_ptr.reset();
-                dict_segment_ptr.reset();
-
-                // Reset original pointer
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
-
+                migration_engine.migrate_numerical_dictionary_segment<float>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             case hyrise::DataType::Double:
             {
-                // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
-                // Assertf(abs_encoded_segment_ptr!=nullptr,"AbstractSegment to AbstractEncodedSegment conversion failed\n");
-                auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
-                Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
-                auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<double>>(base_dict_segment_ptr);
-                Assertf(dict_segment_ptr != nullptr, "BaseDictionarySegment to DictionarySegment conversion failed\n");
-
-                // Copy to new dict segment ptr using the built in API
-                auto new_dict_segment_ptr = dict_segment_ptr->copy_using_memory_resource(*mem_pool);
-
-                // Replace segment pointer
-                chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
-                
-                // Delete original segment
-                abs_encoded_segment_ptr.reset();
-                base_dict_segment_ptr.reset();
-                dict_segment_ptr.reset();
-
-                // Reset original pointer
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
-
+                migration_engine.migrate_numerical_dictionary_segment<double>(chunk_ptr, segment_ptr, column_id, mem_pool);
                 break;
             }
             case hyrise::DataType::String:
             {
+                auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+                Assertf(abs_encoded_segment_ptr != nullptr, "AbstractSegment to AbstractEncodedSegment conversion failed\n");
                 auto base_dict_segment_ptr = std::dynamic_pointer_cast<BaseDictionarySegment>(abs_encoded_segment_ptr);
                 Assertf(base_dict_segment_ptr != nullptr, "AbstractEncodedSegment to BaseDictionarySegment conversion failed\n");
                 auto dict_segment_ptr = std::dynamic_pointer_cast<const DictionarySegment<pmr_string>>(base_dict_segment_ptr);
@@ -1368,16 +1281,8 @@ int Console::_move2cxl(const std::string &args)
                 abs_encoded_segment_ptr.reset();
                 base_dict_segment_ptr.reset();
                 dict_segment_ptr.reset();
-
-                // Reset original pointer
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
+                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
+                segment_ptr.reset();
 
                 break;
             }
@@ -1404,14 +1309,8 @@ int Console::_move2cxl(const std::string &args)
                 // Delete original segment
                 base_value_segment_ptr.reset();
                 value_segment_ptr.reset();
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
+                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
+                segment_ptr.reset();
 
                 break;
             }
@@ -1429,14 +1328,8 @@ int Console::_move2cxl(const std::string &args)
                 // Delete original segment
                 base_value_segment_ptr.reset();
                 value_segment_ptr.reset();
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
+                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
+                segment_ptr.reset();
 
                 break;
             }
@@ -1454,14 +1347,8 @@ int Console::_move2cxl(const std::string &args)
                 // Delete original segment
                 base_value_segment_ptr.reset();
                 value_segment_ptr.reset();
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
+                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
+                segment_ptr.reset();
 
                 break;
             }
@@ -1479,14 +1366,8 @@ int Console::_move2cxl(const std::string &args)
                 // Delete original segment
                 base_value_segment_ptr.reset();
                 value_segment_ptr.reset();
-                if (segment_ptr.unique())
-                {
-                    segment_ptr.reset();
-                }
-                else
-                {
-                    std::cout << "Warning: Original segment pointer is still shared " << segment_ptr.use_count() << " times\n";
-                }
+                Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
+                segment_ptr.reset();
 
                 break;
             }
@@ -1505,6 +1386,11 @@ int Console::_move2cxl(const std::string &args)
     auto end_migration = std::chrono::system_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_migration - start_migration);
+
+    print_memory();
+    malloc_trim(0);
+    print_memory();
+
     // std::cout<<"Migrated "<<moved_bytes<<" in "<<duration.count()<<" ns\n";
     std::cout << moved_bytes << "," << duration.count() << "," << ((double)moved_bytes * std::pow(2, -30)) / ((double)duration.count() * 1e-9) << "GB/s\n";
     // std::cout << "Migration Duration: " << duration.count() << "ns\n";
@@ -1561,7 +1447,7 @@ int Console::_hshell(const std::string &args)
             out("  hshell size TABLE_NAME COLUMN_NAME  Size of the column in bytes\n");
             return ReturnCode::Error;
         }
-        
+
         // Fetch table manager
         auto &storage_manager = Hyrise::get().storage_manager;
         // Check if table exists
@@ -1572,9 +1458,8 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
 
-        
         size_t column_size = 0;
-        
+
         auto table = storage_manager.get_table(table_name);
         auto &column_name = arguments[2];
         auto column_id = table->column_id_by_name(column_name);
