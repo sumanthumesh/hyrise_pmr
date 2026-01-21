@@ -1328,6 +1328,11 @@ int Console::_create_mem(const std::string &args)
     auto numa_node = boost::lexical_cast<int>(arguments[2]);
 
     // Create memory pool
+    if (mem_pool_manager.exists(pool_name))
+    {
+        std::cerr << "Pool " << pool_name << " already exists\n";
+        return ReturnCode::Error;
+    }
     mem_pool_manager.create_pool(pool_name, pool_size, numa_node);
 
     // Print out created pool details
