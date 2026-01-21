@@ -46,9 +46,14 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         return reinterpret_cast<std::uintptr_t>(_buffer) + _size;
     }
 
-    std::uintptr_t size() const
+    std::size_t size() const
     {
         return _size;
+    }
+
+    size_t allocated_bytes() const
+    {
+        return _allocated_bytes;
     }
 
     int verify_numa_node() const
@@ -77,11 +82,13 @@ class NumaMonotonicResource : public std::pmr::memory_resource
   protected:
     void *do_allocate(std::size_t bytes, std::size_t alignment) override
     {
+        _allocated_bytes += bytes;
         return _mono.allocate(bytes, alignment);
     }
 
     void do_deallocate(void *p, std::size_t bytes, std::size_t alignment) override
     {
+        _allocated_bytes -= bytes;
         _mono.deallocate(p, bytes, alignment);
     }
 
@@ -96,8 +103,8 @@ class NumaMonotonicResource : public std::pmr::memory_resource
     void *_buffer{};
     // std::pmr::memory_resource* _upstream;
     std::pmr::monotonic_buffer_resource _mono;
+    size_t _allocated_bytes{0};
 };
-
 
 namespace hyrise
 {
@@ -106,6 +113,10 @@ class MemPoolManager
   public:
     void create_pool(const std::string &pool_name, uint64_t size, int numa_node);
     std::shared_ptr<NumaMonotonicResource> get_pool(const std::string &pool_name);
+    bool exists(const std::string &pool_name) const
+    {
+        return _pools.find(pool_name) != _pools.end();
+    }
 
   private:
     std::unordered_map<std::string, std::shared_ptr<NumaMonotonicResource>> _pools;
