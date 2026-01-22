@@ -66,6 +66,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
 
     // Decide on an initial pool size
     size_t pool_size = static_cast<size_t>((float)column_size * 1.2); // 20% overhead
+    // size_t pool_size = static_cast<size_t>((float)column_size * 0.9); // 10% undershoot
 
     // Create a new pool of this size
     size_t pool_id = _pool_manager.unique_pool_id();
@@ -75,6 +76,8 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     std::cout << "Initial pool " << pool_name << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
 
     size_t bytes_migrated = 0;
+
+    size_t num_segments_migrated_to_pool = 0;
 
     for (ChunkID chunk_id{0}; chunk_id < table_name->chunk_count(); ++chunk_id)
     {
@@ -91,6 +94,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
             {
                 // Try to migrate the segment
                 migrate_segment(chunk_ptr, segment_ptr, column_id, memory_resource);
+                num_segments_migrated_to_pool++;
                 break; // Migration successful, exit the loop
             }
             catch (const std::bad_alloc &)
@@ -98,21 +102,41 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                 // Allocation failed. Pool was insufficient.
                 // Will create a new pool for the remaining segments.
 
-                // Commit the first pool
-                if (_columns_to_pools_mapping.find(column_name) == _columns_to_pools_mapping.end())
+                // Commit the first pool if any segments were migrated to it
+                if (num_segments_migrated_to_pool > 0)
                 {
-                    _columns_to_pools_mapping[column_name] = std::vector<std::shared_ptr<NumaMonotonicResource>>{};
+                    if (_columns_to_pools_mapping.find(column_name) == _columns_to_pools_mapping.end())
+                    {
+                        _columns_to_pools_mapping[column_name] = std::vector<std::shared_ptr<NumaMonotonicResource>>{};
+                    }
+                    _columns_to_pools_mapping[column_name].push_back(memory_resource);
+                    std::cout << "Pool " << pool_name << " committed for column " << column_name << " with " << num_segments_migrated_to_pool << " segments\n";
                 }
-                _columns_to_pools_mapping[column_name].push_back(memory_resource);
+                else
+                {
+                    std::cout << "Pool " << pool_name << " of size " << pool_size << "B discarded since it accomodated 0 segments\n";
+                }
 
                 // Create a new pool for the remaining segments
-                size_t remaining_size = column_size - bytes_migrated;
-                pool_size = static_cast<size_t>((float)remaining_size * 1.2); // 20% overhead
+                if (num_segments_migrated_to_pool == 0)
+                {
+                    // No segment was migrated. Pool size was too small. Increase pool size
+                    pool_size *= 2;
+                }
+                else
+                {
+                    // Some segments were migrated. Create a pool for the remaining size
+                    pool_size = static_cast<size_t>((float)(column_size - bytes_migrated) * 1.2); // 20% overhead
+                }
+                
                 pool_id = _pool_manager.unique_pool_id();
                 pool_name = column_name + "_pool_" + std::to_string(pool_id);
                 _pool_manager.create_pool(pool_name, pool_size, numa_node_id);
                 memory_resource = _pool_manager.get_pool(pool_name);
                 std::cout << "New pool " << pool_name << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
+
+                num_segments_migrated_to_pool = 0;
+
 
                 continue;
             }
