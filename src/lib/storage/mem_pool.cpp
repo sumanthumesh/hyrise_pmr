@@ -35,25 +35,20 @@ void *allocate_on_numa_node(std::size_t bytes, int node)
     return ptr;
 }
 
-void MemPoolManager::create_pool(const std::string &pool_name, uint64_t size, int numa_node)
+size_t MemPoolManager::create_pool(uint64_t size, int numa_node)
 {
-    // Check if pool already exists
-    if (_pools.find(pool_name) != _pools.end())
-    {
-        std::cerr << "Pool with name " << pool_name << " already exists\n";
-        exit(2);
-    }
     auto mem_pool_ptr = std::make_shared<NumaMonotonicResource>(size, numa_node);
-    _pools.insert(std::make_pair(pool_name, mem_pool_ptr));
-    _unique_pool_id++;
+    size_t pool_id = unique_pool_id();
+    _pools.insert(std::make_pair(pool_id, mem_pool_ptr));
+    return pool_id;
 }
 
-std::shared_ptr<NumaMonotonicResource> MemPoolManager::get_pool(const std::string &pool_name)
+std::shared_ptr<NumaMonotonicResource> MemPoolManager::get_pool(const size_t pool_id)
 {
-    if (_pools.find(pool_name) == _pools.end())
+    if (_pools.find(pool_id) == _pools.end())
     {
-        std::cerr << "Pool with name " << pool_name << " not found\n";
+        std::cerr << "Pool with id " << pool_id << " not found\n";
         exit(2);
     }
-    return _pools.find(pool_name)->second;
+    return _pools.find(pool_id)->second;
 }

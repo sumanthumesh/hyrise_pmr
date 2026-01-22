@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <deque>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -44,6 +45,7 @@ class MigrationEngine
     // ~MigrationEngine() = default;
 
     void migrate_column(std::shared_ptr<Table> &table_name, const std::string &column_name, int numa_node_id);
+    void delete_column_pool(const std::string &column_name);
     /**
      * Migrate a dictionary or value segment
      */
@@ -158,6 +160,6 @@ class MigrationEngine
 
     private:
     MemPoolManager& _pool_manager;
-    std::unordered_map<std::string, std::vector<std::shared_ptr<NumaMonotonicResource>>> _columns_to_pools_mapping;
+    std::unordered_map<std::string, std::deque<size_t>> _columns_to_pools_mapping;
 };
 } // namespace hyrise

@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "utils/debug_util.hpp"
+
 void *allocate_on_numa_node(std::size_t bytes, int node);
 
 // Simple RAII wrapper for a NUMA-backed monotonic_buffer_resource
@@ -111,19 +113,27 @@ namespace hyrise
 class MemPoolManager
 {
   public:
-    void create_pool(const std::string &pool_name, uint64_t size, int numa_node);
-    std::shared_ptr<NumaMonotonicResource> get_pool(const std::string &pool_name);
-    bool exists(const std::string &pool_name) const
+    size_t create_pool(uint64_t size, int numa_node);
+    std::shared_ptr<NumaMonotonicResource> get_pool(const size_t pool_id);
+    bool exists(const size_t pool_id) const
     {
-        return _pools.find(pool_name) != _pools.end();
+        return _pools.find(pool_id) != _pools.end();
     }
+    void delete_pool(const size_t pool_id)
+    {   
+        auto it = _pools.find(pool_id);
+        Assertf(it != _pools.end(), "Trying to delete non-existing pool %lu\n", pool_id);
+        Assertf(it->second.use_count() == 1, "Pool has %d sharers left, not 1", it->second.use_count());
+        _pools.erase(pool_id);
+    }
+    
+    private:
     size_t unique_pool_id()
     {
         return _unique_pool_id++;
     }
-
-  private:
-    std::unordered_map<std::string, std::shared_ptr<NumaMonotonicResource>> _pools;
+    
+    std::unordered_map<size_t, std::shared_ptr<NumaMonotonicResource>> _pools;
     size_t _unique_pool_id{0};
 };
 } // namespace hyrise

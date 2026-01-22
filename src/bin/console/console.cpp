@@ -1364,11 +1364,11 @@ int Console::_create_mem(const std::string &args)
 {
     const auto arguments = tokenize(args);
 
-    if (arguments.size() != 3)
+    if (arguments.size() != 2)
     {
         // clang-format off
     out("Usage: ");
-    out("  create_mem POOL_NAME SIZE_IN_BYTES NUMA_NODE  Create memory resource for std::pmr\n");  // NOLINT(whitespace/line_length)
+    out("  create_mem SIZE_IN_BYTES NUMA_NODE  Create memory resource for std::pmr\n");  // NOLINT(whitespace/line_length)
 
         // clang-format on
         return ReturnCode::Error;
@@ -1377,24 +1377,17 @@ int Console::_create_mem(const std::string &args)
     // Fetch pool manager
     auto &mem_pool_manager = Hyrise::get().mem_pool_manager;
 
-    auto &pool_name = arguments[0];
     auto pool_size = boost::lexical_cast<uint64_t>(arguments[1]);
     auto numa_node = boost::lexical_cast<int>(arguments[2]);
 
-    // Create memory pool
-    if (mem_pool_manager.exists(pool_name))
-    {
-        std::cerr << "Pool " << pool_name << " already exists\n";
-        return ReturnCode::Error;
-    }
-    mem_pool_manager.create_pool(pool_name, pool_size, numa_node);
+    size_t pool_id = mem_pool_manager.create_pool(pool_size, numa_node);
 
     // Print out created pool details
-    std::printf("%s,0x%016" PRIxPTR ",0x%016" PRIxPTR ",%lu\n",
-                pool_name.c_str(),
-                reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_name)->start_address()),
-                reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_name)->end_address()),
-                mem_pool_manager.get_pool(pool_name)->size());
+    std::printf("%lu,0x%016" PRIxPTR ",0x%016" PRIxPTR ",%lu\n",
+                pool_id,
+                reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_id)->start_address()),
+                reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_id)->end_address()),
+                mem_pool_manager.get_pool(pool_id)->size());
 
     return ReturnCode::Ok;
 }
@@ -1451,9 +1444,9 @@ int Console::_hshell(const std::string &args)
             out("  hshell find_numa MEM_RESOURCE_NAME  Find the NUMA node for the given memory resource\n");
             return ReturnCode::Error;
         }
-        auto &pool_name = arguments[1];
+        auto pool_id = boost::lexical_cast<size_t>(arguments[1]);
         auto &pool_manager = Hyrise::get().mem_pool_manager;
-        auto mem_pool = pool_manager.get_pool(pool_name);
+        auto mem_pool = pool_manager.get_pool(pool_id);
 
         std::cout << mem_pool->verify_numa_node() << "\n";
     }

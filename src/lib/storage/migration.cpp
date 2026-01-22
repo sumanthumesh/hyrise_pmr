@@ -1,5 +1,7 @@
 #include "storage/migration.hpp"
 
+#include <deque>
+
 namespace hyrise
 {
 
@@ -69,11 +71,9 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     // size_t pool_size = static_cast<size_t>((float)column_size * 0.9); // 10% undershoot
 
     // Create a new pool of this size
-    size_t pool_id = _pool_manager.unique_pool_id();
-    std::string pool_name = column_name + "_pool_" + std::to_string(pool_id);
-    _pool_manager.create_pool(pool_name, pool_size, numa_node_id);
-    auto memory_resource = _pool_manager.get_pool(pool_name);
-    std::cout << "Initial pool " << pool_name << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
+    size_t pool_id = _pool_manager.create_pool(pool_size, numa_node_id);
+    auto memory_resource = _pool_manager.get_pool(pool_id);
+    std::cout << "Initial pool " << pool_id << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
 
     size_t bytes_migrated = 0;
 
@@ -107,14 +107,16 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                 {
                     if (_columns_to_pools_mapping.find(column_name) == _columns_to_pools_mapping.end())
                     {
-                        _columns_to_pools_mapping[column_name] = std::vector<std::shared_ptr<NumaMonotonicResource>>{};
+                        _columns_to_pools_mapping[column_name] = std::deque<size_t>{};
                     }
-                    _columns_to_pools_mapping[column_name].push_back(memory_resource);
-                    std::cout << "Pool " << pool_name << " committed for column " << column_name << " with " << num_segments_migrated_to_pool << " segments\n";
+                    _columns_to_pools_mapping[column_name].push_back(pool_id);
+                    std::cout << "Pool " << pool_id << " committed for column " << column_name << " with " << num_segments_migrated_to_pool << " segments\n";
                 }
                 else
                 {
-                    std::cout << "Pool " << pool_name << " of size " << pool_size << "B discarded since it accomodated 0 segments\n";
+                    memory_resource.reset();
+                    _pool_manager.delete_pool(pool_id);
+                    std::cout << "Pool " << pool_id << " of size " << pool_size << "B discarded since it accomodated 0 segments\n";
                 }
 
                 // Create a new pool for the remaining segments
@@ -129,11 +131,9 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                     pool_size = static_cast<size_t>((float)(column_size - bytes_migrated) * 1.2); // 20% overhead
                 }
                 
-                pool_id = _pool_manager.unique_pool_id();
-                pool_name = column_name + "_pool_" + std::to_string(pool_id);
-                _pool_manager.create_pool(pool_name, pool_size, numa_node_id);
-                memory_resource = _pool_manager.get_pool(pool_name);
-                std::cout << "New pool " << pool_name << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
+                pool_id = _pool_manager.create_pool(pool_size, numa_node_id);
+                memory_resource = _pool_manager.get_pool(pool_id);
+                std::cout << "New pool " << pool_id << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
 
                 num_segments_migrated_to_pool = 0;
 
@@ -148,15 +148,15 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     // Commit the last pool
     if (_columns_to_pools_mapping.find(column_name) == _columns_to_pools_mapping.end())
     {
-        _columns_to_pools_mapping[column_name] = std::vector<std::shared_ptr<NumaMonotonicResource>>{};
+        _columns_to_pools_mapping[column_name] = std::deque<size_t>{};
     }
-    _columns_to_pools_mapping[column_name].push_back(memory_resource);
+    _columns_to_pools_mapping[column_name].push_back(pool_id);
 
     // Verify total migrated size
     size_t total_migrated_size = 0;
-    for (const auto &pool_ptr : _columns_to_pools_mapping[column_name])
+    for (const auto &pool_id : _columns_to_pools_mapping[column_name])
     {
-        total_migrated_size += pool_ptr->allocated_bytes();
+        total_migrated_size += _pool_manager.get_pool(pool_id)->allocated_bytes();
     }
 
     // Log migration summary
@@ -165,4 +165,16 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                 _columns_to_pools_mapping[column_name].size());
 }
 
+void MigrationEngine::delete_column_pool(const std::string &column_name)
+{
+    auto it = _columns_to_pools_mapping.find(column_name);
+    Assertf(it != _columns_to_pools_mapping.end(), "Trying to delete non-existing pools for column %s\n", column_name.c_str());
+
+    for (auto &pool_id: it->second)
+    {
+        _pool_manager.delete_pool(pool_id);
+    }
+
+    _columns_to_pools_mapping.erase(it);
+}
 } // namespace hyrise
