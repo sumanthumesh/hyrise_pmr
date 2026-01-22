@@ -62,6 +62,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
 
     // Get size of the column
     size_t column_size = get_column_size(table_name, column_id);
+    std::cout << "Migrating column " << column_name << " of size " << column_size << "B to NUMA node " << numa_node_id << "\n";
 
     // Decide on an initial pool size
     size_t pool_size = static_cast<size_t>((float)column_size * 1.2); // 20% overhead
@@ -71,6 +72,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     std::string pool_name = column_name + "_pool_" + std::to_string(pool_id);
     _pool_manager.create_pool(pool_name, pool_size, numa_node_id);
     auto memory_resource = _pool_manager.get_pool(pool_name);
+    std::cout << "Initial pool " << pool_name << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
 
     size_t bytes_migrated = 0;
 
@@ -79,15 +81,19 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
         auto chunk_ptr = table_name->get_chunk(chunk_id);
         auto segment_ptr = chunk_ptr->get_segment(column_id);
 
+        std::cout << "ChunkID" << chunk_id << "\n";
+
+        size_t current_segment_size = segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
+
         while (true)
         {
             try
-            { 
+            {
                 // Try to migrate the segment
                 migrate_segment(chunk_ptr, segment_ptr, column_id, memory_resource);
                 break; // Migration successful, exit the loop
             }
-            catch (const std::bad_alloc&)
+            catch (const std::bad_alloc &)
             {
                 // Allocation failed. Pool was insufficient.
                 // Will create a new pool for the remaining segments.
@@ -106,11 +112,13 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                 pool_name = column_name + "_pool_" + std::to_string(pool_id);
                 _pool_manager.create_pool(pool_name, pool_size, numa_node_id);
                 memory_resource = _pool_manager.get_pool(pool_name);
+                std::cout << "New pool " << pool_name << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
+
                 continue;
             }
         }
 
-        bytes_migrated += segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
+        bytes_migrated += current_segment_size;
     }
 
     // Commit the last pool
