@@ -33,6 +33,7 @@ Hyrise::Hyrise()
     settings_manager = SettingsManager{};
     log_manager = LogManager{};
     topology = Topology{};
+    migration_engine = std::make_shared<MigrationEngine>(mem_pool_manager);
     _scheduler = std::make_shared<ImmediateExecutionScheduler>();
 }
 

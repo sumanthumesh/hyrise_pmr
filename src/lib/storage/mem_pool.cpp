@@ -45,6 +45,7 @@ void MemPoolManager::create_pool(const std::string &pool_name, uint64_t size, in
     }
     auto mem_pool_ptr = std::make_shared<NumaMonotonicResource>(size, numa_node);
     _pools.insert(std::make_pair(pool_name, mem_pool_ptr));
+    _unique_pool_id++;
 }
 
 std::shared_ptr<NumaMonotonicResource> MemPoolManager::get_pool(const std::string &pool_name)

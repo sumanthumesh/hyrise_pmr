@@ -1159,6 +1159,153 @@ void print_memory()
     }
 }
 
+// int Console::_move2cxl(const std::string &args)
+// {
+//     const auto arguments = tokenize(args);
+
+//     if (arguments.size() != 3)
+//     {
+//         // clang-format off
+//     out("Usage: ");
+//     out("  move2cxl TABLE_NAME COLUMN_NAME POOL_NAME  Move the column to cxl memory \n");  // NOLINT(whitespace/line_length)
+
+//         // clang-format on
+//         return ReturnCode::Error;
+//     }
+
+//     // Fetch table manager
+//     auto &storage_manager = Hyrise::get().storage_manager;
+//     // Check if table exists
+//     auto &table_name = arguments[0];
+//     if (!storage_manager.has_table(table_name))
+//     {
+//         std::cerr << "Cannot find table " << table_name << "\n";
+//         return ReturnCode::Error;
+//     }
+//     auto table = storage_manager.get_table(table_name);
+//     auto chunk_count = table->chunk_count();
+
+//     auto &column_name = arguments[1];
+//     // This will throw error if column does not exist
+//     auto column_id = table->column_id_by_name(column_name);
+
+//     // Fetch memory pool
+//     auto &pool_name = arguments[2];
+//     auto &pool_manager = Hyrise::get().mem_pool_manager;
+//     auto mem_pool = pool_manager.get_pool(pool_name);
+
+//     print_memory();
+
+//     // Fetch migration engine
+//     auto &migration_engine = Hyrise::get().migration_engine;
+
+//     auto start_migration = std::chrono::system_clock::now();
+
+//     size_t moved_bytes = 0;
+
+//     // Loop over chunks
+//     for (ChunkID cid = ChunkID{0}; cid < chunk_count; cid++)
+//     {
+//         auto chunk_ptr = table->get_chunk(cid);
+//         // Fetch segments corresponding to column id
+//         auto segment_ptr = chunk_ptr->get_segment(column_id);
+//         Assertf(segment_ptr != nullptr, "Failed to fetch segment\n");
+
+//         moved_bytes += segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
+
+//         // Need to copy segment and replace the original segment ptr with this new one
+//         // Cast to correct dictionary segment first
+//         auto data_type = segment_ptr->data_type();
+//         // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
+//         // Assertf(abs_encoded_segment_ptr != nullptr, "AbstractSegment to AbstractEncodedSegment conversion failed\n");
+
+//         if (std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr))
+//         {
+//             switch (data_type)
+//             {
+//             case hyrise::DataType::Int:
+//             {
+//                 migration_engine.migrate_numerical_dictionary_segment<int32_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             case hyrise::DataType::Long:
+//             {
+//                 migration_engine.migrate_numerical_dictionary_segment<int64_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             case hyrise::DataType::Float:
+//             {
+//                 migration_engine.migrate_numerical_dictionary_segment<float>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             case hyrise::DataType::Double:
+//             {
+//                 migration_engine.migrate_numerical_dictionary_segment<double>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             case hyrise::DataType::String:
+//             {
+//                 migration_engine.migrate_string_dictionary_segment(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             default:
+//                 std::cout << "Should not have reached here\n";
+//                 return ReturnCode::Error;
+//             }
+//         }
+//         else if (std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
+//         {
+//             switch (data_type)
+//             {
+//             case DataType::Int:
+//             {
+//                 migration_engine.migrate_numerical_value_segment<int32_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             case DataType::Long:
+//             {
+//                 migration_engine.migrate_numerical_value_segment<int64_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             case DataType::Float:
+//             {
+//                 migration_engine.migrate_numerical_value_segment<float>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             case DataType::Double:
+//             {
+//                 migration_engine.migrate_numerical_value_segment<double>(chunk_ptr, segment_ptr, column_id, mem_pool);
+//                 break;
+//             }
+//             default:
+//                 std::cout << "Should not have reached here\n";
+//                 return ReturnCode::Error;
+//             }
+//         }
+//         else
+//         {
+//             std::cout << "Segment type not Dictionary or ValueSegment, but is instead " << Print::_segment_type(segment_ptr) << "\n";
+//             return ReturnCode::Error;
+//         }
+//     }
+
+//     auto end_migration = std::chrono::system_clock::now();
+
+//     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_migration - start_migration);
+
+//     print_memory();
+//     malloc_trim(0);
+//     print_memory();
+
+//     // std::cout<<"Migrated "<<moved_bytes<<" in "<<duration.count()<<" ns\n";
+//     std::cout << moved_bytes << "," << duration.count() << "," << ((double)moved_bytes * std::pow(2, -30)) / ((double)duration.count() * 1e-9) << "GB/s\n";
+//     // std::cout << "Migration Duration: " << duration.count() << "ns\n";
+//     std::ofstream migration_log("migration_log.txt", std::ios_base::app);
+//     migration_log << table_name << "," << column_name << "," << pool_name << "," << moved_bytes << "," << duration.count() << "\n";
+//     migration_log.close();
+//     return ReturnCode::Ok;
+// }
+
 int Console::_move2cxl(const std::string &args)
 {
     const auto arguments = tokenize(args);
@@ -1167,7 +1314,7 @@ int Console::_move2cxl(const std::string &args)
     {
         // clang-format off
     out("Usage: ");
-    out("  move2cxl TABLE_NAME COLUMN_NAME POOL_NAME  Move the column to cxl memory \n");  // NOLINT(whitespace/line_length)
+    out("  move2cxl TABLE_NAME COLUMN_NAME NUMA_NODE  Move the column to cxl memory \n");  // NOLINT(whitespace/line_length)
 
         // clang-format on
         return ReturnCode::Error;
@@ -1182,113 +1329,20 @@ int Console::_move2cxl(const std::string &args)
         std::cerr << "Cannot find table " << table_name << "\n";
         return ReturnCode::Error;
     }
-    auto table = storage_manager.get_table(table_name);
-    auto chunk_count = table->chunk_count();
+    auto table_ptr = storage_manager.get_table(table_name);
 
     auto &column_name = arguments[1];
-    // This will throw error if column does not exist
-    auto column_id = table->column_id_by_name(column_name);
 
-    // Fetch memory pool
-    auto &pool_name = arguments[2];
-    auto &pool_manager = Hyrise::get().mem_pool_manager;
-    auto mem_pool = pool_manager.get_pool(pool_name);
-
-    print_memory();
+    int numa_node = boost::lexical_cast<int>(arguments[2]);
 
     // Fetch migration engine
     auto &migration_engine = Hyrise::get().migration_engine;
+    
+    size_t moved_bytes = 0;
 
     auto start_migration = std::chrono::system_clock::now();
 
-    size_t moved_bytes = 0;
-
-    // Loop over chunks
-    for (ChunkID cid = ChunkID{0}; cid < chunk_count; cid++)
-    {
-        auto chunk_ptr = table->get_chunk(cid);
-        // Fetch segments corresponding to column id
-        auto segment_ptr = chunk_ptr->get_segment(column_id);
-        Assertf(segment_ptr != nullptr, "Failed to fetch segment\n");
-
-        moved_bytes += segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
-
-        // Need to copy segment and replace the original segment ptr with this new one
-        // Cast to correct dictionary segment first
-        auto data_type = segment_ptr->data_type();
-        // auto abs_encoded_segment_ptr = std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr);
-        // Assertf(abs_encoded_segment_ptr != nullptr, "AbstractSegment to AbstractEncodedSegment conversion failed\n");
-
-        if (std::dynamic_pointer_cast<AbstractEncodedSegment>(segment_ptr))
-        {
-            switch (data_type)
-            {
-            case hyrise::DataType::Int:
-            {
-                migration_engine.migrate_numerical_dictionary_segment<int32_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            case hyrise::DataType::Long:
-            {
-                migration_engine.migrate_numerical_dictionary_segment<int64_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            case hyrise::DataType::Float:
-            {
-                migration_engine.migrate_numerical_dictionary_segment<float>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            case hyrise::DataType::Double:
-            {
-                migration_engine.migrate_numerical_dictionary_segment<double>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            case hyrise::DataType::String:
-            {
-                migration_engine.migrate_string_dictionary_segment(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            default:
-                std::cout << "Should not have reached here\n";
-                return ReturnCode::Error;
-            }
-        }
-        else if (std::dynamic_pointer_cast<BaseValueSegment>(segment_ptr))
-        {
-            switch (data_type)
-            {
-            case DataType::Int:
-            {
-                migration_engine.migrate_numerical_value_segment<int32_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            case DataType::Long:
-            {
-                migration_engine.migrate_numerical_value_segment<int64_t>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            case DataType::Float:
-            {
-                migration_engine.migrate_numerical_value_segment<float>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            case DataType::Double:
-            {
-                migration_engine.migrate_numerical_value_segment<double>(chunk_ptr, segment_ptr, column_id, mem_pool);
-                break;
-            }
-            default:
-                std::cout << "Should not have reached here\n";
-                return ReturnCode::Error;
-            }
-        }
-        else
-        {
-            std::cout << "Segment type not Dictionary or ValueSegment, but is instead " << Print::_segment_type(segment_ptr) << "\n";
-            return ReturnCode::Error;
-        }
-    }
-
+    migration_engine->migrate_column(table_ptr, column_name , numa_node);
     auto end_migration = std::chrono::system_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_migration - start_migration);
@@ -1301,7 +1355,7 @@ int Console::_move2cxl(const std::string &args)
     std::cout << moved_bytes << "," << duration.count() << "," << ((double)moved_bytes * std::pow(2, -30)) / ((double)duration.count() * 1e-9) << "GB/s\n";
     // std::cout << "Migration Duration: " << duration.count() << "ns\n";
     std::ofstream migration_log("migration_log.txt", std::ios_base::app);
-    migration_log << table_name << "," << column_name << "," << pool_name << "," << moved_bytes << "," << duration.count() << "\n";
+    migration_log << table_name << "," << column_name << "," << "," << moved_bytes << "," << duration.count() << "\n";
     migration_log.close();
     return ReturnCode::Ok;
 }

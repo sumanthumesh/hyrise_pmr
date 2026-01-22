@@ -117,8 +117,13 @@ class MemPoolManager
     {
         return _pools.find(pool_name) != _pools.end();
     }
+    size_t unique_pool_id()
+    {
+        return _unique_pool_id++;
+    }
 
   private:
     std::unordered_map<std::string, std::shared_ptr<NumaMonotonicResource>> _pools;
+    size_t _unique_pool_id{0};
 };
 } // namespace hyrise

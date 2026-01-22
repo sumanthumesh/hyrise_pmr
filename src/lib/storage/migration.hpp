@@ -40,10 +40,14 @@ namespace hyrise
 class MigrationEngine
 {
   public:
-    MigrationEngine() = default;
+    MigrationEngine(MemPoolManager& pool_manager) : _pool_manager{pool_manager} {}
     // ~MigrationEngine() = default;
 
-    void migrate_column(const std::string &table_name, const std::string &column_name, int numa_node_id);
+    void migrate_column(std::shared_ptr<Table> &table_name, const std::string &column_name, int numa_node_id);
+    /**
+     * Migrate a dictionary or value segment
+     */
+    void migrate_segment(std::shared_ptr<Chunk> &chunk_ptr, std::shared_ptr<AbstractSegment> &segment_ptr, ColumnID column_id, std::shared_ptr<NumaMonotonicResource> &memory_resource);
     /**
      * Migrate Int,Long,Float,Double DictionarySegments
      */
@@ -138,5 +142,22 @@ class MigrationEngine
         Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
         segment_ptr.reset();
     }
+
+    size_t get_column_size(std::shared_ptr<Table>& table, ColumnID& column_id)
+    {
+        size_t total_size = 0;
+        auto chunk_count = table->chunk_count();
+        for (ChunkID chunk_id{0}; chunk_id < chunk_count; ++chunk_id)
+        {
+            auto chunk_ptr = table->get_chunk(chunk_id);
+            auto segment_ptr = chunk_ptr->get_segment(column_id);
+            total_size += segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
+        }
+        return total_size;
+    }
+
+    private:
+    MemPoolManager& _pool_manager;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<NumaMonotonicResource>>> _columns_to_pools_mapping;
 };
 } // namespace hyrise
