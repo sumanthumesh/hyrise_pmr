@@ -79,6 +79,8 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
 
     size_t num_segments_migrated_to_pool = 0;
 
+    std::deque<size_t> pools_used_for_column;
+
     for (ChunkID chunk_id{0}; chunk_id < table_name->chunk_count(); ++chunk_id)
     {
         auto chunk_ptr = table_name->get_chunk(chunk_id);
@@ -105,11 +107,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                 // Commit the first pool if any segments were migrated to it
                 if (num_segments_migrated_to_pool > 0)
                 {
-                    if (_columns_to_pools_mapping.find(column_name) == _columns_to_pools_mapping.end())
-                    {
-                        _columns_to_pools_mapping[column_name] = std::deque<size_t>{};
-                    }
-                    _columns_to_pools_mapping[column_name].push_back(pool_id);
+                    pools_used_for_column.push_back(pool_id);
                     std::cout << "Pool " << pool_id << " committed for column " << column_name << " with " << num_segments_migrated_to_pool << " segments\n";
                 }
                 else
@@ -146,18 +144,22 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     }
 
     // Commit the last pool
-    if (_columns_to_pools_mapping.find(column_name) == _columns_to_pools_mapping.end())
-    {
-        _columns_to_pools_mapping[column_name] = std::deque<size_t>{};
-    }
-    _columns_to_pools_mapping[column_name].push_back(pool_id);
+    pools_used_for_column.push_back(pool_id);
 
     // Verify total migrated size
     size_t total_migrated_size = 0;
-    for (const auto &pool_id : _columns_to_pools_mapping[column_name])
+    for (const auto &pool_id : pools_used_for_column)
     {
         total_migrated_size += _pool_manager.get_pool(pool_id)->allocated_bytes();
     }
+
+    // Delete the original column to pool mapping
+    if (_columns_to_pools_mapping.find(column_name) != _columns_to_pools_mapping.end())
+    {
+        delete_column_pool(column_name);
+    }
+    // Update the mapping
+    _columns_to_pools_mapping[column_name] = pools_used_for_column;
 
     // Log migration summary
     std::printf("Columns %s of size %luB migrated to %d with total migrated size %luB across %lu pools\n",
