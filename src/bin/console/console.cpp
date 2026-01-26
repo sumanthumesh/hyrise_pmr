@@ -109,6 +109,7 @@ namespace
  */
 sigjmp_buf jmp_env; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
+
 // Removes the coloring commands (e.g. '\x1B[31m') from input, to have a clean logfile.
 // If remove_rl_codes_only is true, then it only removes the Readline specific escape sequences '\001' and '\002'
 std::string remove_coloring(const std::string &input, bool remove_rl_codes_only = false)
@@ -1469,6 +1470,18 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
         SegmentsUsed::get().print_segments_used();
+    }
+    else if (cmd == "tables")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh tables  Print all the segments used\n");
+            return ReturnCode::Error;
+        }
+        for (auto &id: Table::_existing_table_ids) {
+            std::cout << id << "\n";
+        }
     }
     else
     {

@@ -57,6 +57,12 @@ class Table : private Noncopyable
           const std::vector<std::shared_ptr<Chunk>> &chunks, const UseMvcc use_mvcc = UseMvcc::No,
           pmr_vector<std::shared_ptr<PartialHashIndex>> const &table_indexes = {});
 
+    ~Table()
+    {
+        std::cout << "Destroying Table " << _table_id << "\n";
+        _existing_table_ids.erase(_table_id);
+    }
+
     /**
      * @defgroup Getter and convenience functions for the column definitions
      * @{
@@ -309,5 +315,13 @@ class Table : private Noncopyable
     // For tables with _type==Reference, the row count will not vary. As such, there is no need to iterate over all
     // chunks more than once.
     mutable std::optional<uint64_t> _cached_row_count;
+
+    static std::atomic<size_t> _table_id_counter;
+
+  public:
+    static std::unordered_set<size_t> _existing_table_ids;
+
+  protected:
+    size_t _table_id;
 };
 } // namespace hyrise

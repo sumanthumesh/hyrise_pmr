@@ -118,7 +118,7 @@ class MigrationEngine
         dict_segment_ptr.reset();
         base_dict_segment_ptr.reset();
         abs_encoded_segment_ptr.reset();
-        Assertf(segment_ptr.use_count() == 1, "Original segment pointer is still shared %lu times\n", segment_ptr.use_count() - 1);
+        Assertf(segment_ptr.use_count() == 1, "Original segment pointer %s is still shared %lu times\n", segment_ptr->type_description().c_str(), segment_ptr.use_count() - 1);
         segment_ptr.reset();
     }
     /**
