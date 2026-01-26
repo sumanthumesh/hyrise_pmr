@@ -23,6 +23,7 @@
 #include "storage/value_segment.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
+#include "utils/debug_util.hpp"
 #include "utils/format_bytes.hpp"
 #include "utils/map_prunable_subquery_predicates.hpp"
 #include "utils/print_utils.hpp"
@@ -49,6 +50,8 @@ AbstractOperator::AbstractOperator(const OperatorType type, const std::shared_pt
     {
         mutable_right_input()->register_consumer();
     }
+
+    OperatorsUsed::get().add_operator(type_name(_type));
 }
 
 AbstractOperator::~AbstractOperator()
@@ -75,6 +78,44 @@ AbstractOperator::~AbstractOperator()
 OperatorType AbstractOperator::type() const
 {
     return _type;
+}
+
+std::string AbstractOperator::type_name(const OperatorType& type) const {
+    switch (type) {
+        case OperatorType::Aggregate:          return "Aggregate";
+        case OperatorType::Alias:              return "Alias";
+        case OperatorType::ChangeMetaTable:    return "ChangeMetaTable";
+        case OperatorType::CreateTable:        return "CreateTable";
+        case OperatorType::CreatePreparedPlan: return "CreatePreparedPlan";
+        case OperatorType::CreateView:         return "CreateView";
+        case OperatorType::DropTable:          return "DropTable";
+        case OperatorType::DropView:           return "DropView";
+        case OperatorType::Delete:             return "Delete";
+        case OperatorType::Difference:         return "Difference";
+        case OperatorType::Export:             return "Export";
+        case OperatorType::GetTable:           return "GetTable";
+        case OperatorType::Import:             return "Import";
+        case OperatorType::IndexScan:          return "IndexScan";
+        case OperatorType::Insert:             return "Insert";
+        case OperatorType::JoinHash:           return "JoinHash";
+        case OperatorType::JoinIndex:          return "JoinIndex";
+        case OperatorType::JoinNestedLoop:     return "JoinNestedLoop";
+        case OperatorType::JoinSortMerge:      return "JoinSortMerge";
+        case OperatorType::JoinVerification:   return "JoinVerification";
+        case OperatorType::Limit:              return "Limit";
+        case OperatorType::Print:              return "Print";
+        case OperatorType::Product:            return "Product";
+        case OperatorType::Projection:         return "Projection";
+        case OperatorType::Sort:               return "Sort";
+        case OperatorType::TableScan:          return "TableScan";
+        case OperatorType::TableWrapper:       return "TableWrapper";
+        case OperatorType::UnionAll:           return "UnionAll";
+        case OperatorType::UnionPositions:     return "UnionPositions";
+        case OperatorType::Update:             return "Update";
+        case OperatorType::Validate:           return "Validate";
+        case OperatorType::Mock:               return "Mock";
+    }
+    return "UnknownOperatorType";
 }
 
 bool AbstractOperator::executed() const

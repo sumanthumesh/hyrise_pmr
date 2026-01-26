@@ -26,6 +26,36 @@ class AbstractEncodedSegment : public AbstractSegment
      * Returns the vector’s type if it does, else std::nullopt
      */
     virtual std::optional<CompressedVectorType> compressed_vector_type() const = 0;
+
+    inline std::string type_description() const override
+    {
+        std::string desc = "AbstractEncodedSegment";
+        switch (data_type())
+        {
+        case DataType::Int:
+            desc += " (Int)";
+            break;
+        case DataType::Long:
+            desc += " (Long)";
+            break;
+        case DataType::Float:
+            desc += " (Float)";
+            break;
+        case DataType::Double:
+            desc += " (Double)";
+            break;
+        case DataType::String:
+            desc += " (String)";
+            break;
+        case DataType::Null:
+            desc += " (Null)";
+            break;
+        default:
+            desc += " (Unknown)";
+            break;
+        }
+        return desc;
+    }
 };
 
 } // namespace hyrise

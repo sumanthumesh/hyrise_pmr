@@ -131,6 +131,7 @@ class AbstractOperator : public std::enable_shared_from_this<AbstractOperator>, 
     virtual ~AbstractOperator();
 
     OperatorType type() const;
+    std::string type_name(const OperatorType&) const;
 
     // Overriding implementations need to call on_operator_started/finished() on the _transaction_context as well
     virtual void execute();

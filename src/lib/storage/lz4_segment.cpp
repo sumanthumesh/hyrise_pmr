@@ -40,7 +40,9 @@ LZ4Segment<T>::LZ4Segment(pmr_vector<pmr_vector<char>> &&lz4_blocks, std::option
       _block_size{block_size},
       _last_block_size{last_block_size},
       _compressed_size{compressed_size},
-      _num_elements{num_elements} {}
+      _num_elements{num_elements} {
+        SegmentsUsed::get().add_segment(type_description());
+      }
 
 template <typename T>
 LZ4Segment<T>::LZ4Segment(pmr_vector<pmr_vector<char>> &&lz4_blocks, std::optional<pmr_vector<bool>> &&null_values,
@@ -55,7 +57,9 @@ LZ4Segment<T>::LZ4Segment(pmr_vector<pmr_vector<char>> &&lz4_blocks, std::option
       _block_size{block_size},
       _last_block_size{last_block_size},
       _compressed_size{compressed_size},
-      _num_elements{num_elements} {}
+      _num_elements{num_elements} {
+        SegmentsUsed::get().add_segment(type_description());
+      }
 
 template <typename T>
 AllTypeVariant LZ4Segment<T>::operator[](const ChunkOffset chunk_offset) const

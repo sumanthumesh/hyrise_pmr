@@ -1450,6 +1450,26 @@ int Console::_hshell(const std::string &args)
 
         std::cout << mem_pool->verify_numa_node() << "\n";
     }
+    else if (cmd == "ops")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh ops  Print all the operators used\n");
+            return ReturnCode::Error;
+        }
+        OperatorsUsed::get().print_operators_used();
+    }
+    else if (cmd == "segments")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh segments  Print all the segments used\n");
+            return ReturnCode::Error;
+        }
+        SegmentsUsed::get().print_segments_used();
+    }
     else
     {
         out("Error: Unknown hshell command\n");

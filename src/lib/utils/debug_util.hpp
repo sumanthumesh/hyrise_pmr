@@ -8,6 +8,9 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <unordered_set>
+
+#include "utils/singleton.hpp"
 
 // The following asserts are printf versions of the asserts defined in utils/assert.hpp
 
@@ -74,3 +77,47 @@ inline void assertf_impl(bool cond, const char* file, int line,
     assertf_impl((cond), __FILE__, __LINE__, (fmt) __VA_OPT__(, ) __VA_ARGS__)
 
 std::string print_backtrace();
+
+namespace hyrise
+{
+    class OperatorsUsed : public Singleton<OperatorsUsed>
+    {
+      public:
+        void add_operator(const std::string& operator_name)
+        {
+            _operators_used.insert(operator_name);
+        }
+
+        void print_operators_used() const
+        {
+            std::cout << "Operators used in this run:\n";
+            for (const auto& op : _operators_used)
+            {
+                std::cout << "- " << op << "\n";
+            }
+        }
+
+      private:
+        std::unordered_set<std::string> _operators_used;
+    };
+    class SegmentsUsed : public Singleton<SegmentsUsed>
+    {
+      public:
+        void add_segment(const std::string& segment_name)
+        {
+            _segments_used.insert(segment_name);
+        }
+
+        void print_segments_used() const
+        {
+            std::cout << "Segments used in this run:\n";
+            for (const auto& op : _segments_used)
+            {
+                std::cout << "- " << op << "\n";
+            }
+        }
+
+      private:
+        std::unordered_set<std::string> _segments_used;
+    };
+}

@@ -38,6 +38,36 @@ class ReferenceSegment : public AbstractSegment
 
     size_t memory_usage(const MemoryUsageCalculationMode mode) const override;
 
+    inline std::string type_description() const override
+    {
+        std::string desc = "ReferenceSegment";
+        switch (data_type())
+        {
+        case DataType::Int:
+            desc += " (Int)";
+            break;
+        case DataType::Long:
+            desc += " (Long)";
+            break;
+        case DataType::Float:
+            desc += " (Float)";
+            break;
+        case DataType::Double:
+            desc += " (Double)";
+            break;
+        case DataType::String:
+            desc += " (String)";
+            break;
+        case DataType::Null:
+            desc += " (Null)";
+            break;
+        default:
+            desc += " (Unknown)";
+            break;
+        }
+        return desc;
+    } 
+
   protected:
     // After an operator finishes, its shared_ptr reference to the table gets deleted. Thus, the ReferenceSegments need
     // their own shared_ptrs.

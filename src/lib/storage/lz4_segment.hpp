@@ -173,6 +173,36 @@ class LZ4Segment : public AbstractEncodedSegment
 
     /**@}*/
 
+    inline std::string type_description() const override
+    {
+        std::string desc = "LZ4Segment";
+        switch (data_type())
+        {
+        case DataType::Int:
+            desc += " (Int)";
+            break;
+        case DataType::Long:
+            desc += " (Long)";
+            break;
+        case DataType::Float:
+            desc += " (Float)";
+            break;
+        case DataType::Double:
+            desc += " (Double)";
+            break;
+        case DataType::String:
+            desc += " (String)";
+            break;
+        case DataType::Null:
+            desc += " (Null)";
+            break;
+        default:
+            desc += " (Unknown)";
+            break;
+        }
+        return desc;
+    } 
+
   private:
     const pmr_vector<pmr_vector<char>> _lz4_blocks;
     const std::optional<pmr_vector<bool>> _null_values;

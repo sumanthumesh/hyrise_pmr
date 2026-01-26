@@ -6,6 +6,7 @@
 #include "all_type_variant.hpp"
 #include "segment_access_counter.hpp"
 #include "types.hpp"
+#include "utils/debug_util.hpp"
 
 namespace hyrise
 {
@@ -35,6 +36,36 @@ class AbstractSegment : private Noncopyable
     virtual size_t memory_usage(const MemoryUsageCalculationMode mode) const = 0;
 
     mutable SegmentAccessCounter access_counter;
+
+    inline virtual std::string type_description() const
+    {
+        std::string desc = "AbstractSegment";
+        switch (_data_type)
+        {
+        case DataType::Int:
+            desc += " (Int)";
+            break;
+        case DataType::Long:
+            desc += " (Long)";
+            break;
+        case DataType::Float:
+            desc += " (Float)";
+            break;
+        case DataType::Double:
+            desc += " (Double)";
+            break;
+        case DataType::String:
+            desc += " (String)";
+            break;
+        case DataType::Null:
+            desc += " (Null)";
+            break;
+        default:
+            desc += " (Unknown)";
+            break;
+        }
+        return desc;
+    }
 
   private:
     const DataType _data_type;

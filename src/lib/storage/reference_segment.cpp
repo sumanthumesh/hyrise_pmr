@@ -32,6 +32,8 @@ ReferenceSegment::ReferenceSegment(const std::shared_ptr<const Table> &reference
     // operators ignore this, simply because we have not experienced the issue and have not considered it to be a
     // priority. This assert makes sure that we become aware of it becoming relevant.
     Assert(pos->size() <= Chunk::MAX_SIZE, "AbstractPosList exceeds Chunk::MAX_SIZE.");
+
+    SegmentsUsed::get().add_segment(type_description());
 }
 
 AllTypeVariant ReferenceSegment::operator[](const ChunkOffset chunk_offset) const

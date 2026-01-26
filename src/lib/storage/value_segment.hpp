@@ -84,6 +84,36 @@ class ValueSegment : public BaseValueSegment
 
     size_t memory_usage(const MemoryUsageCalculationMode mode) const override;
 
+    inline std::string type_description() const override
+    {
+        std::string desc = "ValueSegment";
+        switch (data_type())
+        {
+        case DataType::Int:
+            desc += " (Int)";
+            break;
+        case DataType::Long:
+            desc += " (Long)";
+            break;
+        case DataType::Float:
+            desc += " (Float)";
+            break;
+        case DataType::Double:
+            desc += " (Double)";
+            break;
+        case DataType::String:
+            desc += " (String)";
+            break;
+        case DataType::Null:
+            desc += " (Null)";
+            break;
+        default:
+            desc += " (Unknown)";
+            break;
+        }
+        return desc;
+    } 
+
   protected:
     pmr_vector<T> _values;
     std::optional<pmr_vector<bool>> _null_values;

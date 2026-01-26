@@ -1,6 +1,7 @@
 #include "abstract_segment.hpp"
 
 #include "all_type_variant.hpp"
+#include "operators/print.hpp"
 
 namespace hyrise
 {

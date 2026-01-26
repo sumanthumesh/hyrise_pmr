@@ -52,5 +52,35 @@ class BaseDictionarySegment : public AbstractEncodedSegment
      * @brief Returns encoding specific null value ID
      */
     virtual ValueID null_value_id() const = 0;
+
+    inline std::string type_description() const override
+    {
+        std::string desc = "BaseDictionarySegment";
+        switch (data_type())
+        {
+        case DataType::Int:
+            desc += " (Int)";
+            break;
+        case DataType::Long:
+            desc += " (Long)";
+            break;
+        case DataType::Float:
+            desc += " (Float)";
+            break;
+        case DataType::Double:
+            desc += " (Double)";
+            break;
+        case DataType::String:
+            desc += " (String)";
+            break;
+        case DataType::Null:
+            desc += " (Null)";
+            break;
+        default:
+            desc += " (Unknown)";
+            break;
+        }
+        return desc;
+    }
 };
 } // namespace hyrise

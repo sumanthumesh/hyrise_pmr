@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "hyrise.hpp"
+#include "utils/debug_util.hpp"
 
 #define ANSI_COLOR_RED "\x1B[31m"   // NOLINT(cppcoreguidelines-macro-usage)
 #define ANSI_COLOR_GREEN "\x1B[32m" // NOLINT(cppcoreguidelines-macro-usage)
@@ -32,6 +33,8 @@
 
 sigjmp_buf jmp_env; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
+hyrise::OperatorsUsed operators_used; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+hyrise::SegmentsUsed segments_used;     // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 int main(int argc, char **argv)
 {
 
