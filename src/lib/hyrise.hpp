@@ -65,6 +65,8 @@ class Hyrise : public Singleton<Hyrise>
     size_t& query_counter() {return _query_counter;}
     bool& print_out() {return _print_out;}
 
+    std::string recently_parsed_script_file{""};
+
   private:
     Hyrise();
     friend class Singleton;

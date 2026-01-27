@@ -1155,6 +1155,7 @@ int Console::_exec_script(const std::string &script_file)
     }
 
     out("Executing script file: " + filepath + "\n");
+    Hyrise::get().recently_parsed_script_file = std::filesystem::absolute(filepath).string();
     _verbose = true;
     auto command = std::string{};
     // TODO(anyone): Use std::to_underlying(ReturnCode::Ok) once we use C++23.
