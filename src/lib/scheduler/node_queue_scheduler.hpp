@@ -83,6 +83,8 @@ class NodeQueueScheduler final : public AbstractScheduler
     // Number of groups for _group_tasks
     static constexpr auto NUM_GROUPS = 10;
 
+    static size_t _preferred_worker_count;
+    
   protected:
     /**
      * @param task
@@ -94,6 +96,7 @@ class NodeQueueScheduler final : public AbstractScheduler
                    SchedulePriority priority = SchedulePriority::Default) override final;
 
     void _group_tasks(const std::vector<std::shared_ptr<AbstractTask>> &tasks) const override final;
+
 
   private:
     std::atomic<TaskID::base_type> _task_counter{0};
@@ -110,7 +113,6 @@ class NodeQueueScheduler final : public AbstractScheduler
 
     std::mutex _finish_mutex{};
 
-    size_t _preferred_worker_count{1};
 };
 
 } // namespace hyrise

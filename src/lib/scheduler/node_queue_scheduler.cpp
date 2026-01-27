@@ -24,12 +24,9 @@
 namespace hyrise
 {
 
-NodeQueueScheduler::NodeQueueScheduler()
-{
-    _worker_id_allocator = std::make_shared<UidAllocator>();
-}
+size_t NodeQueueScheduler::_preferred_worker_count{1};
 
-NodeQueueScheduler::NodeQueueScheduler(size_t preferred_worker_count) : _preferred_worker_count(preferred_worker_count)
+NodeQueueScheduler::NodeQueueScheduler()
 {
     _worker_id_allocator = std::make_shared<UidAllocator>();
 }
@@ -51,7 +48,7 @@ void NodeQueueScheduler::begin()
     std::cout << Hyrise::get().topology << std::endl;
 
     // _workers.reserve(Hyrise::get().topology.num_cpus());
-    _workers.reserve(_preferred_worker_count);
+    _workers.reserve(NodeQueueScheduler::_preferred_worker_count);
     _node_count = Hyrise::get().topology.nodes().size();
     _queues.resize(_node_count);
     _workers_per_node.reserve(_node_count);

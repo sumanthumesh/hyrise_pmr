@@ -1086,7 +1086,8 @@ int Console::_change_runtime_setting(const std::string &input)
     {
         auto num_workers = std::stoull(value);
         Assertf(num_workers > 0, "Number of workers must be greater than zero\n");
-        Hyrise::get().set_scheduler(std::make_shared<NodeQueueScheduler>(num_workers));
+        NodeQueueScheduler::_preferred_worker_count = num_workers;
+        Hyrise::get().set_scheduler(std::make_shared<NodeQueueScheduler>());
         out("Scheduler set to use " + std::to_string(num_workers) + " workers\n");
         return 0;
     }
