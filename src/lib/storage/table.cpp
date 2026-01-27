@@ -45,7 +45,6 @@ namespace
 
 using namespace hyrise; // NOLINT(build/namespaces)
 
-
 // Checks if the two vectors have common elements, e.g., lhs = [0, 2] and rhs = [2, 1, 3]. We expect very short
 // vectors, so we use a simple but quadratic solution. For larger vectors, we could create sets and check set
 // containment.
@@ -87,15 +86,18 @@ Table::Table(const TableColumnDefinitions &column_definitions, const TableType t
     DebugAssert(type == TableType::Data || !target_chunk_size, "Must not set target_chunk_size for reference tables.");
     DebugAssert(!target_chunk_size || *target_chunk_size > 0, "Table must have a chunk size greater than 0.");
 
-    _table_id = _table_id_counter.load();
-
-    std::cout << (type == TableType::Data ? "Data" : "References") << _table_id << "\n";
-    for (auto &column_definition: _column_definitions)
+    if constexpr (HYRISE_DEBUG)
     {
-        std::cout << column_definition << std::endl;
+        _table_id = _table_id_counter.load();
+
+        std::cout << (type == TableType::Data ? "Data" : "References") << _table_id << "\n";
+        for (auto &column_definition : _column_definitions)
+        {
+            std::cout << column_definition << std::endl;
+        }
+        _table_id_counter.fetch_add(1, std::memory_order_relaxed);
+        _existing_table_ids.insert(_table_id);
     }
-    _table_id_counter.fetch_add(1,std::memory_order_relaxed);
-    _existing_table_ids.insert(_table_id);
 }
 
 Table::Table(const TableColumnDefinitions &column_definitions, const TableType type,

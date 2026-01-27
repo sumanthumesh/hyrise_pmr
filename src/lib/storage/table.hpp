@@ -59,8 +59,11 @@ class Table : private Noncopyable
 
     ~Table()
     {
-        std::cout << "Destroying Table " << _table_id << "\n";
-        _existing_table_ids.erase(_table_id);
+        if constexpr (HYRISE_DEBUG)
+        {
+            std::cout << "Destroying Table " << _table_id << "\n";
+            _existing_table_ids.erase(_table_id);
+        }
     }
 
     /**
