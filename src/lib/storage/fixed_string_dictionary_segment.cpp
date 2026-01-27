@@ -32,9 +32,13 @@ FixedStringDictionarySegment<T>::FixedStringDictionarySegment(
     : BaseDictionarySegment(data_type_from_type<pmr_string>()),
       _dictionary{dictionary},
       _attribute_vector{attribute_vector},
-      _decompressor{_attribute_vector->create_base_decompressor()} {
+      _decompressor{_attribute_vector->create_base_decompressor()}
+{
+    if constexpr (HYRISE_DEBUG)
+    {
         SegmentsUsed::get().add_segment(type_description());
-      }
+    }
+}
 
 template <typename T>
 AllTypeVariant FixedStringDictionarySegment<T>::operator[](const ChunkOffset chunk_offset) const

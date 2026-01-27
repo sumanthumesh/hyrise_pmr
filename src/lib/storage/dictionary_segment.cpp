@@ -36,8 +36,10 @@ DictionarySegment<T>::DictionarySegment(const std::shared_ptr<const pmr_vector<T
     // For a DictionarySegment of the max size Chunk::MAX_SIZE, those two values overlap.
 
     Assert(_dictionary->size() < std::numeric_limits<ValueID::base_type>::max(), "Input segment too big");
-
-    SegmentsUsed::get().add_segment(type_description());
+    if constexpr (HYRISE_DEBUG)
+    {
+        SegmentsUsed::get().add_segment(type_description());
+    }
 }
 
 template <typename T>

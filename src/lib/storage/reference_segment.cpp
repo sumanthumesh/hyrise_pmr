@@ -33,7 +33,10 @@ ReferenceSegment::ReferenceSegment(const std::shared_ptr<const Table> &reference
     // priority. This assert makes sure that we become aware of it becoming relevant.
     Assert(pos->size() <= Chunk::MAX_SIZE, "AbstractPosList exceeds Chunk::MAX_SIZE.");
 
-    SegmentsUsed::get().add_segment(type_description());
+    if constexpr (HYRISE_DEBUG)
+    {
+        SegmentsUsed::get().add_segment(type_description());
+    }
 }
 
 AllTypeVariant ReferenceSegment::operator[](const ChunkOffset chunk_offset) const

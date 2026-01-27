@@ -28,9 +28,13 @@ FrameOfReferenceSegment<T, U>::FrameOfReferenceSegment(pmr_vector<T> block_minim
       _block_minima{std::move(block_minima)},
       _null_values{std::move(null_values)},
       _offset_values{std::move(offset_values)},
-      _decompressor{_offset_values->create_base_decompressor()} {
+      _decompressor{_offset_values->create_base_decompressor()}
+{
+    if constexpr (HYRISE_DEBUG)
+    {
         SegmentsUsed::get().add_segment(type_description());
-      }
+    }
+}
 
 template <typename T, typename U>
 const pmr_vector<T> &FrameOfReferenceSegment<T, U>::block_minima() const

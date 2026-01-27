@@ -29,12 +29,21 @@ ValueSegment<T>::ValueSegment(bool nullable, ChunkOffset capacity) : BaseValueSe
         _null_values = pmr_vector<bool>();
         _null_values->reserve(capacity);
     }
-    SegmentsUsed::get().add_segment(type_description());
+    if constexpr (HYRISE_DEBUG)
+    {
+        SegmentsUsed::get().add_segment(type_description());
+    }
 }
 
 template <typename T>
 ValueSegment<T>::ValueSegment(pmr_vector<T> &&values)
-    : BaseValueSegment(data_type_from_type<T>()), _values(std::move(values)) {SegmentsUsed::get().add_segment(type_description());}
+    : BaseValueSegment(data_type_from_type<T>()), _values(std::move(values))
+{
+    if constexpr (HYRISE_DEBUG)
+    {
+        SegmentsUsed::get().add_segment(type_description());
+    }
+}
 
 template <typename T>
 ValueSegment<T>::ValueSegment(pmr_vector<T> &&values, pmr_vector<bool> &&null_values)

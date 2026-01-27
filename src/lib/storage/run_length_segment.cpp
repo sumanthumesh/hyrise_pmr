@@ -24,8 +24,13 @@ RunLengthSegment<T>::RunLengthSegment(const std::shared_ptr<const pmr_vector<T>>
     : AbstractEncodedSegment(data_type_from_type<T>()),
       _values{values},
       _null_values{null_values},
-      _end_positions{end_positions} {SegmentsUsed::get().add_segment(type_description());}
-      
+      _end_positions{end_positions}
+{
+    if constexpr (HYRISE_DEBUG)
+    {
+        SegmentsUsed::get().add_segment(type_description());
+    }
+}
 
 template <typename T>
 std::shared_ptr<const pmr_vector<T>> RunLengthSegment<T>::values() const
