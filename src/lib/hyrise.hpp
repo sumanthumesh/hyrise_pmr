@@ -66,6 +66,7 @@ class Hyrise : public Singleton<Hyrise>
     bool& print_out() {return _print_out;}
 
     std::string recently_parsed_script_file{""};
+    std::string label{""};
 
   private:
     Hyrise();

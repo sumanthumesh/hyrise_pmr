@@ -1091,6 +1091,13 @@ int Console::_change_runtime_setting(const std::string &input)
         out("Scheduler set to use " + std::to_string(num_workers) + " workers\n");
         return 0;
     }
+    
+    if (property == "label")
+    {
+        Hyrise::get().label = value;
+        out("Label set to " + value + "\n");
+        return 0;
+    }
 
     if (property == "print")
     {
