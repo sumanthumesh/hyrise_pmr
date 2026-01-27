@@ -367,6 +367,8 @@ int Console::_eval_sql(const std::string &sql)
         // was started or nullptr if we are in auto-commit mode or the last transaction was finished.
         _explicitly_created_transaction_context = _sql_pipeline->transaction_context();
 
+        _sql_pipeline.reset();
+
         return ReturnCode::Error;
     }
 
@@ -391,6 +393,28 @@ int Console::_eval_sql(const std::string &sql)
     stream << _sql_pipeline->metrics();
 
     out(stream.str());
+
+    if (_sql_pipeline->pqp_cache)
+    {
+        _sql_pipeline->pqp_cache->clear();
+    }
+    if (_sql_pipeline->lqp_cache)
+    {
+        _sql_pipeline->lqp_cache->clear();
+    }
+
+    _sql_pipeline.reset();
+
+    // Debug: check if the result table is still alive
+    if (table) {
+    std::cout << "After reset, table use_count: " << table.use_count() << "\n";
+    
+    // If use_count > 0, something else still owns it
+    if (table.use_count() > 1) {
+        std::cout << "WARNING: Table still has " << (table.use_count() - 1) 
+                  << " other owner(s) after pipeline reset!\n";
+    }
+    }
 
     return ReturnCode::Ok;
 }
