@@ -109,7 +109,6 @@ namespace
  */
 sigjmp_buf jmp_env; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
-
 // Removes the coloring commands (e.g. '\x1B[31m') from input, to have a clean logfile.
 // If remove_rl_codes_only is true, then it only removes the Readline specific escape sequences '\001' and '\002'
 std::string remove_coloring(const std::string &input, bool remove_rl_codes_only = false)
@@ -394,26 +393,34 @@ int Console::_eval_sql(const std::string &sql)
 
     out(stream.str());
 
-    if (_sql_pipeline->pqp_cache)
+    if (_reset_pipeline_after_exec)
     {
-        _sql_pipeline->pqp_cache->clear();
-    }
-    if (_sql_pipeline->lqp_cache)
-    {
-        _sql_pipeline->lqp_cache->clear();
+        if (_sql_pipeline->pqp_cache)
+        {
+            _sql_pipeline->pqp_cache->clear();
+        }
+        if (_sql_pipeline->lqp_cache)
+        {
+            _sql_pipeline->lqp_cache->clear();
+        }
+
+        _sql_pipeline.reset();
     }
 
-    _sql_pipeline.reset();
+    // Reset the operators global IDs to zero to avoid large numbers in the next visualization.
+    AbstractOperator::global_operator_id = 0;
 
     // Debug: check if the result table is still alive
-    if (table) {
-    std::cout << "After reset, table use_count: " << table.use_count() << "\n";
-    
-    // If use_count > 0, something else still owns it
-    if (table.use_count() > 1) {
-        std::cout << "WARNING: Table still has " << (table.use_count() - 1) 
-                  << " other owner(s) after pipeline reset!\n";
-    }
+    if (table)
+    {
+        std::cout << "After reset, table use_count: " << table.use_count() << "\n";
+
+        // If use_count > 0, something else still owns it
+        if (table.use_count() > 1)
+        {
+            std::cout << "WARNING: Table still has " << (table.use_count() - 1)
+                      << " other owner(s) after pipeline reset!\n";
+        }
     }
 
     return ReturnCode::Ok;
@@ -955,7 +962,7 @@ int Console::_visualize(const std::string &input)
         return ReturnCode::Error;
     }
 
-    const auto img_filename = plan_type_str + ".png";
+    const auto img_filename = plan_type_str + std::to_string(Hyrise::get().query_counter())+".png";
 
     try
     {
@@ -1091,7 +1098,7 @@ int Console::_change_runtime_setting(const std::string &input)
         out("Scheduler set to use " + std::to_string(num_workers) + " workers\n");
         return 0;
     }
-    
+
     if (property == "label")
     {
         Hyrise::get().label = value;
@@ -1134,6 +1141,26 @@ int Console::_change_runtime_setting(const std::string &input)
         else
         {
             out("Usage: binary_caching (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
+    
+    if (property == "pipe_reset")
+    {
+        if (value == "on")
+        {
+            _reset_pipeline_after_exec = true;
+            out("Pipeline reset turned on\n");
+        }
+        else if (value == "off")
+        {
+            _reset_pipeline_after_exec = false;
+            out("Pipeline reset turned off\n");
+        }
+        else
+        {
+            out("Usage: pipe_reset (on|off)\n");
             return 1;
         }
         return 0;
@@ -1371,12 +1398,12 @@ int Console::_move2cxl(const std::string &args)
 
     // Fetch migration engine
     auto &migration_engine = Hyrise::get().migration_engine;
-    
+
     size_t moved_bytes = 0;
 
     auto start_migration = std::chrono::system_clock::now();
 
-    migration_engine->migrate_column(table_ptr, column_name , numa_node);
+    migration_engine->migrate_column(table_ptr, column_name, numa_node);
     auto end_migration = std::chrono::system_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_migration - start_migration);
@@ -1512,7 +1539,8 @@ int Console::_hshell(const std::string &args)
             out("  hsh tables  Print all the segments used\n");
             return ReturnCode::Error;
         }
-        for (auto &id: Table::_existing_table_ids) {
+        for (auto &id : Table::_existing_table_ids)
+        {
             std::cout << id << "\n";
         }
     }

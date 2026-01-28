@@ -171,6 +171,8 @@ class Console : public Singleton<Console>
 
     std::unique_ptr<SQLPipeline> _sql_pipeline;
     std::shared_ptr<TransactionContext> _explicitly_created_transaction_context;
+
+    bool _reset_pipeline_after_exec{false};
 };
 
 } // namespace hyrise
