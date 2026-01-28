@@ -347,9 +347,9 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     const auto done = std::chrono::steady_clock::now();
     _metrics->plan_execution_duration = done - started;
 
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(done - started);
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(done - started);
 
-    std::ofstream query_exec_info_file("query_exec_info_"+std::to_string(Hyrise::get().query_counter())+".txt", std::ios::app);
+    std::ofstream query_exec_info_file("query_exec_info_"+std::to_string(Hyrise::get().query_counter())+".txt");
     query_exec_info_file << Hyrise::get().label << "\n";
     query_exec_info_file << Hyrise::get().recently_parsed_script_file << "\n";
     query_exec_info_file << get_sql_string() << "\n";
