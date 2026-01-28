@@ -211,7 +211,8 @@ void PQPVisualizer::_build_dataflow(const std::shared_ptr<const AbstractOperator
 void PQPVisualizer::_add_operator(const std::shared_ptr<const AbstractOperator> &op)
 {
     VizVertexInfo info = _default_vertex;
-    auto label = op->description(DescriptionMode::MultiLine);
+    auto label = std::to_string(op->operator_id) + "\n";
+    label += op->description(DescriptionMode::MultiLine);
 
     const auto &performance_data = *op->performance_data;
     if (op->executed())

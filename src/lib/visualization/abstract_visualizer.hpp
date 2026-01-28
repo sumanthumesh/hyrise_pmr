@@ -138,22 +138,17 @@ class AbstractVisualizer
     {
         _build_graph(graph_base);
 
-        char *tmpname = strdup("/tmp/hyrise_viz_XXXXXX");
-        auto file_descriptor = mkstemp(tmpname);
-        Assert(file_descriptor > 0, "mkstemp failed.");
-
-        // mkstemp returns a file descriptor. Unfortunately, we cannot directly create an ofstream from a file descriptor.
-        close(file_descriptor);
-        auto file = std::ofstream(tmpname);
-
-        // This unique_ptr serves as a scope guard that guarantees the deletion of the temp file once we return from this
-        // method.
-        const auto delete_temp_file = [&tmpname](auto ptr)
+        // Derive the .gv filename from the image filename by replacing the extension
+        auto gv_filename = img_filename;
+        const auto last_dot = gv_filename.find_last_of('.');
+        if (last_dot != std::string::npos)
         {
-            delete ptr;
-            std::remove(tmpname);
-        };
-        const auto delete_guard = std::unique_ptr<char, decltype(delete_temp_file)>(new char, delete_temp_file);
+            gv_filename = gv_filename.substr(0, last_dot);
+        }
+        gv_filename += ".gv";
+
+        auto file = std::ofstream(gv_filename);
+        Assert(file.is_open(), "Failed to open file for writing: " + gv_filename);
 
         // The caller set the pen widths to either the number of rows (for edges) or the execution time in ns (for
         // vertices). As some plans have only operators that take microseconds and others take minutes, normalize this
@@ -190,11 +185,12 @@ class AbstractVisualizer
         normalize_penwidths(boost::edges(_graph));
 
         boost::write_graphviz_dp(file, _graph, _properties);
+        file.close();
 
         auto renderer = _graphviz_config.renderer;
         auto format = _graphviz_config.format;
 
-        auto cmd = renderer + " -T" + format + " \"" + tmpname + "\" > \"" + img_filename + "\"";
+        auto cmd = renderer + " -T" + format + " \"" + gv_filename + "\" > \"" + img_filename + "\"";
         auto ret = system(cmd.c_str());
 
         Assert(ret == 0, "Calling graphviz' " + renderer +
