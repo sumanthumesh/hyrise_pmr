@@ -134,7 +134,7 @@ class AbstractVisualizer
 
     virtual ~AbstractVisualizer() = default;
 
-    void visualize(const GraphBase &graph_base, const std::string &img_filename)
+    virtual void visualize(const GraphBase &graph_base, const std::string &img_filename)
     {
         _build_graph(graph_base);
 
@@ -148,7 +148,7 @@ class AbstractVisualizer
         gv_filename += ".gv";
 
         auto file = std::ofstream(gv_filename);
-        Assert(file.is_open(), "Failed to open file for writing: " + gv_filename);
+        Assert(file.is_open(), "Failed to open file for writing: " + gv_filename);     
 
         // The caller set the pen widths to either the number of rows (for edges) or the execution time in ns (for
         // vertices). As some plans have only operators that take microseconds and others take minutes, normalize this

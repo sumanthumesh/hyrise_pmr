@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <fstream>
 #include <locale>
 #include <memory>
 #include <ratio>
@@ -39,6 +40,19 @@ PQPVisualizer::PQPVisualizer(GraphvizConfig graphviz_config, VizGraphInfo graph_
                              VizEdgeInfo edge_info)
     : AbstractVisualizer(std::move(graphviz_config), std::move(graph_info), std::move(vertex_info),
                          std::move(edge_info)) {}
+
+void PQPVisualizer::visualize(const std::vector<std::shared_ptr<AbstractOperator>> &plans, const std::string &img_filename)
+{
+    AbstractVisualizer::visualize(plans, img_filename);
+    auto txt_filename = img_filename;
+    const auto last_dot = txt_filename.find_last_of('.');
+    if (last_dot != std::string::npos)
+    {
+        txt_filename = txt_filename.substr(0, last_dot);
+    }
+    txt_filename += ".graph";
+    export_as_graph_text(plans, txt_filename);
+}
 
 void PQPVisualizer::_build_graph(const std::vector<std::shared_ptr<AbstractOperator>> &plans)
 {
@@ -234,6 +248,139 @@ void PQPVisualizer::_add_operator(const std::shared_ptr<const AbstractOperator> 
 
     info.label = label;
     _add_vertex(op, info);
+}
+
+void PQPVisualizer::export_as_graph_text(const std::vector<std::shared_ptr<AbstractOperator>> &plans,
+                                         const std::string &text_filename)
+{
+    std::unordered_map<size_t, std::pair<std::string, std::chrono::nanoseconds>> nodes_map;
+    std::vector<std::pair<size_t, size_t>> edges_list;
+
+    _collect_graph_info(plans, nodes_map, edges_list);
+
+    auto file = std::ofstream(text_filename);
+    Assert(file.is_open(), "Failed to open file for writing: " + text_filename);
+
+    // Write nodes section
+    for (const auto &[op_id, node_info] : nodes_map)
+    {
+        const auto &[operator_type, walltime] = node_info;
+        file << "V," << op_id << "," << operator_type << "," << walltime.count() << "\n";
+    }
+
+    // Write edges section
+    for (const auto &[src_id, dest_id] : edges_list)
+    {
+        file << "E," << src_id << "," << dest_id << "\n";
+    }
+
+    file.close();
+}
+
+void PQPVisualizer::_collect_graph_info(const std::vector<std::shared_ptr<AbstractOperator>> &plans,
+                                        std::unordered_map<size_t, std::pair<std::string, std::chrono::nanoseconds>> &nodes_map,
+                                        std::vector<std::pair<size_t, size_t>> &edges_list)
+{
+    std::unordered_set<std::shared_ptr<const AbstractOperator>> visited_ops;
+
+    for (const auto &plan : plans)
+    {
+        _collect_subtree_info(plan, visited_ops, nodes_map, edges_list);
+    }
+}
+
+void PQPVisualizer::_collect_subtree_info(const std::shared_ptr<const AbstractOperator> &op,
+                                          std::unordered_set<std::shared_ptr<const AbstractOperator>> &visited_ops,
+                                          std::unordered_map<size_t, std::pair<std::string, std::chrono::nanoseconds>> &nodes_map,
+                                          std::vector<std::pair<size_t, size_t>> &edges_list)
+{
+    // Avoid processing operators redundantly in diamond shaped PQPs
+    if (visited_ops.contains(op))
+    {
+        return;
+    }
+    visited_ops.insert(op);
+
+    // Add this operator as a node
+    nodes_map[op->operator_id] = {op->name(), op->performance_data->walltime};
+
+    // Process left input and add edge
+    if (op->left_input())
+    {
+        auto left = op->left_input();
+        _collect_subtree_info(left, visited_ops, nodes_map, edges_list);
+        edges_list.emplace_back(left->operator_id, op->operator_id);
+    }
+
+    // Process right input and add edge
+    if (op->right_input())
+    {
+        auto right = op->right_input();
+        _collect_subtree_info(right, visited_ops, nodes_map, edges_list);
+        edges_list.emplace_back(right->operator_id, op->operator_id);
+    }
+
+    // Handle subqueries
+    switch (op->type())
+    {
+    case OperatorType::Projection:
+    {
+        const auto projection = std::dynamic_pointer_cast<const Projection>(op);
+        for (auto expression : projection->expressions)
+        {
+            // Cast away const to use visit_expression (we only read, don't modify)
+            auto mutable_expression = const_cast<std::shared_ptr<AbstractExpression> &>(expression);
+            visit_expression(mutable_expression, [&](const auto &sub_expression)
+                             {
+                const auto pqp_subquery_expression = std::dynamic_pointer_cast<PQPSubqueryExpression>(sub_expression);
+                if (!pqp_subquery_expression) {
+                  return ExpressionVisitation::VisitArguments;
+                }
+                _collect_subtree_info(pqp_subquery_expression->pqp, visited_ops, nodes_map, edges_list);
+                edges_list.emplace_back(pqp_subquery_expression->pqp->operator_id, op->operator_id);
+                return ExpressionVisitation::VisitArguments; });
+        }
+    }
+    break;
+
+    case OperatorType::TableScan:
+    {
+        const auto table_scan = std::dynamic_pointer_cast<const TableScan>(op);
+        auto predicate = table_scan->predicate();
+        auto mutable_predicate = const_cast<std::shared_ptr<AbstractExpression> &>(predicate);
+        visit_expression(mutable_predicate, [&](const auto &sub_expression)
+                         {
+            const auto pqp_subquery_expression = std::dynamic_pointer_cast<PQPSubqueryExpression>(sub_expression);
+            if (!pqp_subquery_expression) {
+              return ExpressionVisitation::VisitArguments;
+            }
+            _collect_subtree_info(pqp_subquery_expression->pqp, visited_ops, nodes_map, edges_list);
+            edges_list.emplace_back(pqp_subquery_expression->pqp->operator_id, op->operator_id);
+            return ExpressionVisitation::VisitArguments; });
+    }
+    break;
+
+    case OperatorType::Limit:
+    {
+        const auto limit = std::dynamic_pointer_cast<const Limit>(op);
+        auto row_count_expr = limit->row_count_expression();
+        auto mutable_row_count_expr = const_cast<std::shared_ptr<AbstractExpression> &>(row_count_expr);
+        visit_expression(mutable_row_count_expr, [&](const auto &sub_expression)
+                         {
+            const auto pqp_subquery_expression = std::dynamic_pointer_cast<PQPSubqueryExpression>(sub_expression);
+            if (!pqp_subquery_expression) {
+              return ExpressionVisitation::VisitArguments;
+            }
+            _collect_subtree_info(pqp_subquery_expression->pqp, visited_ops, nodes_map, edges_list);
+            edges_list.emplace_back(pqp_subquery_expression->pqp->operator_id, op->operator_id);
+            return ExpressionVisitation::VisitArguments; });
+    }
+    break;
+
+    default:
+    {
+    } // OperatorType has no expressions
+    }
 }
 
 } // namespace hyrise
