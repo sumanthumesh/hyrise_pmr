@@ -227,6 +227,9 @@ class AbstractOperator : public std::enable_shared_from_this<AbstractOperator>, 
 
     std::unique_ptr<AbstractOperatorPerformanceData> performance_data;
 
+    static size_t global_operator_id;
+    size_t operator_id{std::numeric_limits<size_t>::max()};
+
   protected:
     friend class OperatorTaskTest;
     // abstract method to actually execute the operator

@@ -32,6 +32,8 @@
 namespace hyrise
 {
 
+size_t AbstractOperator::global_operator_id{0};
+
 AbstractOperator::AbstractOperator(const OperatorType type, const std::shared_ptr<const AbstractOperator> &left,
                                    const std::shared_ptr<const AbstractOperator> &right,
                                    std::unique_ptr<AbstractOperatorPerformanceData> init_performance_data)
@@ -54,6 +56,8 @@ AbstractOperator::AbstractOperator(const OperatorType type, const std::shared_pt
     {
         OperatorsUsed::get().add_operator(type_name(_type));
     }
+
+    operator_id = global_operator_id++;
 }
 
 AbstractOperator::~AbstractOperator()
