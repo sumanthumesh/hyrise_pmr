@@ -2,6 +2,7 @@ obj/*
 .DS_STORE
 build/*
 build-*/*
+build_*/*
 *.make
 Makefile*
 coverage*
@@ -59,3 +60,5 @@ compile_commands.json
 
 # Myscripts
 myscripts/*all_cols*.sql
+myscripts/tpch_visualize_*.sql
+myscripts/*.bin
