@@ -1544,6 +1544,16 @@ int Console::_hshell(const std::string &args)
             std::cout << id << "\n";
         }
     }
+    else if (cmd == "mem_usage")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh mem_usage  Print memory usage statistics\n");
+            return ReturnCode::Error;
+        }
+        print_memory();
+    }
     else
     {
         out("Error: Unknown hshell command\n");
