@@ -962,7 +962,7 @@ int Console::_visualize(const std::string &input)
         return ReturnCode::Error;
     }
 
-    const auto img_filename = plan_type_str + std::to_string(Hyrise::get().query_counter())+".png";
+    const auto img_filename = plan_type_str + std::to_string(Hyrise::get().query_counter()-1)+".png";
 
     try
     {
