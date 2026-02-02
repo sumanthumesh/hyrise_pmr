@@ -14,14 +14,22 @@ long get_value_from_line(const std::string& line) {
     return value;
 }
 
-void print_memory_usage(const std::string& pid) {
+bool print_memory_usage(const std::string& pid, std::ofstream& ostr, bool& started) {
     std::string status_path = "/proc/" + pid + "/status";
     std::ifstream status_file(status_path);
 
-    if (!status_file.is_open()) {
+    if (!status_file.is_open() && !started) {
         std::cerr << "Error: Could not open " << status_path << ". Process with PID " << pid << " may not exist." << std::endl;
-        return;
+        return false;
     }
+    else if (!status_file.is_open() && started) {
+        // Process has ended
+        std::cerr << "Process with PID " << pid << " has ended." << std::endl;
+        ostr.close();
+        return false;
+    }
+
+    started = true;
 
     std::string line;
     long vm_size = 0;
@@ -36,23 +44,32 @@ void print_memory_usage(const std::string& pid) {
     }
 
     if (vm_size > 0 && rss_size > 0) {
-        std::cout << vm_size << "," << rss_size << std::endl;
+        ostr << vm_size << "," << rss_size << std::endl;
     } else {
-        std::cout << "Could not find VmSize or VmRSS for PID: " << pid << std::endl;
+        ostr << "Could not find VmSize or VmRSS for PID: " << pid << std::endl;
     }
+
+    return true;
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <pid>" << std::endl;
+    if (argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " <pid> <output_file>" << std::endl;
         return 1;
     }
 
     std::string pid = argv[1];
+    std::string output_file = argv[2] + std::string{".dat"};
+
+    std::ofstream ostr(output_file);
+    if (!ostr.is_open()) {
+        std::cerr << "Error: Could not open output file " << output_file << std::endl;
+        return 1;
+    }
 
     // You can uncomment the while loop to monitor the process continuously
-    while (true) {
-        print_memory_usage(pid);
+    bool started = false;
+    while (print_memory_usage(pid, ostr, started)) {
         usleep(1000000); // Sleep for 1 second
     }
 
