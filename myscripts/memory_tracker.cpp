@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string pid = argv[1];
-    std::string output_file = argv[2] + std::string{".dat"};
+    std::string output_file = argv[2];
 
     std::ofstream ostr(output_file);
     if (!ostr.is_open()) {
