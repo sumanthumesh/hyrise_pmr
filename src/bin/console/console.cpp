@@ -1220,6 +1220,21 @@ void print_memory()
     }
 }
 
+// Run cmd in background, don't wait.
+void run_detached(const char* cmd) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        // fork failed
+        return;
+    }
+    if (pid == 0) {
+        // Child: exec the shell command
+        execl("/bin/sh", "sh", "-c", cmd, (char*)nullptr);
+        _exit(127); // exec failed
+    }
+    // Parent: just return, child continues in background
+}
+
 // int Console::_move2cxl(const std::string &args)
 // {
 //     const auto arguments = tokenize(args);
@@ -1553,6 +1568,17 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
         print_memory();
+    }
+    else if (cmd == "track_mem")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh track_mem\n");
+            return ReturnCode::Error;
+        }
+        std::string command = "../myscripts/memory_tracker.bin " + std::to_string(getpid()) + " mem_track_" + Hyrise::get().label + ".dat";
+        run_detached(command.c_str());
     }
     else
     {
