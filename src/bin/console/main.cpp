@@ -35,6 +35,7 @@ sigjmp_buf jmp_env; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables
 
 hyrise::OperatorsUsed operators_used; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 hyrise::SegmentsUsed segments_used;     // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+hyrise::OperatorMemoryUsage operator_memory_usage; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 int main(int argc, char **argv)
 {
 

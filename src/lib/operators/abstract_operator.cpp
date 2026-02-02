@@ -185,6 +185,11 @@ void AbstractOperator::execute()
         Assert(!_right_input || _right_input->get_output(), "Right input has no output data.");
     }
 
+    auto tracker_handle = OperatorMemoryUsage::get().start_tracker(this->operator_id);
+    std::thread t_mem_tracker([tracker_handle]() {
+        OperatorMemoryUsage::get().track_memory(tracker_handle);
+    });
+
     auto performance_timer = Timer{};
 
     auto transaction_context = this->transaction_context();
@@ -211,6 +216,13 @@ void AbstractOperator::execute()
 
     // release any temporary data if possible
     _on_cleanup();
+
+    // Signal this specific tracker thread to stop
+    tracker_handle.stop_flag->store(true);
+    if (t_mem_tracker.joinable())
+    {
+        t_mem_tracker.join();
+    }
 
     if (_output)
     {

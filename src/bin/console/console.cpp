@@ -1580,6 +1580,16 @@ int Console::_hshell(const std::string &args)
         std::string command = "../myscripts/memory_tracker.bin " + std::to_string(getpid()) + " mem_track_" + Hyrise::get().label + ".dat";
         run_detached(command.c_str());
     }
+    else if (cmd == "print_mem_usage")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh print_mem_usage\n");
+            return ReturnCode::Error;
+        }
+        OperatorMemoryUsage::get().print_memory_usage("mem_track_" + Hyrise::get().label + ".dat");
+    }
     else
     {
         out("Error: Unknown hshell command\n");
