@@ -5,6 +5,7 @@
 
 #include "concurrency/transaction_manager.hpp"
 #include "memory/default_memory_resource.hpp"
+#include "memory/mem_manager.hpp"
 #include "scheduler/abstract_scheduler.hpp"
 #include "scheduler/immediate_execution_scheduler.hpp"
 #include "scheduler/topology.hpp"
@@ -24,7 +25,8 @@ Hyrise::Hyrise()
     // stored tables to be deconstructed, too. As these might call deallocate on the default_memory_resource, it is
     // important that the resource has not been destructed before. As objects are destructed in the reverse order of their
     // construction, explicitly initializing the resource first means that it is destructed last.
-    std::pmr::set_default_resource(&DefaultResource::get());
+    // std::pmr::set_default_resource(&DefaultResource::get());
+    std::pmr::set_default_resource(&MemManager::get());
 
     storage_manager = StorageManager{};
     plugin_manager = PluginManager{};

@@ -175,6 +175,8 @@ set(
     lossy_cast.hpp
     memory/default_memory_resource.cpp
     memory/default_memory_resource.hpp
+    memory/mem_manager.cpp
+    memory/mem_manager.hpp
     memory/zero_allocator.hpp
     null_value.hpp
     operators/abstract_aggregate_operator.cpp

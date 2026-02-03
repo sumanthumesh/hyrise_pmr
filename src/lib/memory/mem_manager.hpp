@@ -29,6 +29,7 @@ namespace hyrise
         // Allocation strategy enum to control how allocations are distributed
         enum class AllocationStrategy
         {
+            TableGen,   // Use this only while generating tables
             Local,      // Allocate on local node
             Remote,     // Allocate on remote node
             Greedy,     // Try local first, then remote
@@ -61,6 +62,14 @@ namespace hyrise
         void set_strategy(AllocationStrategy strategy);
 
         /**
+         * Destroy a pool by its ID. This releases all NUMA memory back to the OS via numa_free.
+         * The pool is removed from the manager, triggering the NumaMonotonicResource destructor.
+         * @param pool_id The ID of the pool to destroy
+         * @throws std::out_of_range if pool_id does not exist
+         */
+        void destroy_pool(size_t pool_id);
+
+        /**
          * PMR interface implementation
          */
         void *do_allocate(std::size_t bytes, std::size_t alignment) override;
@@ -71,11 +80,12 @@ namespace hyrise
         // Helper to find which pool owns a pointer
         int _find_pool_for_pointer(void *p) const;
 
-        // Pool storage and metadata
-        std::vector<std::shared_ptr<NumaMonotonicResource>> _pools;
-        std::vector<int> _pool_numa_nodes;  // parallel to _pools, stores NUMA node for each pool
-        mutable std::mutex _pools_mutex;    // protect access to _pools and _pool_numa_nodes
+        // Pool storage and metadata - use maps to keep pool IDs stable even after deletion
+        std::unordered_map<size_t, std::shared_ptr<NumaMonotonicResource>> _pools;  // pool_id -> pool
+        std::unordered_map<size_t, int> _pool_numa_nodes;  // pool_id -> NUMA node
+        mutable std::mutex _pools_mutex;    // protect access to maps
 
         AllocationStrategy _strategy;
+        size_t _next_pool_id = 0;  // monotonically increasing pool ID counter
     };
 }

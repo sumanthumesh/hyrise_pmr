@@ -40,6 +40,7 @@
 #include "benchmark_config.hpp"
 #include "hyrise.hpp"
 #include "logical_query_plan/lqp_utils.hpp"
+#include "memory/mem_manager.hpp"
 #include "operators/export.hpp"
 #include "operators/get_table.hpp"
 #include "operators/import.hpp"
@@ -1222,6 +1223,35 @@ int Console::_change_runtime_setting(const std::string &input)
         }
         return 0;
     }
+    if (property == "mem_strategy")
+    {
+        if (value == "TableGen")
+        {
+            MemManager::get().set_strategy(MemManager::AllocationStrategy::TableGen);
+            out("Memory strategy set to TableGen\n");
+        }
+        else if (value == "Local")
+        {
+            MemManager::get().set_strategy(MemManager::AllocationStrategy::Local);
+            out("Memory strategy set to Local\n");
+        }
+        else if (value == "Remote")
+        {
+            MemManager::get().set_strategy(MemManager::AllocationStrategy::Remote);
+            out("Memory strategy set to Remote\n");
+        }
+        else if (value == "Greedy")
+        {
+            MemManager::get().set_strategy(MemManager::AllocationStrategy::Greedy);
+            out("Memory strategy set to Greedy\n");
+        }
+        else
+        {
+            out("Usage: mem_strategy (TableGen|Local|Remote|Greedy)\n");
+            return 1;
+        }
+        return 0;
+    }
 
     out("Error: Unknown property\n");
     return 1;
@@ -1510,20 +1540,20 @@ int Console::_create_mem(const std::string &args)
         return ReturnCode::Error;
     }
 
-    // Fetch pool manager
-    auto &mem_pool_manager = Hyrise::get().mem_pool_manager;
+    // // Fetch pool manager
+    // auto &mem_manager = MemoryManager::get();
 
-    auto pool_size = boost::lexical_cast<uint64_t>(arguments[1]);
-    auto numa_node = boost::lexical_cast<int>(arguments[2]);
+    // auto pool_size = boost::lexical_cast<uint64_t>(arguments[1]);
+    // auto numa_node = boost::lexical_cast<int>(arguments[2]);
 
-    size_t pool_id = mem_pool_manager.create_pool(pool_size, numa_node);
+    // size_t pool_id = MemManager::get().add_pool(pool_size, numa_node);
 
-    // Print out created pool details
-    std::printf("%lu,0x%016" PRIxPTR ",0x%016" PRIxPTR ",%lu\n",
-                pool_id,
-                reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_id)->start_address()),
-                reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_id)->end_address()),
-                mem_pool_manager.get_pool(pool_id)->size());
+    // // Print out created pool details
+    // std::printf("%lu,0x%016" PRIxPTR ",0x%016" PRIxPTR ",%lu\n",
+    //             pool_id,
+    //             reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_id)->start_address()),
+    //             reinterpret_cast<uintptr_t>(mem_pool_manager.get_pool(pool_id)->end_address()),
+    //             mem_pool_manager.get_pool(pool_id)->size());
 
     return ReturnCode::Ok;
 }
@@ -1649,6 +1679,29 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
         OperatorMemoryUsage::get().print_memory_usage("mem_track_" + Hyrise::get().label + "_" + std::to_string(Hyrise::get().query_counter() - 1) + ".dat");
+    }
+    else if (cmd == "new_mem")
+    {
+        if (arguments.size() != 3)
+        {
+            out("Usage: ");
+            out("  hsh new_mem SIZE NUM_NODE\n");
+            return ReturnCode::Error;
+        }
+        auto pool_id = MemManager::get().add_pool(boost::lexical_cast<size_t>(arguments[1]), boost::lexical_cast<int>(arguments[2]));
+        std::cout << "Created new pool with ID: " << pool_id << "\n";
+    }
+    else if (cmd == "delete_mem")
+    {
+        if (arguments.size() != 2)
+        {
+            out("Usage: ");
+            out("  hsh delete_mem POOL_ID\n");
+            return ReturnCode::Error;
+        }
+        auto pool_id = boost::lexical_cast<size_t>(arguments[1]);
+        MemManager::get().destroy_pool(pool_id);
+        std::cout << "Deleted pool with ID: " << pool_id << "\n";
     }
     else
     {
