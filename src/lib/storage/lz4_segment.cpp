@@ -42,7 +42,7 @@ LZ4Segment<T>::LZ4Segment(pmr_vector<pmr_vector<char>> &&lz4_blocks, std::option
       _compressed_size{compressed_size},
       _num_elements{num_elements}
 {
-    if constexpr (HYRISE_DEBUG)
+    if (SegmentsUsed::get().tracking_enabled)
     {
         SegmentsUsed::get().add_segment(type_description());
     }
@@ -63,7 +63,7 @@ LZ4Segment<T>::LZ4Segment(pmr_vector<pmr_vector<char>> &&lz4_blocks, std::option
       _compressed_size{compressed_size},
       _num_elements{num_elements}
 {
-    if constexpr (HYRISE_DEBUG)
+    if (SegmentsUsed::get().tracking_enabled)
     {
         SegmentsUsed::get().add_segment(type_description());
     }

@@ -30,7 +30,7 @@ FrameOfReferenceSegment<T, U>::FrameOfReferenceSegment(pmr_vector<T> block_minim
       _offset_values{std::move(offset_values)},
       _decompressor{_offset_values->create_base_decompressor()}
 {
-    if constexpr (HYRISE_DEBUG)
+    if (SegmentsUsed::get().tracking_enabled)
     {
         SegmentsUsed::get().add_segment(type_description());
     }

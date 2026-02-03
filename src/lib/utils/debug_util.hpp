@@ -98,6 +98,7 @@ class OperatorsUsed : public Singleton<OperatorsUsed>
             std::cout << "- " << op << "\n";
         }
     }
+    inline static bool tracking_enabled{false};
 
   private:
     std::unordered_set<std::string> _operators_used;
@@ -119,6 +120,7 @@ class SegmentsUsed : public Singleton<SegmentsUsed>
         }
     }
 
+    inline static bool tracking_enabled{false};
   private:
     std::unordered_set<std::string> _segments_used;
 };
@@ -133,8 +135,12 @@ class OperatorMemoryUsage : public Singleton<OperatorMemoryUsage>
 
     TrackerHandle start_tracker(size_t operator_id)
     {
-        Assertf(_operator_memory_usage.find(operator_id) == _operator_memory_usage.end(),
-                "Operator ID %zu is already being tracked.", operator_id);
+        // Assertf(_operator_memory_usage.find(operator_id) == _operator_memory_usage.end(),
+        //         "Operator ID %zu is already being tracked.", operator_id);
+        if (_operator_memory_usage.find(operator_id) != _operator_memory_usage.end())
+        {
+            _operator_memory_usage.erase(operator_id);
+        }
         if (!OperatorMemoryUsage::initialized)
         {
             _operator_memory_usage[std::numeric_limits<size_t>::max()] = std::vector<std::pair<size_t, size_t>>{};
@@ -202,8 +208,14 @@ class OperatorMemoryUsage : public Singleton<OperatorMemoryUsage>
             }
         }
     }
+    void reset()
+    {
+        _operator_memory_usage.clear();
+        OperatorMemoryUsage::initialized = false;
+    }
 
     inline static bool initialized{false};
+    inline static bool tracking_enabled{false};
 
   private:
     std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> _operator_memory_usage;

@@ -26,7 +26,7 @@ RunLengthSegment<T>::RunLengthSegment(const std::shared_ptr<const pmr_vector<T>>
       _null_values{null_values},
       _end_positions{end_positions}
 {
-    if constexpr (HYRISE_DEBUG)
+    if (SegmentsUsed::get().tracking_enabled)
     {
         SegmentsUsed::get().add_segment(type_description());
     }

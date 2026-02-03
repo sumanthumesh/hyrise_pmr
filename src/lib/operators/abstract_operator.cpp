@@ -52,7 +52,7 @@ AbstractOperator::AbstractOperator(const OperatorType type, const std::shared_pt
     {
         mutable_right_input()->register_consumer();
     }
-    if constexpr (HYRISE_DEBUG)
+    if (OperatorsUsed::get().tracking_enabled)
     {
         OperatorsUsed::get().add_operator(type_name(_type));
     }
@@ -185,10 +185,14 @@ void AbstractOperator::execute()
         Assert(!_right_input || _right_input->get_output(), "Right input has no output data.");
     }
 
-    auto tracker_handle = OperatorMemoryUsage::get().start_tracker(this->operator_id);
-    std::thread t_mem_tracker([tracker_handle]() {
-        OperatorMemoryUsage::get().track_memory(tracker_handle);
-    });
+    OperatorMemoryUsage::TrackerHandle tracker_handle{nullptr, nullptr};
+    std::shared_ptr<std::thread> t_mem_tracker_ptr{nullptr};
+    if (OperatorMemoryUsage::tracking_enabled)
+    {
+        tracker_handle = OperatorMemoryUsage::get().start_tracker(this->operator_id);
+        t_mem_tracker_ptr = std::make_shared<std::thread>([tracker_handle]()
+                                                          { OperatorMemoryUsage::get().track_memory(tracker_handle); });
+    }
 
     auto performance_timer = Timer{};
 
@@ -218,10 +222,16 @@ void AbstractOperator::execute()
     _on_cleanup();
 
     // Signal this specific tracker thread to stop
-    tracker_handle.stop_flag->store(true);
-    if (t_mem_tracker.joinable())
+    if (OperatorMemoryUsage::tracking_enabled)
     {
-        t_mem_tracker.join();
+        if (tracker_handle.stop_flag)
+        {
+            tracker_handle.stop_flag->store(true);
+        }
+        if (t_mem_tracker_ptr && t_mem_tracker_ptr->joinable())
+        {
+            t_mem_tracker_ptr->join();
+        }
     }
 
     if (_output)

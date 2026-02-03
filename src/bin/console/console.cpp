@@ -962,7 +962,7 @@ int Console::_visualize(const std::string &input)
         return ReturnCode::Error;
     }
 
-    const auto img_filename = plan_type_str + std::to_string(Hyrise::get().query_counter()-1)+".png";
+    const auto img_filename = plan_type_str + std::to_string(Hyrise::get().query_counter() - 1) + ".png";
 
     try
     {
@@ -1145,7 +1145,7 @@ int Console::_change_runtime_setting(const std::string &input)
         }
         return 0;
     }
-    
+
     if (property == "pipe_reset")
     {
         if (value == "on")
@@ -1161,6 +1161,63 @@ int Console::_change_runtime_setting(const std::string &input)
         else
         {
             out("Usage: pipe_reset (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
+    if (property == "track_mem")
+    {
+        if (value == "on")
+        {
+            OperatorMemoryUsage::tracking_enabled = true;
+            out("Memory tracking turned on\n");
+        }
+        else if (value == "off")
+        {
+            OperatorMemoryUsage::tracking_enabled = false;
+            out("Memory tracking turned off\n");
+        }
+        else
+        {
+            out("Usage: track_mem (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
+    if (property == "track_segment_type")
+    {
+        if (value == "on")
+        {
+            SegmentsUsed::tracking_enabled = true;
+            out("Segment type tracking turned on\n");
+        }
+        else if (value == "off")
+        {
+            SegmentsUsed::tracking_enabled = false;
+            out("Segment type tracking turned off\n");
+        }
+        else
+        {
+            out("Usage: track_segment_type (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
+    if (property == "track_op_type")
+    {
+        if (value == "on")
+        {
+            OperatorsUsed::tracking_enabled = true;
+            out("Operator type tracking turned on\n");
+        }
+        else if (value == "off")
+        {
+            OperatorsUsed::tracking_enabled = false;
+            out("Operator type tracking turned off\n");
+        }
+        else
+        {
+            out("Usage: track_op_type (on|off)\n");
             return 1;
         }
         return 0;
@@ -1221,15 +1278,18 @@ void print_memory()
 }
 
 // Run cmd in background, don't wait.
-void run_detached(const char* cmd) {
+void run_detached(const char *cmd)
+{
     pid_t pid = fork();
-    if (pid < 0) {
+    if (pid < 0)
+    {
         // fork failed
         return;
     }
-    if (pid == 0) {
+    if (pid == 0)
+    {
         // Child: exec the shell command
-        execl("/bin/sh", "sh", "-c", cmd, (char*)nullptr);
+        execl("/bin/sh", "sh", "-c", cmd, (char *)nullptr);
         _exit(127); // exec failed
     }
     // Parent: just return, child continues in background
@@ -1588,7 +1648,7 @@ int Console::_hshell(const std::string &args)
             out("  hsh print_mem_usage\n");
             return ReturnCode::Error;
         }
-        OperatorMemoryUsage::get().print_memory_usage("mem_track_" + Hyrise::get().label + ".dat");
+        OperatorMemoryUsage::get().print_memory_usage("mem_track_" + Hyrise::get().label + "_" + std::to_string(Hyrise::get().query_counter() - 1) + ".dat");
     }
     else
     {

@@ -36,8 +36,18 @@ sigjmp_buf jmp_env; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables
 hyrise::OperatorsUsed operators_used; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 hyrise::SegmentsUsed segments_used;     // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 hyrise::OperatorMemoryUsage operator_memory_usage; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+[[noreturn]] void segfault_handler(int sig) {
+    
+    std::cerr << print_backtrace() << std::endl;
+
+    std::_Exit(EXIT_FAILURE);  // async-signal-safe termination
+}
+
 int main(int argc, char **argv)
 {
+
+    std::signal(SIGSEGV, segfault_handler);
 
     std::ofstream migration_log("migration_log.txt");
 

@@ -34,7 +34,7 @@ FixedStringDictionarySegment<T>::FixedStringDictionarySegment(
       _attribute_vector{attribute_vector},
       _decompressor{_attribute_vector->create_base_decompressor()}
 {
-    if constexpr (HYRISE_DEBUG)
+    if (SegmentsUsed::get().tracking_enabled)
     {
         SegmentsUsed::get().add_segment(type_description());
     }
