@@ -58,6 +58,11 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         return _allocated_bytes;
     }
 
+    size_t numa_node() const
+    {
+        return _numa_node;
+    }
+
     int verify_numa_node() const
     {
         // Allocate a tiny page to test
@@ -125,6 +130,31 @@ class MemPoolManager
         Assertf(it != _pools.end(), "Trying to delete non-existing pool %lu\n", pool_id);
         Assertf(it->second.use_count() == 1, "Pool has %d sharers left, not 1", it->second.use_count());
         _pools.erase(pool_id);
+    }
+
+    void print_status() const
+    {
+        std::unordered_map<size_t,size_t> size_by_numa;
+
+        std::cout << "Original Table Pools:\n";
+        for (const auto& [pool_id, pool] : _pools)
+        {
+            std::cout << "  Pool ID: " << pool_id 
+                      << ", Size: " << pool->size() << " bytes"
+                      << ", Allocated: " << pool->allocated_bytes() << " bytes"
+                      << ", NUMA Node: " << pool->numa_node() << "\n";
+            
+            if (size_by_numa.find(pool->numa_node()) == size_by_numa.end())
+            {
+                size_by_numa[pool->numa_node()] = 0;
+            }
+            size_by_numa[pool->numa_node()] += pool->allocated_bytes();
+        }
+        std::cout << "Total allocated bytes by NUMA node:\n";
+        for (const auto& [numa_node, total_bytes] : size_by_numa)
+        {
+            std::cout << "  NUMA Node " << numa_node << ": " << total_bytes << " bytes\n";
+        }
     }
     
     private:
