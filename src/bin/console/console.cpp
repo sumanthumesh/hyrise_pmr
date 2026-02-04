@@ -1714,8 +1714,17 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
         auto pool_id = boost::lexical_cast<size_t>(arguments[1]);
-        MemManager::get().destroy_pool(pool_id);
-        std::cout << "Deleted pool with ID: " << pool_id << "\n";
+        auto pool = MemManager::get().get_pool(pool_id);
+        if (pool->allocated_bytes() > 0)
+        {
+            out("Error: Cannot delete memory pool that still has allocated memory\n");
+            return ReturnCode::Error;
+        }
+        else
+        {
+            MemManager::get().destroy_pool(pool_id);
+            std::cout << "Deleted pool with ID: " << pool_id << "\n";
+        }
     }
     else
     {
