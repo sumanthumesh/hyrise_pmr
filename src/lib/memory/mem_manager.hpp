@@ -69,6 +69,8 @@ namespace hyrise
          */
         void destroy_pool(size_t pool_id);
 
+        void print_status() const;
+
         /**
          * PMR interface implementation
          */

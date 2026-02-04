@@ -217,4 +217,29 @@ int MemManager::_find_pool_for_pointer(void *p) const
     return -1;  // Not found in any pool
 }
 
+void MemManager::print_status() const
+    {
+        std::unordered_map<size_t,size_t> size_by_numa;
+
+        std::cout << "Default Pools:\n";
+        for (const auto& [pool_id, pool] : _pools)
+        {
+            std::cout << "  Pool ID: " << pool_id 
+                      << ", Size: " << pool->size() << " bytes"
+                      << ", Allocated: " << pool->allocated_bytes() << " bytes"
+                      << ", NUMA Node: " << pool->numa_node() << "\n";
+            
+            if (size_by_numa.find(pool->numa_node()) == size_by_numa.end())
+            {
+                size_by_numa[pool->numa_node()] = 0;
+            }
+            size_by_numa[pool->numa_node()] += pool->allocated_bytes();
+        }
+        std::cout << "Total allocated bytes by NUMA node:\n";
+        for (const auto& [numa_node, total_bytes] : size_by_numa)
+        {
+            std::cout << "  NUMA Node " << numa_node << ": " << total_bytes << " bytes\n";
+        }
+    }
+
 } // namespace hyrise
