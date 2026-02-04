@@ -6,6 +6,7 @@
 #include <boost/hana/type.hpp>
 
 #include "all_type_variant.hpp"
+#include "memory/mem_manager.hpp"
 #include "resolve_type.hpp"
 #include "storage/abstract_encoded_segment.hpp"
 #include "storage/abstract_segment.hpp"
@@ -154,7 +155,8 @@ class SegmentEncoder : public BaseSegmentEncoder
         const auto iterable = create_any_segment_iterable<ColumnDataType>(*abstract_segment);
 
         // For now, we allocate without a specific memory source.
-        return _self()._on_encode(iterable, PolymorphicAllocator<ColumnDataType>{});
+        // return _self()._on_encode(iterable, PolymorphicAllocator<ColumnDataType>{});
+        return _self()._on_encode(iterable, PolymorphicAllocator<ColumnDataType>{&MemManager::get()});
     }
 
     /**@}*/

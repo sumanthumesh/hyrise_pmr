@@ -40,6 +40,7 @@
 #include "benchmark_config.hpp"
 #include "hyrise.hpp"
 #include "logical_query_plan/lqp_utils.hpp"
+#include "memory/default_memory_resource.hpp"
 #include "memory/mem_manager.hpp"
 #include "operators/export.hpp"
 #include "operators/get_table.hpp"
@@ -645,6 +646,15 @@ int Console::_generate_tpch(const std::string &args)
 
     const auto scale_factor = boost::lexical_cast<float>(arguments[0]);
 
+    // We'll use the hyrise::Default resource for heap allocation and the MemManager for segment allocation
+    auto old_mem_source = std::pmr::get_default_resource();
+    // Create a new pool on local memory
+    // auto table_heap_pool_id = MemManager::get().add_pool(1073741824,0); // 1GB pool
+    // std::cout<<"Created table heap pool with ID "<<table_heap_pool_id<<"\n";
+    // auto table_heap_resource = MemManager::get().get_pool(table_heap_pool_id);
+    // Set it as the new default memory resource
+    std::pmr::set_default_resource(&DefaultResource::get());
+
     auto chunk_size = Chunk::DEFAULT_SIZE;
     if (arguments.size() > 1)
     {
@@ -654,6 +664,9 @@ int Console::_generate_tpch(const std::string &args)
     out("Generating all TPCH tables (this might take a while) ...\n");
     const auto config = std::make_shared<BenchmarkConfig>(chunk_size, _binary_caching);
     TPCHTableGenerator{scale_factor, ClusteringConfiguration::None, config}.generate_and_store();
+
+    // Set the default memory resource back to the previous one
+    std::pmr::set_default_resource(old_mem_source);
 
     return ReturnCode::Ok;
 }
@@ -1658,6 +1671,7 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
         print_memory();
+        MemManager::get().print_status();
     }
     else if (cmd == "track_mem")
     {
