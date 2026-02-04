@@ -97,7 +97,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Allocate on the first pool only (used during table generation)
         try
         {
-            std::printf("TG,%lu\n", bytes);
+            // std::printf("TG,%lu\n", bytes);
             return _pools.begin()->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
