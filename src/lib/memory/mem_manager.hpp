@@ -68,7 +68,7 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
      * @param numa_node The NUMA node ID to allocate on
      * @return pool_id that can be used to reference this pool later
      */
-    size_t add_pool(std::size_t size_bytes, int numa_node, size_t pool_id);
+    size_t add_pool(std::size_t size_bytes, int numa_node, size_t pool_id, bool serialize = false);
 
     /**
      * Get a reference to a specific pool by its ID (for introspection)

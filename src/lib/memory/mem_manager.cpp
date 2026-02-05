@@ -20,11 +20,11 @@ MemManager::MemManager(AllocationStrategy strategy)
     set_strategy(strategy);
 }
 
-size_t MemManager::add_pool(std::size_t size_bytes, int numa_node, size_t pool_id)
+size_t MemManager::add_pool(std::size_t size_bytes, int numa_node, size_t pool_id, bool serialize)
 {
     auto lock = std::lock_guard<std::mutex>{_pools_mutex};
 
-    auto numa_pool = std::make_shared<NumaMonotonicResource>(size_bytes, numa_node);
+    auto numa_pool = std::make_shared<NumaMonotonicResource>(size_bytes, numa_node, serialize);
 
     Assertf(_pools.find(pool_id) == _pools.end(),
             "Pool ID %lu already exists. Choose a different pool ID.\n", pool_id);
@@ -80,6 +80,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.TableSegmentGen = get_pool(0).get();         // Use first pool for table generation
         memory_resources.MiscGen = get_pool(1).get();                 // Use second pool for misc table gen allocations
         memory_resources.MiscExecution = _invalid_resource_ptr.get(); // Shouldn't be used if still in table generation
+        std::pmr::set_default_resource(this);
         break;
     case AllocationStrategy::Local:
         /**
@@ -90,6 +91,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         memory_resources.MiscExecution = get_pool(2).get();             // Use third pool for local heap allocations
+        std::pmr::set_default_resource(this);
         break;
     case AllocationStrategy::Remote:
         /**
@@ -100,6 +102,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         memory_resources.MiscExecution = get_pool(3).get();             // Use third pool for local heap allocations
+        std::pmr::set_default_resource(this);
         break;
     case AllocationStrategy::Greedy:
         /**
@@ -109,6 +112,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         memory_resources.MiscExecution = this;                          // Use third pool for local heap allocations
+        std::pmr::set_default_resource(this);
         break;
     }
 }
@@ -163,7 +167,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Allocate on the first pool only (used during table generation)
         try
         {
-            // std::printf("TG,%lu\n", bytes);
+            std::printf("TG,%lu\n", bytes);
             return _pools.find(1)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
@@ -177,7 +181,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Allocate on local pool (first pool in map)
         try
         {
-            // std::printf("LL,%lu\n", bytes);
+            std::printf("LL,%lu\n", bytes);
             return _pools.find(2)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
@@ -197,7 +201,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
 
         try
         {
-            // std::printf("RR,%lu\n", bytes);
+            std::printf("RR,%lu\n", bytes);
             return _pools.find(3)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
@@ -215,12 +219,12 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Try local first, then remote
         if (local_pool->allocated_bytes() + bytes <= local_pool->size())
         {
-            // std::printf("GL,%lu\n", bytes);
+            std::printf("GL,%lu\n", bytes);
             return local_pool->allocate(bytes, alignment);
         }
         else if (remote_pool && (remote_pool->allocated_bytes() + bytes <= remote_pool->size()))
         {
-            // std::printf("GR,%lu\n", bytes);
+            std::printf("GR,%lu\n", bytes);
             return remote_pool->allocate(bytes, alignment);
         }
         else
