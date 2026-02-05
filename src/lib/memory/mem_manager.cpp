@@ -17,6 +17,7 @@ MemManager::MemManager(AllocationStrategy strategy)
     // add_pool(16ull * 1024 * 1024 * 1024, 0);  // Default pool: 16GB on NUMA node 0
     // add_pool(16ull * 1024 * 1024 * 1024, 0);  // Default pool: 16GB on NUMA node 0
     // add_pool(16ull * 1024 * 1024 * 1024, 0);  // Default pool: 16GB on NUMA node 0
+    set_strategy(strategy);
 }
 
 size_t MemManager::add_pool(std::size_t size_bytes, int numa_node, size_t pool_id)
@@ -63,10 +64,12 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         /**
          * The default allocation policy on hyrise
          * use the DefaultResource for all pmr allocations
+         * Ideally only TableSegmentGen needs to be explicitly specified
          */
         memory_resources.TableSegmentGen = &DefaultResource::get();
-        memory_resources.MiscGen = &DefaultResource::get();
-        memory_resources.MiscExecution = &DefaultResource::get();
+        memory_resources.MiscGen = _invalid_resource_ptr.get();
+        memory_resources.MiscExecution = _invalid_resource_ptr.get();
+        std::pmr::set_default_resource(&DefaultResource::get());
         break;
     case AllocationStrategy::TableGen:
         /**

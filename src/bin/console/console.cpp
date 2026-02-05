@@ -1258,9 +1258,14 @@ int Console::_change_runtime_setting(const std::string &input)
             MemManager::get().set_strategy(MemManager::AllocationStrategy::Greedy);
             out("Memory strategy set to Greedy\n");
         }
+        else if (value == "Heap")
+        {
+            MemManager::get().set_strategy(MemManager::AllocationStrategy::Heap);
+            out("Memory strategy set to Heap\n");
+        }
         else
         {
-            out("Usage: mem_strategy (TableGen|Local|Remote|Greedy)\n");
+            out("Usage: mem_strategy (Heap|TableGen|Local|Remote|Greedy)\n");
             return 1;
         }
         return 0;
@@ -1696,13 +1701,13 @@ int Console::_hshell(const std::string &args)
     }
     else if (cmd == "new_mem")
     {
-        if (arguments.size() != 3)
+        if (arguments.size() != 4)
         {
             out("Usage: ");
-            out("  hsh new_mem SIZE NUM_NODE\n");
+            out("  hsh new_mem SIZE NUM_NODE POOL_ID\n");
             return ReturnCode::Error;
         }
-        auto pool_id = MemManager::get().add_pool(boost::lexical_cast<size_t>(arguments[1]), boost::lexical_cast<int>(arguments[2]));
+        auto pool_id = MemManager::get().add_pool(boost::lexical_cast<size_t>(arguments[1]), boost::lexical_cast<int>(arguments[2]), boost::lexical_cast<size_t>(arguments[3]));
         std::cout << "Created new pool with ID: " << pool_id << "\n";
     }
     else if (cmd == "delete_mem")
