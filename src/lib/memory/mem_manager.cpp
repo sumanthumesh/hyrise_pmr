@@ -56,6 +56,7 @@ size_t MemManager::pool_count() const
 
 void MemManager::set_strategy(AllocationStrategy strategy)
 {
+
     // Need to set strategy and the corresponding memory resources
     _strategy = strategy;
     switch (strategy)
@@ -162,7 +163,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Allocate on the first pool only (used during table generation)
         try
         {
-            std::printf("TG,%lu\n", bytes);
+            // std::printf("TG,%lu\n", bytes);
             return _pools.find(1)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
@@ -176,7 +177,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Allocate on local pool (first pool in map)
         try
         {
-            std::printf("LL,%lu\n", bytes);
+            // std::printf("LL,%lu\n", bytes);
             return _pools.find(2)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
@@ -196,7 +197,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
 
         try
         {
-            std::printf("RR,%lu\n", bytes);
+            // std::printf("RR,%lu\n", bytes);
             return _pools.find(3)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
@@ -214,12 +215,12 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Try local first, then remote
         if (local_pool->allocated_bytes() + bytes <= local_pool->size())
         {
-            std::printf("GL,%lu\n", bytes);
+            // std::printf("GL,%lu\n", bytes);
             return local_pool->allocate(bytes, alignment);
         }
         else if (remote_pool && (remote_pool->allocated_bytes() + bytes <= remote_pool->size()))
         {
-            std::printf("GR,%lu\n", bytes);
+            // std::printf("GR,%lu\n", bytes);
             return remote_pool->allocate(bytes, alignment);
         }
         else
@@ -247,9 +248,14 @@ void MemManager::do_deallocate(void *pointer, std::size_t bytes, std::size_t ali
     // Find which pool owns this pointer
     int pool_idx = _find_pool_for_pointer(pointer);
 
-    if (pool_idx >= 0 && pool_idx < static_cast<int>(_pools.size()))
+    if (pool_idx >= 0)
     {
         _pools[pool_idx]->deallocate(pointer, bytes, alignment);
+    }
+    else
+    {
+        std::cerr << "Could not find pool for this pointer\n";
+        exit(EXIT_FAILURE);
     }
     // If pointer not found in any pool, silently ignore (could be from default allocator)
     // or you could log a warning if needed
