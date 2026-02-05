@@ -156,7 +156,7 @@ class SegmentEncoder : public BaseSegmentEncoder
 
         // For now, we allocate without a specific memory source.
         // return _self()._on_encode(iterable, PolymorphicAllocator<ColumnDataType>{});
-        return _self()._on_encode(iterable, PolymorphicAllocator<ColumnDataType>{&MemManager::get()});
+        return _self()._on_encode(iterable, PolymorphicAllocator<ColumnDataType>{MemManager::get().memory_resources.TableSegmentGen});
     }
 
     /**@}*/
