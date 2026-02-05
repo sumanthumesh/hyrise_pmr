@@ -35,9 +35,9 @@ void *allocate_on_numa_node(std::size_t bytes, int node)
     return ptr;
 }
 
-size_t MemPoolManager::create_pool(uint64_t size, int numa_node)
+size_t MemPoolManager::create_pool(uint64_t size, int numa_node, bool serialize)
 {
-    auto mem_pool_ptr = std::make_shared<NumaMonotonicResource>(size, numa_node);
+    auto mem_pool_ptr = std::make_shared<NumaMonotonicResource>(size, numa_node, serialize);
     size_t pool_id = unique_pool_id();
     _pools.insert(std::make_pair(pool_id, mem_pool_ptr));
     return pool_id;
