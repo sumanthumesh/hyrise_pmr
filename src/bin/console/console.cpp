@@ -1701,13 +1701,14 @@ int Console::_hshell(const std::string &args)
     }
     else if (cmd == "new_mem")
     {
-        if (arguments.size() != 4)
+        if (arguments.size() != 4 && arguments.size() != 5)
         {
             out("Usage: ");
-            out("  hsh new_mem SIZE NUM_NODE POOL_ID\n");
+            out("  hsh new_mem SIZE NUM_NODE POOL_ID [serialize]\n");
             return ReturnCode::Error;
         }
-        auto pool_id = MemManager::get().add_pool(boost::lexical_cast<size_t>(arguments[1]), boost::lexical_cast<int>(arguments[2]), boost::lexical_cast<size_t>(arguments[3]));
+        bool serialize = arguments.size() == 5 ? true : false;
+        auto pool_id = MemManager::get().add_pool(boost::lexical_cast<size_t>(arguments[1]), boost::lexical_cast<int>(arguments[2]), boost::lexical_cast<size_t>(arguments[3]), serialize);
         std::cout << "Created new pool with ID: " << pool_id << "\n";
     }
     else if (cmd == "delete_mem")
