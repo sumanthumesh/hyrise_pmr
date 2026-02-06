@@ -179,10 +179,9 @@ void MigrationEngine::delete_column_pool(const std::string &column_name)
     _columns_to_pools_mapping.erase(it);
 }
 
-MemResourceStatus& MigrationEngine::aggregate_migrated_status()
+std::unordered_map<int, MemResourceStatus>& MigrationEngine::aggregate_migrated_status()
 {
-    _migrated_status = MemResourceStatus{};
-    _migrated_status.description = "MigrationEngine";
+    _migrated_status.clear();
 
     for (const auto &[column_name, pool_ids] : _columns_to_pools_mapping)
     {
@@ -191,9 +190,16 @@ MemResourceStatus& MigrationEngine::aggregate_migrated_status()
             auto pool_ptr = _pool_manager.get_pool(pool_id);
             auto status = pool_ptr->status();
 
-            _migrated_status.capacity_bytes += status.capacity_bytes;
-            _migrated_status.allocated_bytes += status.allocated_bytes;
-            _migrated_status.peak_allocated_bytes += status.peak_allocated_bytes;
+            if (_migrated_status.find(status.numa_node) == _migrated_status.end())
+            {
+                _migrated_status[status.numa_node] = MemResourceStatus{};
+                _migrated_status[status.numa_node].description = "MigratedColumns";
+                _migrated_status[status.numa_node].numa_node = status.numa_node;
+            }
+
+            _migrated_status[status.numa_node].capacity_bytes += status.capacity_bytes;
+            _migrated_status[status.numa_node].allocated_bytes += status.allocated_bytes;
+            _migrated_status[status.numa_node].peak_allocated_bytes += status.peak_allocated_bytes;
         }
     }
     return _migrated_status;

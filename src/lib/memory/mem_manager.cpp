@@ -330,20 +330,25 @@ std::vector<MemResourceStatus> MemManager::all_pool_status() const
     return statuses;
 }
 
-MemResourceStatus &MemManager::aggregate_manager_status()
+std::unordered_map<int, MemResourceStatus> &MemManager::aggregate_manager_status()
 {
-    _aggregate_manager_status = MemResourceStatus{};
-    _aggregate_manager_status.description = "MemManager";
-
     auto lock = std::lock_guard<std::mutex>{_pools_mutex};
+
+    _aggregate_manager_status.clear();
 
     for (const auto &[pool_id, pool] : _pools)
     {
         auto status = pool->status();
+        if (_aggregate_manager_status.find(status.numa_node) == _aggregate_manager_status.end())
+        {
+            _aggregate_manager_status[status.numa_node] = MemResourceStatus{};
+            _aggregate_manager_status[status.numa_node].description = "MemManager";
+            _aggregate_manager_status[status.numa_node].numa_node = status.numa_node;
+        }
 
-        _aggregate_manager_status.capacity_bytes += status.capacity_bytes;
-        _aggregate_manager_status.allocated_bytes += status.allocated_bytes;
-        _aggregate_manager_status.peak_allocated_bytes += status.peak_allocated_bytes;
+        _aggregate_manager_status[status.numa_node].capacity_bytes += status.capacity_bytes;
+        _aggregate_manager_status[status.numa_node].allocated_bytes += status.allocated_bytes;
+        _aggregate_manager_status[status.numa_node].peak_allocated_bytes += status.peak_allocated_bytes;
     }
     return _aggregate_manager_status;
 }

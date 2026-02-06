@@ -159,12 +159,12 @@ class MigrationEngine
     }
 
     std::vector<MemResourceStatus> all_pool_status() const;
-    MemResourceStatus& aggregate_migrated_status();
+    std::unordered_map<int, MemResourceStatus>& aggregate_migrated_status();
     
 
     private:
     MemPoolManager& _pool_manager;
     std::unordered_map<std::string, std::deque<size_t>> _columns_to_pools_mapping;
-    MemResourceStatus _migrated_status;
+    std::unordered_map<int, MemResourceStatus> _migrated_status;
 };
 } // namespace hyrise
