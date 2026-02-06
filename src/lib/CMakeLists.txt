@@ -177,6 +177,8 @@ set(
     memory/default_memory_resource.hpp
     memory/mem_manager.cpp
     memory/mem_manager.hpp
+    memory/new_delete.cpp
+    memory/new_delete.hpp
     memory/zero_allocator.hpp
     null_value.hpp
     operators/abstract_aggregate_operator.cpp
