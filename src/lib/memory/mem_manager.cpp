@@ -77,6 +77,8 @@ void MemManager::set_strategy(AllocationStrategy strategy)
          * In this strategy, all table generation allocations go to a single NUMA pool
          * The other resources should not be used
          */
+        Assertf(exists(0), "Pool with ID 0 for allocating table segments during table generation does not exist.\n");
+        Assertf(exists(1), "Pool with ID 1 for allocating miscellaneous data during table generation does not exist.\n");
         memory_resources.TableSegmentGen = get_pool(0).get();         // Use first pool for table generation
         memory_resources.MiscGen = get_pool(1).get();                 // Use second pool for misc table gen allocations
         memory_resources.MiscExecution = _invalid_resource_ptr.get(); // Shouldn't be used if still in table generation
@@ -90,6 +92,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
          */
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
+        Assertf(exists(2), "Pool with ID 2 for allocating local execution data does not exist.\n");
         memory_resources.MiscExecution = get_pool(2).get();             // Use third pool for local heap allocations
         std::pmr::set_default_resource(this);
         break;
@@ -101,6 +104,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
          */
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
+        Assertf(exists(3), "Pool with ID 3 for allocating remote execution data does not exist.\n");
         memory_resources.MiscExecution = get_pool(3).get();             // Use third pool for local heap allocations
         std::pmr::set_default_resource(this);
         break;
@@ -109,6 +113,8 @@ void MemManager::set_strategy(AllocationStrategy strategy)
          * In this strategy, table generation has already happened. So table generation resources are not needed.
          * All misc allocations either goto local or remote based on greedy approach
          */
+        Assertf(exists(2), "Pool with ID 2 for allocating local execution data does not exist.\n");
+        Assertf(exists(3), "Pool with ID 3 for allocating remote execution data does not exist.\n");
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         memory_resources.MiscExecution = this;                          // Use third pool for local heap allocations
@@ -162,12 +168,10 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
     }
     if (_strategy == AllocationStrategy::TableGen)
     {
-        Assertf(_pools.size() == 1, "Expected exactly one pool for TableGen strategy, but found %lu\n",
-                _pools.size());
         // Allocate on the first pool only (used during table generation)
         try
         {
-            std::printf("TG,%lu\n", bytes);
+            // std::printf("TG,%lu\n", bytes);
             return _pools.find(1)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
@@ -181,32 +185,25 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Allocate on local pool (first pool in map)
         try
         {
-            std::printf("LL,%lu\n", bytes);
+            // std::printf("LL,%lu\n", bytes);
             return _pools.find(2)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
         {
-            std::cerr << "Tried alllocating on local pool but it is full\n";
+            std::cerr << "Tried allocating on local pool but it is full\n";
             throw; // Local pool full
         }
     }
     else if (_strategy == AllocationStrategy::Remote)
     {
-        // Allocate on remote pool (second pool, if exists)
-        if (_pools.size() < 2)
-        {
-            std::cerr << "Remote pool doesn't exist\n";
-            throw std::bad_alloc(); // No remote pool available
-        }
-
         try
         {
-            std::printf("RR,%lu\n", bytes);
+            // std::printf("RR,%lu\n", bytes);
             return _pools.find(3)->second->allocate(bytes, alignment);
         }
         catch (const std::bad_alloc &)
         {
-            std::cerr << "Tried alllocating on remote pool but it is full\n";
+            std::cerr << "Tried allocating on remote pool but it is full\n";
             throw; // Remote pool full
         }
     }
@@ -219,12 +216,12 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         // Try local first, then remote
         if (local_pool->allocated_bytes() + bytes <= local_pool->size())
         {
-            std::printf("GL,%lu\n", bytes);
+            // std::printf("GL,%lu\n", bytes);
             return local_pool->allocate(bytes, alignment);
         }
         else if (remote_pool && (remote_pool->allocated_bytes() + bytes <= remote_pool->size()))
         {
-            std::printf("GR,%lu\n", bytes);
+            // std::printf("GR,%lu\n", bytes);
             return remote_pool->allocate(bytes, alignment);
         }
         else
@@ -342,7 +339,7 @@ std::unordered_map<int, MemResourceStatus> &MemManager::aggregate_manager_status
         if (_aggregate_manager_status.find(status.numa_node) == _aggregate_manager_status.end())
         {
             _aggregate_manager_status[status.numa_node] = MemResourceStatus{};
-            _aggregate_manager_status[status.numa_node].description = "MemManager";
+            _aggregate_manager_status[status.numa_node].description = "MemManagerAggregate";
             _aggregate_manager_status[status.numa_node].numa_node = status.numa_node;
         }
 
