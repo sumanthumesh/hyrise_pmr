@@ -193,7 +193,7 @@ std::unordered_map<int, MemResourceStatus>& MigrationEngine::aggregate_migrated_
             if (_migrated_status.find(status.numa_node) == _migrated_status.end())
             {
                 _migrated_status[status.numa_node] = MemResourceStatus{};
-                _migrated_status[status.numa_node].description = "MigratedColumns";
+                _migrated_status[status.numa_node].description = "MigratedColumnsAggregate";
                 _migrated_status[status.numa_node].numa_node = status.numa_node;
             }
 
