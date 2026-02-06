@@ -178,7 +178,7 @@ std::shared_ptr<const Table> TableScan::_on_execute()
                 }
                 else
                 {
-                    auto filtered_pos_lists = std::map<std::shared_ptr<const AbstractPosList>, std::shared_ptr<RowIDPosList>>{};
+                    auto filtered_pos_lists = pmr_map<std::shared_ptr<const AbstractPosList>, std::shared_ptr<RowIDPosList>>{};
 
                     for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id)
                     {
