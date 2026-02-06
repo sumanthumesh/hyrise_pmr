@@ -4,6 +4,7 @@
 #include <cstdlib>
 
 #include "types.hpp"
+#include "utils/debug_util.hpp"
 
 namespace hyrise
 {
@@ -38,7 +39,7 @@ MemResourceStatus DefaultResource::status() const
 {
     MemResourceStatus status;
     status.description = "DefaultResource";
-    status.resource_id = reinterpret_cast<size_t>(this);
+    status.resource_id = std::numeric_limits<size_t>::max(); // No fixed ID
     status.capacity_bytes = std::numeric_limits<size_t>::max(); // No fixed capacity
     status.allocated_bytes = _bytes_allocated;
     status.peak_allocated_bytes = _peak_bytes_allocated;
