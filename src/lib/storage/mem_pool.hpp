@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "memory/mem_common.hpp"
 #include "utils/debug_util.hpp"
 
 void *allocate_on_numa_node(std::size_t bytes, int node);
@@ -60,10 +61,10 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         // I'm not locking this with a mutex for now. I feel I can get away with a slightly inaccurate guess
         return _allocated_bytes;
     }
-    
+
     size_t allocated_bytes_mutex() const
     {
-        std::unique_lock<std::mutex> lock{_mutex,std::defer_lock};
+        std::unique_lock<std::mutex> lock{_mutex, std::defer_lock};
         if (_serialize)
         {
             lock.lock();
@@ -99,14 +100,26 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         return -1; // couldn't verify
     }
 
+    hyrise::MemResourceStatus status() const
+    {
+        hyrise::MemResourceStatus status;
+        status.description = std::string("NumaMonotonicResource") + (_serialize ? "_serialized" : "");
+        status.resource_id = std::numeric_limits<size_t>::max(); // No fixed ID
+        status.capacity_bytes = _size;
+        status.allocated_bytes = _allocated_bytes;
+        status.peak_allocated_bytes = _peak_allocated_bytes;
+        status.numa_node = _numa_node;
+        return status;
+    }
+
   protected:
     void *do_allocate(std::size_t bytes, std::size_t alignment) override
     {
-        std::unique_lock<std::mutex> lock{_mutex,std::defer_lock};
-        
+        std::unique_lock<std::mutex> lock{_mutex, std::defer_lock};
+
         if (_serialize)
         {
-            lock.lock();    
+            lock.lock();
         }
 
         _allocated_bytes += bytes;
@@ -119,11 +132,11 @@ class NumaMonotonicResource : public std::pmr::memory_resource
 
     void do_deallocate(void *p, std::size_t bytes, std::size_t alignment) override
     {
-        std::unique_lock<std::mutex> lock{_mutex,std::defer_lock};
-        
+        std::unique_lock<std::mutex> lock{_mutex, std::defer_lock};
+
         if (_serialize)
         {
-            lock.lock();    
+            lock.lock();
         }
         _allocated_bytes -= bytes;
         _mono.deallocate(p, bytes, alignment);

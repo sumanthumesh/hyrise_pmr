@@ -14,11 +14,17 @@ namespace hyrise
 
 void *DefaultResource::do_allocate(std::size_t bytes, std::size_t /*alignment*/)
 {
+    _bytes_allocated += bytes;
+    if (_bytes_allocated > _peak_bytes_allocated)
+    {
+        _peak_bytes_allocated = _bytes_allocated;
+    }
     return std::malloc(bytes);
 }
 
-void DefaultResource::do_deallocate(void *pointer, std::size_t /*bytes*/, std::size_t /*alignment*/)
+void DefaultResource::do_deallocate(void *pointer, std::size_t bytes, std::size_t /*alignment*/)
 {
+    _bytes_allocated -= bytes;
     std::free(pointer);
 }
 
@@ -27,5 +33,17 @@ void DefaultResource::do_deallocate(void *pointer, std::size_t /*bytes*/, std::s
     return &other == this;
 }
 // NOLINTEND(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory,hicpp-no-malloc)
+
+MemResourceStatus DefaultResource::status() const
+{
+    MemResourceStatus status;
+    status.description = "DefaultResource";
+    status.resource_id = reinterpret_cast<size_t>(this);
+    status.capacity_bytes = std::numeric_limits<size_t>::max(); // No fixed capacity
+    status.allocated_bytes = _bytes_allocated;
+    status.peak_allocated_bytes = _peak_bytes_allocated;
+    status.numa_node = -1; // Not NUMA-aware
+    return status;
+}
 
 } // namespace hyrise

@@ -314,4 +314,37 @@ void MemManager::print_status() const
     }
 }
 
+std::vector<MemResourceStatus> MemManager::all_pool_status() const
+{
+    std::vector<MemResourceStatus> statuses;
+
+    auto lock = std::lock_guard<std::mutex>{_pools_mutex};
+
+    for (const auto &[pool_id, pool] : _pools)
+    {
+        auto s = pool->status();
+        s.resource_id = pool_id;
+        statuses.push_back(s);
+    }
+
+    return statuses;
+}
+
+MemResourceStatus &MemManager::aggregate_manager_status()
+{
+    _aggregate_manager_status = MemResourceStatus{};
+    _aggregate_manager_status.description = "MemManager";
+
+    auto lock = std::lock_guard<std::mutex>{_pools_mutex};
+
+    for (const auto &[pool_id, pool] : _pools)
+    {
+        auto status = pool->status();
+
+        _aggregate_manager_status.capacity_bytes += status.capacity_bytes;
+        _aggregate_manager_status.allocated_bytes += status.allocated_bytes;
+        _aggregate_manager_status.peak_allocated_bytes += status.peak_allocated_bytes;
+    }
+    return _aggregate_manager_status;
+}
 } // namespace hyrise

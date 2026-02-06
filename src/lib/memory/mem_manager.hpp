@@ -99,6 +99,8 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
     bool exists(size_t pool_id);
 
     void print_status() const;
+    std::vector<MemResourceStatus> all_pool_status() const;
+    MemResourceStatus& aggregate_manager_status();
 
     /**
      * PMR interface implementation
@@ -131,6 +133,7 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
     AllocationStrategy _strategy;
 
     std::shared_ptr<InvalidMemResource> _invalid_resource_ptr;
+    MemResourceStatus _aggregate_manager_status;
 };
 
 } // namespace hyrise

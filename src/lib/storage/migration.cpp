@@ -128,13 +128,12 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                     // Some segments were migrated. Create a pool for the remaining size
                     pool_size = static_cast<size_t>((float)(column_size - bytes_migrated) * 1.2); // 20% overhead
                 }
-                
+
                 pool_id = _pool_manager.create_pool(pool_size, numa_node_id);
                 memory_resource = _pool_manager.get_pool(pool_id);
                 std::cout << "New pool " << pool_id << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
 
                 num_segments_migrated_to_pool = 0;
-
 
                 continue;
             }
@@ -172,11 +171,48 @@ void MigrationEngine::delete_column_pool(const std::string &column_name)
     auto it = _columns_to_pools_mapping.find(column_name);
     Assertf(it != _columns_to_pools_mapping.end(), "Trying to delete non-existing pools for column %s\n", column_name.c_str());
 
-    for (auto &pool_id: it->second)
+    for (auto &pool_id : it->second)
     {
         _pool_manager.delete_pool(pool_id);
     }
 
     _columns_to_pools_mapping.erase(it);
+}
+
+MemResourceStatus& MigrationEngine::aggregate_migrated_status()
+{
+    _migrated_status = MemResourceStatus{};
+    _migrated_status.description = "MigrationEngine";
+
+    for (const auto &[column_name, pool_ids] : _columns_to_pools_mapping)
+    {
+        for (const auto &pool_id : pool_ids)
+        {
+            auto pool_ptr = _pool_manager.get_pool(pool_id);
+            auto status = pool_ptr->status();
+
+            _migrated_status.capacity_bytes += status.capacity_bytes;
+            _migrated_status.allocated_bytes += status.allocated_bytes;
+            _migrated_status.peak_allocated_bytes += status.peak_allocated_bytes;
+        }
+    }
+    return _migrated_status;
+}
+
+std::vector<MemResourceStatus> MigrationEngine::all_pool_status() const
+{
+    std::vector<MemResourceStatus> statuses;
+    for (const auto &[column_name, pool_ids] : _columns_to_pools_mapping)
+    {
+        for (const auto &pool_id : pool_ids)
+        {
+            auto pool_ptr = _pool_manager.get_pool(pool_id);
+            auto s = pool_ptr->status();
+            s.resource_id = pool_id;
+            statuses.push_back(s);
+        }
+    }
+
+    return statuses;
 }
 } // namespace hyrise

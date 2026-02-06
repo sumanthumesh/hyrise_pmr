@@ -158,8 +158,13 @@ class MigrationEngine
         return total_size;
     }
 
+    std::vector<MemResourceStatus> all_pool_status() const;
+    MemResourceStatus& aggregate_migrated_status();
+    
+
     private:
     MemPoolManager& _pool_manager;
     std::unordered_map<std::string, std::deque<size_t>> _columns_to_pools_mapping;
+    MemResourceStatus _migrated_status;
 };
 } // namespace hyrise
