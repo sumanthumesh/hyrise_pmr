@@ -16,6 +16,7 @@
 #include "hyrise.hpp"
 #include "logical_query_plan/lqp_translator.hpp"
 #include "logical_query_plan/lqp_utils.hpp"
+#include "memory/new_delete.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/import.hpp"
 #include "operators/maintenance/create_prepared_plan.hpp"
@@ -322,6 +323,7 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
 
     const auto &tasks = get_tasks();
 
+    start_tracking_allocations();
     const auto started = std::chrono::steady_clock::now();
 
     Hyrise::get().scheduler()->schedule_and_wait_for_tasks(tasks);
@@ -346,9 +348,12 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
 
     const auto done = std::chrono::steady_clock::now();
     _metrics->plan_execution_duration = done - started;
-
+    
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(done - started);
 
+    stop_tracking_allocations();
+    auto delta_memory = tracked_bytes();
+    std::cout<< "Memory usage for this query: " << delta_memory << " bytes\n";
     // OperatorMemoryUsage::get().reset();
 
     std::ofstream query_exec_info_file("query_exec_info_"+std::to_string(Hyrise::get().query_counter())+".txt");
