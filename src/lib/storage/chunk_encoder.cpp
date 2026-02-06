@@ -60,8 +60,8 @@ std::shared_ptr<AbstractSegment> ChunkEncoder::encode_segment(const std::shared_
     // the data vectors for a ValueSegment. If another encoding is requested, the segment
     // encoding utitilies are used (which create and call the according encoder).
     if (encoding_spec.encoding_type == EncodingType::Unencoded) {
-      pmr_vector<ColumnDataType> values{PolymorphicAllocator<ColumnDataType>{&MemManager::get()}};
-      pmr_vector<bool> null_values{PolymorphicAllocator<bool>{&MemManager::get()}};
+      pmr_vector<ColumnDataType> values{PolymorphicAllocator<ColumnDataType>{MemManager::get().memory_resources.TableSegmentGen}};
+      pmr_vector<bool> null_values{PolymorphicAllocator<bool>{MemManager::get().memory_resources.TableSegmentGen}};
       auto contains_nulls = false;
 
       auto iterable = create_any_segment_iterable<ColumnDataType>(*segment);
