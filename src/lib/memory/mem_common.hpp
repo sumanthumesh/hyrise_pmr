@@ -7,6 +7,9 @@
 
 namespace hyrise
 {
+    /**
+     * Simple representation of the status of a memory resource, used for logging and debugging.
+     */
 struct MemResourceStatus
 {
     std::string description{""};
