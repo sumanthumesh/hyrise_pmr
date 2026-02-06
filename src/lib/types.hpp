@@ -4,11 +4,15 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory_resource>
 #include <ostream>
+#include <set>
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -92,6 +96,19 @@ using pmr_string = std::basic_string<char, std::char_traits<char>, PolymorphicAl
 //   a = b;  // a does NOT use alloc, neither for its current values, nor for future allocations (#623).
 template <typename T>
 using pmr_vector = std::vector<T, PolymorphicAllocator<T>>;
+
+template <typename T>
+using pmr_set = std::set<T, std::less<T>, PolymorphicAllocator<T>>;
+
+template <typename Key, typename T>
+using pmr_map = std::map<Key, T, std::less<Key>, PolymorphicAllocator<std::pair<const Key, T>>>;
+
+template <typename T>
+using pmr_unordered_set = std::unordered_set<T, std::hash<T>, std::equal_to<T>, PolymorphicAllocator<T>>;
+
+template <typename Key, typename T>
+using pmr_unordered_map = std::unordered_map<Key, T, std::hash<Key>, std::equal_to<Key>, 
+                                              PolymorphicAllocator<std::pair<const Key, T>>>;
 
 constexpr ChunkOffset INVALID_CHUNK_OFFSET{std::numeric_limits<ChunkOffset::base_type>::max()};
 constexpr ChunkID INVALID_CHUNK_ID{std::numeric_limits<ChunkID::base_type>::max()};
