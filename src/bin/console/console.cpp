@@ -1718,7 +1718,11 @@ int Console::_hshell(const std::string &args)
         }
         bool serialize = arguments.size() == 5 ? true : false;
         auto pool_id = MemManager::get().add_pool(boost::lexical_cast<size_t>(arguments[1]), boost::lexical_cast<int>(arguments[2]), boost::lexical_cast<size_t>(arguments[3]), serialize);
-        std::cout << "Created new pool with ID: " << pool_id << "\n";
+        auto pool = MemManager::get().get_pool(pool_id);
+        std::printf("%lu,0x%016" PRIxPTR ",0x%016" PRIxPTR "\n",
+                    pool_id,
+                    reinterpret_cast<uintptr_t>(pool->start_address()),
+                    reinterpret_cast<uintptr_t>(pool->end_address()));
     }
     else if (cmd == "delete_mem")
     {
