@@ -93,7 +93,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         Assertf(exists(2), "Pool with ID 2 for allocating local execution data does not exist.\n");
-        memory_resources.MiscExecution = get_pool(2).get();             // Use third pool for local heap allocations
+        memory_resources.MiscExecution = get_pool(2).get(); // Use third pool for local heap allocations
         std::pmr::set_default_resource(this);
         break;
     case AllocationStrategy::Remote:
@@ -105,7 +105,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         Assertf(exists(3), "Pool with ID 3 for allocating remote execution data does not exist.\n");
-        memory_resources.MiscExecution = get_pool(3).get();             // Use third pool for local heap allocations
+        memory_resources.MiscExecution = get_pool(3).get(); // Use third pool for local heap allocations
         std::pmr::set_default_resource(this);
         break;
     case AllocationStrategy::Greedy:
@@ -213,13 +213,17 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         const auto &local_pool = _pools.find(2)->second;
         const auto &remote_pool = _pools.find(3)->second;
 
+        // Current memory usage check before allocation
+        std::pair<size_t, size_t> current_usage = quick_size_check();
+        std::printf("Current usage before allocation: Local=%lu bytes, Remote=%lu bytes\n", current_usage.first, current_usage.second);
+
         // Try local first, then remote
-        if (local_pool->allocated_bytes() + bytes <= local_pool->size())
+        if (current_usage.first + bytes <= _local_mem_capacity_bytes)
         {
             // std::printf("GL,%lu\n", bytes);
             return local_pool->allocate(bytes, alignment);
         }
-        else if (remote_pool && (remote_pool->allocated_bytes() + bytes <= remote_pool->size()))
+        else if (current_usage.second + bytes <= _remote_mem_capacity_bytes)
         {
             // std::printf("GR,%lu\n", bytes);
             return remote_pool->allocate(bytes, alignment);
@@ -235,6 +239,51 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
         std::cerr << "Allocating failed on all strategies\n";
         throw std::bad_alloc(); // Unknown strategy
     }
+}
+
+std::pair<size_t, size_t> MemManager::quick_size_check() const
+{
+    // No locking this for now. It's just a quick check and doesn't need to be perfectly accurate. If we find inconsistencies we can add locking later.
+
+    size_t local_allocated = 0, remote_allocated = 0;
+
+    // This is the mem manager's view of allocated bytes by NUMA node based on the pools it manages. This is not necessarily perfectly accurate since there is no locking, but should be good enough for a quick check.
+    for (const auto &[pool_id, pool] : _pools)
+    {
+        switch (pool->numa_node())
+        {
+        case 0:
+            local_allocated += pool->allocated_bytes();
+            break;
+        case 1:
+            remote_allocated += pool->allocated_bytes();
+            break;
+        default:
+            std::printf("Unexpected NUMA node %lu for pool %lu in quick size check. Ignoring this pool for the quick size check.\n", pool->numa_node(), pool_id);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // This is the migrated status that the MigrationEngine is tracking. This is updated when we call mem_usage from _hshell and should be accurate since it's updated with locking in the MigrationEngine.
+    switch (_migrated_status.size())
+    {
+    case 0:
+    break;
+    case 1:
+        // If we only have one NUMA node, we'll assume all allocated memory is local
+        local_allocated += _migrated_status.find(0)->second.allocated_bytes;
+        break;
+    case 2:
+        // If we only have one NUMA node, we'll assume all allocated memory is local
+        local_allocated += _migrated_status.find(0)->second.allocated_bytes;
+        remote_allocated += _migrated_status.find(1)->second.allocated_bytes;
+        break;
+    default:
+        std::printf("Expected 0,1 or 2 NUMA nodes in migrated status, but found %lu. Ignoring migrated status for quick size check.\n", _migrated_status.size());
+        break;
+    }
+
+    return std::make_pair(local_allocated, remote_allocated);
 }
 
 void MemManager::do_deallocate(void *pointer, std::size_t bytes, std::size_t alignment)
@@ -348,5 +397,16 @@ std::unordered_map<int, MemResourceStatus> &MemManager::aggregate_manager_status
         _aggregate_manager_status[status.numa_node].peak_allocated_bytes += status.peak_allocated_bytes;
     }
     return _aggregate_manager_status;
+}
+
+void MemManager::update_migrated_status(std::unordered_map<int, MemResourceStatus> &migrated_status)
+{
+    _migrated_status = migrated_status;
+}
+
+void MemManager::set_numa_node_capacities(size_t local_capacity_bytes, size_t remote_capacity_bytes)
+{
+    _local_mem_capacity_bytes = local_capacity_bytes;
+    _remote_mem_capacity_bytes = remote_capacity_bytes;
 }
 } // namespace hyrise

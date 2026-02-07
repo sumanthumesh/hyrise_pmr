@@ -1664,6 +1664,7 @@ int Console::_hshell(const std::string &args)
             out("  hsh mem_usage  Print memory usage statistics\n");
             return ReturnCode::Error;
         }
+
         std::cout<<"Memory Usage Statistics:\n";
         print_memory();
         // Get from migration engine
@@ -1672,6 +1673,9 @@ int Console::_hshell(const std::string &args)
         {
             std::cout << status.first << ": " << status.second.to_string() << "\n";
         }
+        // Update MemManager with data from migration engine
+        MemManager::get().update_migrated_status(migration_status);
+
         // Get from MemManager
         auto all_manager_pools_status = MemManager::get().all_pool_status();
         for (const auto& status : all_manager_pools_status)
@@ -1686,6 +1690,11 @@ int Console::_hshell(const std::string &args)
         // Get from DefaultMemoryResource
         auto default_mem_resource_status = DefaultResource::get().status();
         std::cout << default_mem_resource_status.to_string() << "\n";
+
+        // Quick view from MemManager
+        std::cout << "Quick Memory Usage Overview:\n";
+        auto used_capacity = MemManager::get().quick_size_check();
+        std::printf("Used Capacity: %lu, %lu\n", used_capacity.first, used_capacity.second);
     }
     else if (cmd == "track_mem")
     {
@@ -1707,6 +1716,19 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
         OperatorMemoryUsage::get().print_memory_usage("mem_track_" + Hyrise::get().label + "_" + std::to_string(Hyrise::get().query_counter() - 1) + ".dat");
+    }
+    else if (cmd == "set_mem_capacity")
+    {
+        if (arguments.size() != 3)
+        {
+            out("Usage: ");
+            out("  hsh set_mem_capacity LOCAL_CAPACITY REMOTE_CAPACITY\n");
+            return ReturnCode::Error;
+        }
+        
+        auto local_capacity = boost::lexical_cast<size_t>(arguments[1]);
+        auto remote_capacity = boost::lexical_cast<size_t>(arguments[2]);
+        MemManager::get().set_numa_node_capacities(local_capacity,remote_capacity);
     }
     else if (cmd == "new_mem")
     {

@@ -179,7 +179,7 @@ void MigrationEngine::delete_column_pool(const std::string &column_name)
     _columns_to_pools_mapping.erase(it);
 }
 
-std::unordered_map<int, MemResourceStatus>& MigrationEngine::aggregate_migrated_status()
+std::unordered_map<int, MemResourceStatus> &MigrationEngine::aggregate_migrated_status()
 {
     _migrated_status.clear();
 
@@ -220,5 +220,10 @@ std::vector<MemResourceStatus> MigrationEngine::all_pool_status() const
     }
 
     return statuses;
+}
+
+std::pair<size_t, size_t> MigrationEngine::quick_size_check() const
+{
+    return std::make_pair(_migrated_status.find(0)->second.allocated_bytes, _migrated_status.find(1)->second.allocated_bytes);
 }
 } // namespace hyrise

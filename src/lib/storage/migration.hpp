@@ -160,6 +160,7 @@ class MigrationEngine
 
     std::vector<MemResourceStatus> all_pool_status() const;
     std::unordered_map<int, MemResourceStatus>& aggregate_migrated_status();
+    std::pair<size_t,size_t> quick_size_check() const;
     
 
     private:

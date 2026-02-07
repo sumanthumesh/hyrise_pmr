@@ -103,6 +103,13 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
     std::unordered_map<int, MemResourceStatus>& aggregate_manager_status();
 
     /**
+     * A very quick total of local and remote node allocated bytes based on the manager's view of its pools and the migrated status from the MigrationEngine. This is not perfectly accurate since there is no locking, but should be good enough for a quick check to see if we're in the right ballpark before doing more expensive calls to get detailed status.
+     */
+    std::pair<size_t,size_t> quick_size_check() const;
+
+    void update_migrated_status(std::unordered_map<int, MemResourceStatus>& migrated_status);
+
+    /**
      * PMR interface implementation
      */
     void *do_allocate(std::size_t bytes, std::size_t alignment) override;
@@ -121,6 +128,11 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
         std::pmr::memory_resource *MiscExecution = nullptr;   // For all misc allocations
     } memory_resources;
 
+    /**
+     * Interface to set memory capacities for local and remote NUMA nodes. This is used by the MigrationEngine to inform the MemManager of the total capacities of local and remote memory based on the pools it has created for migration.
+     */
+    void set_numa_node_capacities(size_t local_capacity_bytes, size_t remote_capacity_bytes);
+
   private:
     // Helper to find which pool owns a pointer
     int _find_pool_for_pointer(void *p) const;
@@ -134,6 +146,11 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
 
     std::shared_ptr<InvalidMemResource> _invalid_resource_ptr;
     std::unordered_map<int, MemResourceStatus> _aggregate_manager_status;
+    std::unordered_map<int, MemResourceStatus> _migrated_status;
+
+    // Sizes of local and remote memories
+    size_t _local_mem_capacity_bytes{1ull*1024*1024*1024}; //1GB default local memory capacity
+    size_t _remote_mem_capacity_bytes{1ull*1024*1024*1024}; //1GB default remote memory capacity
 };
 
 } // namespace hyrise
