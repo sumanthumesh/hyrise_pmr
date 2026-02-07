@@ -86,7 +86,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
         auto chunk_ptr = table_name->get_chunk(chunk_id);
         auto segment_ptr = chunk_ptr->get_segment(column_id);
 
-        std::cout << "ChunkID" << chunk_id << "\n";
+        // std::cout << "ChunkID" << chunk_id << "\n";
 
         size_t current_segment_size = segment_ptr->memory_usage(MemoryUsageCalculationMode::Full);
 
@@ -108,13 +108,13 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
                 if (num_segments_migrated_to_pool > 0)
                 {
                     pools_used_for_column.push_back(pool_id);
-                    std::cout << "Pool " << pool_id << " committed for column " << column_name << " with " << num_segments_migrated_to_pool << " segments\n";
+                    // std::cout << "Pool " << pool_id << " committed for column " << column_name << " with " << num_segments_migrated_to_pool << " segments\n";
                 }
                 else
                 {
                     memory_resource.reset();
                     _pool_manager.delete_pool(pool_id);
-                    std::cout << "Pool " << pool_id << " of size " << pool_size << "B discarded since it accomodated 0 segments\n";
+                    // std::cout << "Pool " << pool_id << " of size " << pool_size << "B discarded since it accomodated 0 segments\n";
                 }
 
                 // Create a new pool for the remaining segments
@@ -131,7 +131,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
 
                 pool_id = _pool_manager.create_pool(pool_size, numa_node_id);
                 memory_resource = _pool_manager.get_pool(pool_id);
-                std::cout << "New pool " << pool_id << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
+                // std::cout << "New pool " << pool_id << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
 
                 num_segments_migrated_to_pool = 0;
 
@@ -145,12 +145,12 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     // Commit the last pool
     pools_used_for_column.push_back(pool_id);
 
-    // Verify total migrated size
-    size_t total_migrated_size = 0;
-    for (const auto &pool_id : pools_used_for_column)
-    {
-        total_migrated_size += _pool_manager.get_pool(pool_id)->allocated_bytes();
-    }
+    // // Verify total migrated size
+    // size_t total_migrated_size = 0;
+    // for (const auto &pool_id : pools_used_for_column)
+    // {
+    //     total_migrated_size += _pool_manager.get_pool(pool_id)->allocated_bytes();
+    // }
 
     // Delete the original column to pool mapping
     if (_columns_to_pools_mapping.find(column_name) != _columns_to_pools_mapping.end())
@@ -161,9 +161,9 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     _columns_to_pools_mapping[column_name] = pools_used_for_column;
 
     // Log migration summary
-    std::printf("Columns %s of size %luB migrated to %d with total migrated size %luB across %lu pools\n",
-                column_name.c_str(), column_size, numa_node_id, total_migrated_size,
-                _columns_to_pools_mapping[column_name].size());
+    // std::printf("Columns %s of size %luB migrated to %d with total migrated size %luB across %lu pools\n",
+    //             column_name.c_str(), column_size, numa_node_id, total_migrated_size,
+    //             _columns_to_pools_mapping[column_name].size());
 }
 
 void MigrationEngine::delete_column_pool(const std::string &column_name)
