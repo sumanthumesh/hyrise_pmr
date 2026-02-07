@@ -82,6 +82,7 @@ int main(int argc,char **argv) {
             exit(EXIT_FAILURE);
         }
     }
+    std::cout<< "All addresses are within the specified ranges." << std::endl;
     
     return 0;
 }
