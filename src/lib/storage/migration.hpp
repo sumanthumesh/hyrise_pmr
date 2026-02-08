@@ -100,7 +100,8 @@ class MigrationEngine
 
         // Handle dictionary
         std::pmr::memory_resource *mr = memory_resource.get();
-        auto new_dict_ptr = std::make_shared<pmr_vector<pmr_string>>(mr);
+        auto new_dict_ptr = std::make_shared<pmr_vector<pmr_string>>(PolymorphicAllocator<pmr_string>{mr});
+        new_dict_ptr->reserve(dict_segment_ptr->dictionary()->size());
         // For each string in the original dictionary, create a new pmr_string and place in new dictionary instead of original
         for (auto &original_str : *dict_segment_ptr->dictionary())
         {
