@@ -215,7 +215,7 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
 
         // Current memory usage check before allocation
         std::pair<size_t, size_t> current_usage = quick_size_check();
-        std::printf("Current usage before allocation: Local=%lu bytes, Remote=%lu bytes\n", current_usage.first, current_usage.second);
+        // std::printf("Current usage before allocation: Local=%lu bytes, Remote=%lu bytes\n", current_usage.first, current_usage.second);
 
         // Try local first, then remote
         if (current_usage.first + bytes <= _local_mem_capacity_bytes)
