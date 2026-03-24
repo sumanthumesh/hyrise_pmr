@@ -161,9 +161,10 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
 {
     auto lock = std::lock_guard<std::mutex>{_pools_mutex};
 
-    if (_pools.empty())
+    if (_pools.empty() && _strategy != AllocationStrategy::Heap)
     {
         std::cerr << "No NUMA pools available for allocation\n";
+        std::cerr << print_backtrace() << std::endl;
         throw std::bad_alloc();
     }
     if (_strategy == AllocationStrategy::TableGen)
@@ -234,6 +235,11 @@ void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
             throw std::bad_alloc(); // Both pools full
         }
     }
+    // else if (_strategy == AllocationStrategy::Heap)
+    // {
+    //     // std::printf("HP,%lu\n", bytes);
+    //     return DefaultResource::get().allocate(bytes, alignment);
+    // }
     else
     {
         std::cerr << "Allocating failed on all strategies\n";
