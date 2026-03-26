@@ -1665,6 +1665,7 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
 
+        std::cout<<"------------------------------------------\n";
         std::cout<<"Memory Usage Statistics:\n";
         print_memory();
         // Get from migration engine
@@ -1690,11 +1691,12 @@ int Console::_hshell(const std::string &args)
         // Get from DefaultMemoryResource
         auto default_mem_resource_status = DefaultResource::get().status();
         std::cout << default_mem_resource_status.to_string() << "\n";
-
+        
         // Quick view from MemManager
         std::cout << "Quick Memory Usage Overview:\n";
         auto used_capacity = MemManager::get().quick_size_check();
         std::printf("Used Capacity: %lu, %lu\n", used_capacity.first, used_capacity.second);
+        std::cout<<"------------------------------------------\n";
     }
     else if (cmd == "track_mem")
     {
