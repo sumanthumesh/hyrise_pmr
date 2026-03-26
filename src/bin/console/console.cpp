@@ -21,6 +21,7 @@
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -59,7 +60,11 @@
 #include "sql/sql_translator.hpp"
 #include "ssb/ssb_table_generator.hpp"
 #include "storage/chunk_encoder.hpp"
+#include "storage/base_value_segment.hpp"
 #include "storage/encoding_type.hpp"
+#include "storage/reference_segment.hpp"
+#include "storage/abstract_encoded_segment.hpp"
+#include "storage/segment_encoding_utils.hpp"
 #include "storage/vector_compression/fixed_width_integer/fixed_width_integer_vector.hpp"
 #include "storage/migration.hpp"
 #include "tpcc/tpcc_table_generator.hpp"
@@ -1651,9 +1656,109 @@ int Console::_hshell(const std::string &args)
             out("  hsh tables  Print all the segments used\n");
             return ReturnCode::Error;
         }
+        std::cout << "Existing table IDs:\n";
         for (auto &id : Table::_existing_table_ids)
         {
             std::cout << id << "\n";
+        }
+    }
+    else if (cmd == "table_info")
+    {
+        if (arguments.size() != 1 && arguments.size() != 2)
+        {
+            out("Usage: ");
+            out("  hsh table_info [TABLE_NAME]  Print table schema information\n");
+            return ReturnCode::Error;
+        }
+        auto& storage_manager = Hyrise::get().storage_manager;
+        auto print_table_details = [&](const std::string& table_name) {
+            if (!storage_manager.has_table(table_name))
+            {
+                std::cerr << "Cannot find table " << table_name << "\n";
+                return;
+            }
+            auto table = storage_manager.get_table(table_name);
+            std::cout << "Table: " << table_name << "\n";
+            std::cout << "Columns:\n";
+            for (ColumnID column_id{0}; column_id < table->column_count(); ++column_id)
+            {
+                auto column_name = table->column_name(column_id);
+                auto data_type = table->column_data_type(column_id);
+                auto segment_descriptions = std::set<std::string>{};
+                auto encoding_descriptions = std::set<std::string>{};
+                const auto chunk_count = table->chunk_count();
+                for (auto chunk_id = ChunkID{0}; chunk_id < chunk_count; ++chunk_id)
+                {
+                    const auto chunk = table->get_chunk(chunk_id);
+                    if (!chunk)
+                    {
+                        continue;
+                    }
+
+                    const auto segment = chunk->get_segment(column_id);
+                    if (!segment)
+                    {
+                        segment_descriptions.emplace("UnknownSegment");
+                        encoding_descriptions.emplace("Unknown");
+                        continue;
+                    }
+
+                    if (std::dynamic_pointer_cast<const ReferenceSegment>(segment))
+                    {
+                        segment_descriptions.emplace("ReferenceSegment");
+                        encoding_descriptions.emplace("N/A");
+                        continue;
+                    }
+
+                    if (std::dynamic_pointer_cast<const BaseValueSegment>(segment))
+                    {
+                        segment_descriptions.emplace("ValueSegment");
+                    }
+                    else if (std::dynamic_pointer_cast<const AbstractEncodedSegment>(segment))
+                    {
+                        segment_descriptions.emplace("EncodedSegment");
+                    }
+                    else
+                    {
+                        segment_descriptions.emplace("UnknownSegment");
+                    }
+
+                    const auto segment_encoding_spec = get_segment_encoding_spec(segment);
+                    auto encoding_description = std::string{magic_enum::enum_name(segment_encoding_spec.encoding_type)};
+                    if (segment_encoding_spec.vector_compression_type)
+                    {
+                        encoding_description +=
+                            "/" + std::string{magic_enum::enum_name(*segment_encoding_spec.vector_compression_type)};
+                    }
+                    encoding_descriptions.emplace(encoding_description);
+                }
+
+                const auto encoding_info = encoding_descriptions.empty()
+                                               ? std::string{"N/A"}
+                                               : boost::algorithm::join(std::vector<std::string>{encoding_descriptions.begin(),
+                                                                                                 encoding_descriptions.end()},
+                                                                        ", ");
+                const auto segment_info = segment_descriptions.empty()
+                                              ? std::string{"UnknownSegment"}
+                                              : boost::algorithm::join(std::vector<std::string>{segment_descriptions.begin(),
+                                                                                                segment_descriptions.end()},
+                                                                       ", ");
+
+                std::cout << "  - " << column_name << ": " << data_type_to_string.left.at(data_type)
+                          << " (segment: " << segment_info << ", encoding: "
+                          << encoding_info << ")\n";
+            }
+        };
+        if (arguments.size() == 1)
+        {
+            for (auto &table_name : storage_manager.table_names())
+            {
+                print_table_details(table_name);
+            }
+        }
+        else
+        {
+            print_table_details(arguments[1]);
         }
     }
     else if (cmd == "mem_usage")
