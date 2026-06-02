@@ -77,6 +77,13 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         return _numa_node;
     }
 
+    void reset_peak()
+    {
+        _peak_allocated_bytes = 0;
+        _total_allocated_bytes = 0;
+        std::cout<<__func__<<"\n";
+    }
+
     int verify_numa_node() const
     {
         // Allocate a tiny page to test
@@ -108,6 +115,7 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         status.capacity_bytes = _size;
         status.allocated_bytes = _allocated_bytes;
         status.peak_allocated_bytes = _peak_allocated_bytes;
+        status.total_allocated_bytes = _total_allocated_bytes;
         status.numa_node = _numa_node;
         return status;
     }
@@ -123,6 +131,7 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         }
 
         _allocated_bytes += bytes;
+        _total_allocated_bytes += bytes;
         if (_allocated_bytes > _peak_allocated_bytes)
         {
             _peak_allocated_bytes = _allocated_bytes;
@@ -155,6 +164,7 @@ class NumaMonotonicResource : public std::pmr::memory_resource
     std::pmr::monotonic_buffer_resource _mono;
     size_t _allocated_bytes{0};
     size_t _peak_allocated_bytes{0}; // Track the max allocated bytes. Will come in handy because resource does not automatically free pages to OS even if bytes are deallocated
+    size_t _total_allocated_bytes{0}; // Track total allocation
 
     /**
      * Handle thread concurrency if needed
