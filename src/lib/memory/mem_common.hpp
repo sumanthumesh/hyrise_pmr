@@ -17,6 +17,7 @@ struct MemResourceStatus
     size_t capacity_bytes{0};
     size_t allocated_bytes{0};
     size_t peak_allocated_bytes{0};
+    size_t total_allocated_bytes{0};
     int numa_node{-1};
 
     std::string to_string() const
@@ -24,7 +25,9 @@ struct MemResourceStatus
         std::stringstream ss;
         ss << "MemResourceStatus {" << description << "," << std::dec << resource_id << ","
            << std::dec << capacity_bytes << "," << std::dec << allocated_bytes << ","
-           << std::dec << peak_allocated_bytes << "," << std::dec << numa_node << "}";
+           << std::dec << peak_allocated_bytes << "," 
+           << std::dec << total_allocated_bytes << "," 
+           << std::dec << numa_node << "}";
         return ss.str();
     }
 };
