@@ -1153,6 +1153,26 @@ int Console::_change_runtime_setting(const std::string &input)
         }
         return 0;
     }
+    
+    if (property == "table_log")
+    {
+        if (value == "on")
+        {
+            Table::log_create_destroy = true;
+            out("Table log turned on\n");
+        }
+        else if (value == "off")
+        {
+            Table::log_create_destroy = false;
+            out("Table log turned off\n");
+        }
+        else
+        {
+            out("Usage: table_log (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
 
     if (property == "pipe_reset")
     {
@@ -1318,6 +1338,20 @@ void print_memory()
         }
     }
 }
+
+// size_t vmrss()
+// {
+//     std::ifstream in("/proc/self/status");
+//     std::string line;
+//     while (std::getline(in, line))
+//     {
+//         if (line.rfind("VmRSS:", 0) == 0)
+//         {
+//             return std::stol(line.substr(line.find_first_of("0123456789")));
+//         }
+//     }
+//     return 0;
+// }
 
 // Run cmd in background, don't wait.
 void run_detached(const char *cmd)
@@ -1836,6 +1870,22 @@ int Console::_hshell(const std::string &args)
         auto local_capacity = boost::lexical_cast<size_t>(arguments[1]);
         auto remote_capacity = boost::lexical_cast<size_t>(arguments[2]);
         MemManager::get().set_numa_node_capacities(local_capacity,remote_capacity);
+    }
+    else if (cmd == "reset_peak")
+    {
+        if (arguments.size() != 2)
+        {
+            out("Usage: ");
+            out("  hsh reset_peak MEM_POOL_ID\n");
+            return ReturnCode::Error;
+        }
+        
+        auto resource_id = boost::lexical_cast<size_t>(arguments[1]);
+        auto pool = MemManager::get().get_pool(resource_id);
+
+        pool->reset_peak();
+
+        std::printf("Peak usage of pool %lu reset!\n",resource_id);
     }
     else if (cmd == "new_mem")
     {
