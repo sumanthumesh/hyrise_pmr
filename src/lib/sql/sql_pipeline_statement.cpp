@@ -7,6 +7,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <functional>
 
 #include "SQLParser.h"
 #include "SQLParserResult.h"
@@ -323,6 +324,22 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
 
     const auto &tasks = get_tasks();
 
+    auto f = []()
+    {
+        std::ifstream in("/proc/self/status");
+        std::string line;
+        while (std::getline(in, line))
+        {
+            if (line.rfind("VmRSS:", 0) == 0)
+            {
+                return std::stoul(line.substr(line.find_first_of("0123456789")));
+            }
+        }
+        return (size_t)0;
+    };
+
+    size_t vmrss_before = f();
+
     start_tracking_allocations();
     const auto started = std::chrono::steady_clock::now();
 
@@ -352,8 +369,12 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(done - started);
 
     stop_tracking_allocations();
+
+    size_t vmrss_after = f();
+
     auto delta_memory = tracked_bytes();
     std::cout<< "Memory usage for this query: " << delta_memory << " bytes\n";
+    std::cout<< "VmRSS Change: " << vmrss_after - vmrss_before << " KB\n";
     // OperatorMemoryUsage::get().reset();
 
     std::ofstream query_exec_info_file("query_exec_info_"+std::to_string(Hyrise::get().query_counter())+".txt");

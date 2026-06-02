@@ -4,6 +4,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <sstream>
+#include <fstream>
+#include <string>
 
 #include "SQLParserResult.h"
 
