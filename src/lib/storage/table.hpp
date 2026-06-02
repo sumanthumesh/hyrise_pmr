@@ -59,7 +59,7 @@ class Table : private Noncopyable
 
     ~Table()
     {
-        if constexpr (HYRISE_DEBUG)
+        if (log_create_destroy)
         {
             std::cout << "Destroying Table " << _table_id << "\n";
             _existing_table_ids.erase(_table_id);
@@ -323,6 +323,7 @@ class Table : private Noncopyable
 
   public:
     static std::unordered_set<size_t> _existing_table_ids;
+    inline static bool log_create_destroy{false};
 
   protected:
     size_t _table_id;

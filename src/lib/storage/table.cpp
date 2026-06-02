@@ -86,11 +86,11 @@ Table::Table(const TableColumnDefinitions &column_definitions, const TableType t
     DebugAssert(type == TableType::Data || !target_chunk_size, "Must not set target_chunk_size for reference tables.");
     DebugAssert(!target_chunk_size || *target_chunk_size > 0, "Table must have a chunk size greater than 0.");
 
-    if constexpr (HYRISE_DEBUG)
+    if (log_create_destroy)
     {
         _table_id = _table_id_counter.load();
 
-        std::cout << (type == TableType::Data ? "Data" : "References") << _table_id << "\n";
+        std::cout << "Creating Table (" << (type == TableType::Data ? "Data" : "References") << ") with ID: " << _table_id << "\n";
         for (auto &column_definition : _column_definitions)
         {
             std::cout << column_definition << std::endl;
