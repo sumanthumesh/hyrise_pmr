@@ -731,6 +731,12 @@ endif()
 # -rdynamic tells the linker to export the library's symbols so that plugins can use them.
 target_link_libraries(hyrise_impl PUBLIC ${LIBRARIES} -rdynamic)
 
+# boost::stacktrace with addr2line backend — used by print_backtrace() to produce
+# source file + line info in crash dumps. Requires -ldl at runtime; addr2line must
+# be on PATH when the backtrace is printed.
+target_compile_definitions(hyrise_impl PUBLIC BOOST_STACKTRACE_USE_ADDR2LINE)
+target_link_libraries(hyrise_impl PUBLIC dl)
+
 if(NOT APPLE)
     # Do not use jemalloc on Mac as we cannot properly replace the allocator - see third_party/CMakeLists.txt for details.
     target_link_libraries(hyrise_impl PUBLIC custom_jemalloc -rdynamic)
