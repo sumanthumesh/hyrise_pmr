@@ -1,6 +1,7 @@
 #pragma once
 
 #include "numaif.h"
+#include <atomic>
 #include <cassert>
 #include <cerrno>
 #include <iostream>
@@ -17,17 +18,24 @@
 
 void *allocate_on_numa_node(std::size_t bytes, int node);
 
-// Simple RAII wrapper for a NUMA-backed monotonic_buffer_resource
+// NUMA-backed bump allocator. One numa_alloc upfront; every do_allocate advances an
+// atomic bump pointer via lock-free CAS, so multiple threads can allocate concurrently
+// without a mutex on the hot path. Monotonic semantics: do_deallocate decrements the
+// logical counter but never returns memory; pages return to the OS only when this
+// resource is destroyed.
+//
+// The `_serialize` constructor flag is retained for API compatibility but is now a
+// no-op label — all access is thread-safe by construction.
 class NumaMonotonicResource : public std::pmr::memory_resource
 {
   public:
     NumaMonotonicResource(std::size_t size_bytes, int numa_node, bool serialize = false,
-                          std::pmr::memory_resource *upstream = std::pmr::null_memory_resource())
+                          std::pmr::memory_resource * /*upstream*/ = std::pmr::null_memory_resource())
         : _size(size_bytes),
           _numa_node(numa_node),
-          _buffer(allocate_on_numa_node(size_bytes, numa_node)),
-          //   _upstream(upstream),
-          _mono(_buffer, _size, upstream),
+          _buffer(static_cast<char *>(allocate_on_numa_node(size_bytes, numa_node))),
+          _next(_buffer),
+          _end(_buffer + size_bytes),
           _serialize(serialize)
     {
     }
@@ -48,7 +56,7 @@ class NumaMonotonicResource : public std::pmr::memory_resource
 
     std::uintptr_t end_address() const
     {
-        return reinterpret_cast<std::uintptr_t>(_buffer) + _size;
+        return reinterpret_cast<std::uintptr_t>(_end);
     }
 
     std::size_t size() const
@@ -58,18 +66,13 @@ class NumaMonotonicResource : public std::pmr::memory_resource
 
     size_t allocated_bytes() const
     {
-        // I'm not locking this with a mutex for now. I feel I can get away with a slightly inaccurate guess
-        return _allocated_bytes;
+        return _allocated_bytes.load(std::memory_order_relaxed);
     }
 
+    // Kept for API compatibility — atomic loads are already safe; no lock needed.
     size_t allocated_bytes_mutex() const
     {
-        std::unique_lock<std::mutex> lock{_mutex, std::defer_lock};
-        if (_serialize)
-        {
-            lock.lock();
-        }
-        return _allocated_bytes;
+        return _allocated_bytes.load(std::memory_order_acquire);
     }
 
     size_t numa_node() const
@@ -79,9 +82,9 @@ class NumaMonotonicResource : public std::pmr::memory_resource
 
     void reset_peak()
     {
-        _peak_allocated_bytes = 0;
-        _total_allocated_bytes = 0;
-        std::cout<<__func__<<"\n";
+        _peak_allocated_bytes.store(0, std::memory_order_relaxed);
+        _total_allocated_bytes.store(0, std::memory_order_relaxed);
+        std::cout << __func__ << "\n";
     }
 
     int verify_numa_node() const
@@ -113,9 +116,9 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         status.description = std::string("NumaMonotonicResource") + (_serialize ? "_serialized" : "");
         status.resource_id = std::numeric_limits<size_t>::max(); // No fixed ID
         status.capacity_bytes = _size;
-        status.allocated_bytes = _allocated_bytes;
-        status.peak_allocated_bytes = _peak_allocated_bytes;
-        status.total_allocated_bytes = _total_allocated_bytes;
+        status.allocated_bytes = _allocated_bytes.load(std::memory_order_relaxed);
+        status.peak_allocated_bytes = _peak_allocated_bytes.load(std::memory_order_relaxed);
+        status.total_allocated_bytes = _total_allocated_bytes.load(std::memory_order_relaxed);
         status.numa_node = _numa_node;
         return status;
     }
@@ -123,32 +126,54 @@ class NumaMonotonicResource : public std::pmr::memory_resource
   protected:
     void *do_allocate(std::size_t bytes, std::size_t alignment) override
     {
-        std::unique_lock<std::mutex> lock{_mutex, std::defer_lock};
-
-        if (_serialize)
+        // Lock-free bump-pointer allocate. Standard CAS loop:
+        //   1. Read current bump position.
+        //   2. Compute aligned start and new bump position.
+        //   3. CAS — if another thread moved the pointer in between, retry against the new value.
+        char *cur = _next.load(std::memory_order_relaxed);
+        char *aligned;
+        char *new_next;
+        for (;;)
         {
-            lock.lock();
+            const auto a = (reinterpret_cast<std::uintptr_t>(cur) + alignment - 1) & ~(alignment - 1);
+            aligned = reinterpret_cast<char *>(a);
+            new_next = aligned + bytes;
+            if (new_next > _end)
+            {
+                throw std::bad_alloc{};
+            }
+            if (_next.compare_exchange_weak(cur, new_next,
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_relaxed))
+            {
+                break;
+            }
+            // cur was updated by compare_exchange_weak to the current value; retry.
         }
 
-        _allocated_bytes += bytes;
-        _total_allocated_bytes += bytes;
-        if (_allocated_bytes > _peak_allocated_bytes)
+        _allocated_bytes.fetch_add(bytes, std::memory_order_relaxed);
+        _total_allocated_bytes.fetch_add(bytes, std::memory_order_relaxed);
+
+        // Update peak with a lock-free max(): load, compare, CAS, retry if stale.
+        const auto current = _allocated_bytes.load(std::memory_order_relaxed);
+        auto prev_peak = _peak_allocated_bytes.load(std::memory_order_relaxed);
+        while (current > prev_peak &&
+               !_peak_allocated_bytes.compare_exchange_weak(prev_peak, current,
+                                                            std::memory_order_relaxed,
+                                                            std::memory_order_relaxed))
         {
-            _peak_allocated_bytes = _allocated_bytes;
+            // prev_peak refreshed by CAS; loop continues if current still exceeds it.
         }
-        return _mono.allocate(bytes, alignment);
+
+        return aligned;
     }
 
-    void do_deallocate(void *p, std::size_t bytes, std::size_t alignment) override
+    void do_deallocate(void * /*p*/, std::size_t bytes, std::size_t /*alignment*/) override
     {
-        std::unique_lock<std::mutex> lock{_mutex, std::defer_lock};
-
-        if (_serialize)
-        {
-            lock.lock();
-        }
-        _allocated_bytes -= bytes;
-        _mono.deallocate(p, bytes, alignment);
+        // Monotonic: the memory is not actually returned. We only decrement the logical
+        // counter so allocated_bytes() reflects "still-live bytes" rather than
+        // "ever-allocated bytes".
+        _allocated_bytes.fetch_sub(bytes, std::memory_order_relaxed);
     }
 
     bool do_is_equal(const std::pmr::memory_resource &other) const noexcept override
@@ -159,19 +184,18 @@ class NumaMonotonicResource : public std::pmr::memory_resource
   private:
     std::size_t _size{};
     int _numa_node{-1};
-    void *_buffer{};
-    // std::pmr::memory_resource* _upstream;
-    std::pmr::monotonic_buffer_resource _mono;
-    size_t _allocated_bytes{0};
-    size_t _peak_allocated_bytes{0}; // Track the max allocated bytes. Will come in handy because resource does not automatically free pages to OS even if bytes are deallocated
-    size_t _total_allocated_bytes{0}; // Track total allocation
+    char *_buffer{};
+    std::atomic<char *> _next;          // bump pointer; only moves forward
+    char *_end{};
 
-    /**
-     * Handle thread concurrency if needed
-     * Will serialize accesses with mutex for now
-     */
-    bool _serialize{false};    // Set this to true if multiple threads might concurrently access this leading to segfault
-    mutable std::mutex _mutex; // Lock to protect _mono from racy multithreading
+    std::atomic<size_t> _allocated_bytes{0};      // alloc minus dealloc — "live" bytes
+    std::atomic<size_t> _peak_allocated_bytes{0}; // max value of _allocated_bytes since last reset_peak
+    std::atomic<size_t> _total_allocated_bytes{0}; // cumulative alloc only — "ever allocated" bytes
+
+    // Retained only so status() can label the pool with "_serialized" if you want to
+    // mark it that way externally. No longer used for synchronization — the resource
+    // is lock-free and always safe for concurrent allocate.
+    bool _serialize{false};
 };
 
 namespace hyrise
