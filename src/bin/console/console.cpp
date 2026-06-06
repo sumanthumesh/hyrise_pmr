@@ -549,6 +549,7 @@ void Console::out(const std::shared_ptr<const Table> &table, const PrintFlags fl
 // NOLINTNEXTLINE: while this particular method could be made static, others cannot.
 int Console::_exit(const std::string & /*args*/)
 {
+    std::cout << "$:Quit\n";
     return ReturnCode::Quit;
 }
 
@@ -1606,6 +1607,7 @@ int Console::_create_mem(const std::string &args)
 
 int Console::_hshell(const std::string &args)
 {
+    std::cout << "$:hsh "<< args << "\n";
     const auto arguments = tokenize(args);
 
     auto &cmd = arguments[0];
@@ -1911,6 +1913,7 @@ int Console::_hshell(const std::string &args)
             out("  hsh delete_mem POOL_ID\n");
             return ReturnCode::Error;
         }
+        std::cout<<"delete_mem "<<arguments[1]<<"\n";
         auto pool_id = boost::lexical_cast<size_t>(arguments[1]);
         auto pool = MemManager::get().get_pool(pool_id);
         if (pool->allocated_bytes() > 0)
