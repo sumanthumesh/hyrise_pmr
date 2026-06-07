@@ -12,6 +12,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <numa.h>
 
 #include "abstract_scheduler.hpp"
 #include "abstract_task.hpp"
@@ -276,7 +277,7 @@ void Worker::_set_affinity()
     CPU_SET(_cpu_id, &cpuset);
     const auto return_code = pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
     Assert(return_code == 0, "Error calling pthread_setaffinity_np (return code: " + std::to_string(return_code) + ").");
-    std::cout << "Worker " << _id << " pinned to CPU " << _cpu_id << std::endl;
+    std::cout << "Worker " << _id << " pinned to CPU " << _cpu_id << "on node " << numa_node_of_cpu(_cpu_id) << std::endl;
 #endif
 }
 
