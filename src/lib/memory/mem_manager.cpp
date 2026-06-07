@@ -65,7 +65,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         /**
          * The default allocation policy on hyrise
          * use the DefaultResource for all pmr allocations
-         * Ideally only TableSegmentGen needs to be explicitly specified
+         * Ideally only TableSegmentGen needs to be explicitly specified since we mentioned it a lot in encoders and binary parser
          */
         memory_resources.TableSegmentGen = &DefaultResource::get();
         memory_resources.MiscGen = _invalid_resource_ptr.get();
@@ -74,15 +74,15 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         break;
     case AllocationStrategy::TableGen:
         /**
-         * In this strategy, all table generation allocations go to a single NUMA pool
-         * The other resources should not be used
+         * In this strategy, all table generation allocations go to a single local NUMA pool
+         * Any miscellaneous allocation will be to pool 1
          */
         Assertf(exists(0), "Pool with ID 0 for allocating table segments during table generation does not exist.\n");
         Assertf(exists(1), "Pool with ID 1 for allocating miscellaneous data during table generation does not exist.\n");
         memory_resources.TableSegmentGen = get_pool(0).get();         // Use first pool for table generation
         memory_resources.MiscGen = get_pool(1).get();                 // Use second pool for misc table gen allocations
         memory_resources.MiscExecution = _invalid_resource_ptr.get(); // Shouldn't be used if still in table generation
-        std::pmr::set_default_resource(this);
+        std::pmr::set_default_resource(memory_resources.MiscGen); // Default to misc gen pool for any allocation that doesn't explicitly specify
         break;
     case AllocationStrategy::Local:
         /**
@@ -94,7 +94,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         Assertf(exists(2), "Pool with ID 2 for allocating local execution data does not exist.\n");
         memory_resources.MiscExecution = get_pool(2).get(); // Use third pool for local heap allocations
-        std::pmr::set_default_resource(this);
+        std::pmr::set_default_resource(memory_resources.MiscExecution); // Default to local execution pool for any allocation that doesn't explicitly specify
         break;
     case AllocationStrategy::Remote:
         /**
@@ -106,7 +106,7 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
         Assertf(exists(3), "Pool with ID 3 for allocating remote execution data does not exist.\n");
         memory_resources.MiscExecution = get_pool(3).get(); // Use third pool for local heap allocations
-        std::pmr::set_default_resource(this);
+        std::pmr::set_default_resource(memory_resources.MiscExecution); // Default to remote execution pool for any allocation that doesn't explicitly specify
         break;
     case AllocationStrategy::Greedy:
         /**
@@ -159,92 +159,98 @@ void MemManager::destroy_pool(size_t pool_id)
 
 void *MemManager::do_allocate(std::size_t bytes, std::size_t alignment)
 {
-    auto lock = std::lock_guard<std::mutex>{_pools_mutex};
 
-    if (_pools.empty() && _strategy != AllocationStrategy::Heap)
-    {
-        std::cerr << "No NUMA pools available for allocation\n";
-        std::cerr << print_backtrace() << std::endl;
-        throw std::bad_alloc();
-    }
-    if (_strategy == AllocationStrategy::TableGen)
-    {
-        // Allocate on the first pool only (used during table generation)
-        try
-        {
-            // std::printf("TG,%lu\n", bytes);
-            return _pools.find(1)->second->allocate(bytes, alignment);
-        }
-        catch (const std::bad_alloc &)
-        {
-            std::cerr << "Tried allocating on table generation pool but it is full\n";
-            throw; // Pool full
-        }
-    }
-    else if (_strategy == AllocationStrategy::Local)
-    {
-        // Allocate on local pool (first pool in map)
-        try
-        {
-            // std::printf("LL,%lu\n", bytes);
-            return _pools.find(2)->second->allocate(bytes, alignment);
-        }
-        catch (const std::bad_alloc &)
-        {
-            std::cerr << "Tried allocating on local pool but it is full\n";
-            throw; // Local pool full
-        }
-    }
-    else if (_strategy == AllocationStrategy::Remote)
-    {
-        try
-        {
-            // std::printf("RR,%lu\n", bytes);
-            return _pools.find(3)->second->allocate(bytes, alignment);
-        }
-        catch (const std::bad_alloc &)
-        {
-            std::cerr << "Tried allocating on remote pool but it is full\n";
-            throw; // Remote pool full
-        }
-    }
-    else if (_strategy == AllocationStrategy::Greedy)
-    {
-        // Fetch NUMA pools
-        const auto &local_pool = _pools.find(2)->second;
-        const auto &remote_pool = _pools.find(3)->second;
+    // Should never reach here. All allocations should go through the specific memory resources (e.g. memory_resources.MiscExecution) that are set to point to specific pools or the default resource based on the strategy. If we do reach here, it means something is trying to allocate on the MemManager directly instead of a specific pool or the default resource, which is not intended.
+    // Exit by printing an error
+    std::cerr << "Direct allocation on MemManager is not allowed.\n";
+    throw std::bad_alloc();
 
-        // Current memory usage check before allocation
-        std::pair<size_t, size_t> current_usage = quick_size_check();
-        // std::printf("Current usage before allocation: Local=%lu bytes, Remote=%lu bytes\n", current_usage.first, current_usage.second);
+    // auto lock = std::lock_guard<std::mutex>{_pools_mutex};
 
-        // Try local first, then remote
-        if (current_usage.first + bytes <= _local_mem_capacity_bytes)
-        {
-            // std::printf("GL,%lu\n", bytes);
-            return local_pool->allocate(bytes, alignment);
-        }
-        else if (current_usage.second + bytes <= _remote_mem_capacity_bytes)
-        {
-            // std::printf("GR,%lu\n", bytes);
-            return remote_pool->allocate(bytes, alignment);
-        }
-        else
-        {
-            std::cerr << "Allocating failed on both pools\n";
-            throw std::bad_alloc(); // Both pools full
-        }
-    }
-    // else if (_strategy == AllocationStrategy::Heap)
+    // if (_pools.empty() && _strategy != AllocationStrategy::Heap)
     // {
-    //     // std::printf("HP,%lu\n", bytes);
-    //     return DefaultResource::get().allocate(bytes, alignment);
+    //     std::cerr << "No NUMA pools available for allocation\n";
+    //     std::cerr << print_backtrace() << std::endl;
+    //     throw std::bad_alloc();
     // }
-    else
-    {
-        std::cerr << "Allocating failed on all strategies\n";
-        throw std::bad_alloc(); // Unknown strategy
-    }
+    // if (_strategy == AllocationStrategy::TableGen)
+    // {
+    //     // Allocate on the first pool only (used during table generation)
+    //     try
+    //     {
+    //         // std::printf("TG,%lu\n", bytes);
+    //         return _pools.find(1)->second->allocate(bytes, alignment);
+    //     }
+    //     catch (const std::bad_alloc &)
+    //     {
+    //         std::cerr << "Tried allocating on table generation pool but it is full\n";
+    //         throw; // Pool full
+    //     }
+    // }
+    // else if (_strategy == AllocationStrategy::Local)
+    // {
+    //     // Allocate on local pool (first pool in map)
+    //     try
+    //     {
+    //         // std::printf("LL,%lu\n", bytes);
+    //         return _pools.find(2)->second->allocate(bytes, alignment);
+    //     }
+    //     catch (const std::bad_alloc &)
+    //     {
+    //         std::cerr << "Tried allocating on local pool but it is full\n";
+    //         throw; // Local pool full
+    //     }
+    // }
+    // else if (_strategy == AllocationStrategy::Remote)
+    // {
+    //     try
+    //     {
+    //         // std::printf("RR,%lu\n", bytes);
+    //         return _pools.find(3)->second->allocate(bytes, alignment);
+    //     }
+    //     catch (const std::bad_alloc &)
+    //     {
+    //         std::cerr << "Tried allocating on remote pool but it is full\n";
+    //         throw; // Remote pool full
+    //     }
+    // }
+    // else if (_strategy == AllocationStrategy::Greedy)
+    // {
+    //     // Fetch NUMA pools
+    //     const auto &local_pool = _pools.find(2)->second;
+    //     const auto &remote_pool = _pools.find(3)->second;
+
+    //     // Current memory usage check before allocation
+    //     std::pair<size_t, size_t> current_usage = quick_size_check();
+    //     // std::printf("Current usage before allocation: Local=%lu bytes, Remote=%lu bytes\n", current_usage.first, current_usage.second);
+
+    //     // Try local first, then remote
+    //     if (current_usage.first + bytes <= _local_mem_capacity_bytes)
+    //     {
+    //         // std::printf("GL,%lu\n", bytes);
+    //         return local_pool->allocate(bytes, alignment);
+    //     }
+    //     else if (current_usage.second + bytes <= _remote_mem_capacity_bytes)
+    //     {
+    //         // std::printf("GR,%lu\n", bytes);
+    //         return remote_pool->allocate(bytes, alignment);
+    //     }
+    //     else
+    //     {
+    //         std::cerr << "Allocating failed on both pools\n";
+    //         throw std::bad_alloc(); // Both pools full
+    //     }
+    // }
+    // // else if (_strategy == AllocationStrategy::Heap)
+    // // {
+    // //     // std::printf("HP,%lu\n", bytes);
+    // //     return DefaultResource::get().allocate(bytes, alignment);
+    // // }
+    // else
+    // {
+    //     std::cerr << "Allocating failed on all strategies\n";
+    //     throw std::bad_alloc(); // Unknown strategy
+    // }
 }
 
 std::pair<size_t, size_t> MemManager::quick_size_check() const
@@ -271,22 +277,20 @@ std::pair<size_t, size_t> MemManager::quick_size_check() const
     }
 
     // This is the migrated status that the MigrationEngine is tracking. This is updated when we call mem_usage from _hshell and should be accurate since it's updated with locking in the MigrationEngine.
-    switch (_migrated_status.size())
+    // Look up each node by key independently — the previous size-based dispatch crashed when
+    // only the remote node was populated (find(0) returned end() and we dereferenced it).
+    if (auto it = _migrated_status.find(0); it != _migrated_status.end())
     {
-    case 0:
-    break;
-    case 1:
-        // If we only have one NUMA node, we'll assume all allocated memory is local
-        local_allocated += _migrated_status.find(0)->second.allocated_bytes;
-        break;
-    case 2:
-        // If we only have one NUMA node, we'll assume all allocated memory is local
-        local_allocated += _migrated_status.find(0)->second.allocated_bytes;
-        remote_allocated += _migrated_status.find(1)->second.allocated_bytes;
-        break;
-    default:
-        std::printf("Expected 0,1 or 2 NUMA nodes in migrated status, but found %lu. Ignoring migrated status for quick size check.\n", _migrated_status.size());
-        break;
+        local_allocated += it->second.allocated_bytes;
+    }
+    if (auto it = _migrated_status.find(1); it != _migrated_status.end())
+    {
+        remote_allocated += it->second.allocated_bytes;
+    }
+    if (_migrated_status.size() > 2)
+    {
+        std::printf("Expected 0, 1 or 2 NUMA nodes in migrated status, but found %lu. Extra nodes ignored.\n",
+                    _migrated_status.size());
     }
 
     return std::make_pair(local_allocated, remote_allocated);
@@ -294,25 +298,31 @@ std::pair<size_t, size_t> MemManager::quick_size_check() const
 
 void MemManager::do_deallocate(void *pointer, std::size_t bytes, std::size_t alignment)
 {
-    if (!pointer)
-    {
-        return;
-    }
 
-    auto lock = std::lock_guard<std::mutex>{_pools_mutex};
+    // Should never reach here. All deallocations should go through the specific memory resources (e.g. memory_resources.MiscExecution) that are set to point to specific pools or the default resource based on the strategy. If we do reach here, it means something is trying to deallocate on the MemManager directly instead of a specific pool or the default resource, which is not intended.
+     // Exit by printing an error
+    std::cerr << "Direct deallocation on MemManager is not allowed.\n";
+    throw std::bad_alloc();
 
-    // Find which pool owns this pointer
-    int pool_idx = _find_pool_for_pointer(pointer);
+    // if (!pointer)
+    // {
+    //     return;
+    // }
 
-    if (pool_idx >= 0)
-    {
-        _pools[pool_idx]->deallocate(pointer, bytes, alignment);
-    }
-    else
-    {
-        std::cerr << "Could not find pool for this pointer\n";
-        exit(EXIT_FAILURE);
-    }
+    // auto lock = std::lock_guard<std::mutex>{_pools_mutex};
+
+    // // Find which pool owns this pointer
+    // int pool_idx = _find_pool_for_pointer(pointer);
+
+    // if (pool_idx >= 0)
+    // {
+    //     _pools[pool_idx]->deallocate(pointer, bytes, alignment);
+    // }
+    // else
+    // {
+    //     std::cerr << "Could not find pool for this pointer\n";
+    //     exit(EXIT_FAILURE);
+    // }
     // If pointer not found in any pool, silently ignore (could be from default allocator)
     // or you could log a warning if needed
 }
