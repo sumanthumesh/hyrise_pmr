@@ -69,20 +69,19 @@ class RowIDPosList final : public AbstractPosList, private pmr_vector<RowID>
 
     RowIDPosList &operator=(RowIDPosList &&other) = default;
 
-    // Factory: construct an empty RowIDPosList whose object + shared_ptr control block AND
-    // its inner pmr_vector<RowID> backing buffer all live on the given PMR resource.
-    // Uses allocate_shared, so the allocator from `mr` is injected into the RowIDPosList
-    // constructor via uses-allocator construction (matching `RowIDPosList(allocator_type)`).
-    static std::shared_ptr<RowIDPosList> make_on(std::pmr::memory_resource *mr)
+    // Factory: construct a RowIDPosList whose wrapper + shared_ptr control block AND its
+    // inner pmr_vector<RowID> backing buffer all live on the given PMR resource. The
+    // allocator from `mr` is injected via uses-allocator construction (the RowIDPosList
+    // ctors take a trailing allocator_type argument that matches).
+    //
+    // Usage matches any of the RowIDPosList constructors:
+    //   - make_on(mr)                       -> RowIDPosList(alloc)              [empty]
+    //   - make_on(mr, count)                -> RowIDPosList(count, alloc)       [pre-sized]
+    //   - make_on(mr, std::move(other))     -> RowIDPosList(other, alloc)       [rvalue move]
+    template <typename... Args>
+    static std::shared_ptr<RowIDPosList> make_on(std::pmr::memory_resource *mr, Args &&...args)
     {
-        return ::hyrise::make_on<RowIDPosList>(mr);
-    }
-
-    // Factory variant that also pre-sizes the inner vector to `initial_size` default-constructed
-    // RowIDs. Routes through constructor (3): RowIDPosList(size_type, allocator_type).
-    static std::shared_ptr<RowIDPosList> make_on(std::pmr::memory_resource *mr, size_type initial_size)
-    {
-        return ::hyrise::make_on<RowIDPosList>(mr, initial_size);
+        return ::hyrise::make_on<RowIDPosList>(mr, std::forward<Args>(args)...);
     }
 
     // If we know that all entries in the RowIDPosList share a single ChunkID, we can optimize the indirection by
