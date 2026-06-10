@@ -57,7 +57,7 @@ template <typename T>
 pmr_compact_vector BinaryParser::_read_values_compact_vector(std::ifstream &file, const size_t count)
 {
     const auto bit_width = _read_value<uint8_t>(file);
-    auto values = pmr_compact_vector(bit_width, count);
+    auto values = pmr_compact_vector(bit_width, count, PolymorphicAllocator<uint64_t>{MemManager::get().memory_resources.TableSegmentGen});
     file.read(reinterpret_cast<char *>(values.get()), static_cast<int64_t>(values.bytes()));
     return values;
 }
@@ -300,11 +300,20 @@ std::shared_ptr<LZ4Segment<T>> BinaryParser::_import_lz4_segment(std::ifstream &
     const auto block_size = _read_value<uint32_t>(file);
     const auto last_block_size = _read_value<uint32_t>(file);
 
+    auto *resource = MemManager::get().memory_resources.TableSegmentGen;
+
     pmr_vector<uint32_t> lz4_block_sizes(_read_values<uint32_t>(file, block_count));
 
     const auto compressed_size = std::accumulate(lz4_block_sizes.begin(), lz4_block_sizes.end(), size_t{0});
 
-    pmr_vector<pmr_vector<char>> lz4_blocks(block_count);
+    // PMR trap: a default-constructed pmr_vector<char> inside lz4_blocks would bind to
+    // the default resource, and assignment from _read_values<char>(...) does NOT
+    // propagate the allocator (POCMA=false). Force every inner slot to use TableSegmentGen
+    // by supplying a prototype inner-vector with the right allocator.
+    pmr_vector<pmr_vector<char>> lz4_blocks(
+        block_count,
+        pmr_vector<char>(PolymorphicAllocator<char>{resource}),
+        PolymorphicAllocator<pmr_vector<char>>{resource});
     for (uint32_t block_index = 0; block_index < block_count; ++block_index)
     {
         lz4_blocks[block_index] = _read_values<char>(file, lz4_block_sizes[block_index]);
