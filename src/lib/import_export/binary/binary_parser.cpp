@@ -221,6 +221,8 @@ template <typename T>
 std::shared_ptr<ValueSegment<T>> BinaryParser::_import_value_segment(std::ifstream &file, ChunkOffset row_count,
                                                                      bool column_is_nullable)
 {
+    auto *resource = MemManager::get().memory_resources.TableSegmentGen;
+
     if (column_is_nullable)
     {
         const auto segment_is_nullable = _read_value<bool>(file);
@@ -228,25 +230,26 @@ std::shared_ptr<ValueSegment<T>> BinaryParser::_import_value_segment(std::ifstre
         {
             auto nullables = _read_values<bool>(file, row_count);
             auto values = _read_values<T>(file, row_count);
-            return std::make_shared<ValueSegment<T>>(std::move(values), std::move(nullables));
+            return make_on<ValueSegment<T>>(resource, std::move(values), std::move(nullables));
         }
     }
 
     auto values = _read_values<T>(file, row_count);
-    return std::make_shared<ValueSegment<T>>(std::move(values));
+    return make_on<ValueSegment<T>>(resource, std::move(values));
 }
 
 template <typename T>
 std::shared_ptr<DictionarySegment<T>> BinaryParser::_import_dictionary_segment(std::ifstream &file,
                                                                                ChunkOffset row_count)
 {
+    auto *resource = MemManager::get().memory_resources.TableSegmentGen;
     const auto compressed_vector_type_id = _read_value<CompressedVectorTypeID>(file);
     const auto dictionary_size = _read_value<ValueID>(file);
-    auto dictionary = std::make_shared<pmr_vector<T>>(_read_values<T>(file, dictionary_size));
+    auto dictionary = make_on<pmr_vector<T>>(resource, _read_values<T>(file, dictionary_size));
 
     auto attribute_vector = _import_attribute_vector(file, row_count, compressed_vector_type_id);
 
-    return std::make_shared<DictionarySegment<T>>(dictionary, attribute_vector);
+    return make_on<DictionarySegment<T>>(resource, dictionary, attribute_vector);
 }
 
 std::shared_ptr<FixedStringDictionarySegment<pmr_string>> BinaryParser::_import_fixed_string_dictionary_segment(
@@ -257,19 +260,21 @@ std::shared_ptr<FixedStringDictionarySegment<pmr_string>> BinaryParser::_import_
     auto dictionary = _import_fixed_string_vector(file, dictionary_size);
     auto attribute_vector = _import_attribute_vector(file, row_count, compressed_vector_type_id);
 
-    return std::make_shared<FixedStringDictionarySegment<pmr_string>>(dictionary, attribute_vector);
+    return make_on<FixedStringDictionarySegment<pmr_string>>(
+        MemManager::get().memory_resources.TableSegmentGen, dictionary, attribute_vector);
 }
 
 template <typename T>
 std::shared_ptr<RunLengthSegment<T>> BinaryParser::_import_run_length_segment(std::ifstream &file,
                                                                               ChunkOffset /*row_count*/)
 {
+    auto *resource = MemManager::get().memory_resources.TableSegmentGen;
     const auto size = _read_value<uint32_t>(file);
-    const auto values = std::make_shared<pmr_vector<T>>(_read_values<T>(file, size));
-    const auto null_values = std::make_shared<pmr_vector<bool>>(_read_values<bool>(file, size));
-    const auto end_positions = std::make_shared<pmr_vector<ChunkOffset>>(_read_values<ChunkOffset>(file, size));
+    const auto values = make_on<pmr_vector<T>>(resource, _read_values<T>(file, size));
+    const auto null_values = make_on<pmr_vector<bool>>(resource, _read_values<bool>(file, size));
+    const auto end_positions = make_on<pmr_vector<ChunkOffset>>(resource, _read_values<ChunkOffset>(file, size));
 
-    return std::make_shared<RunLengthSegment<T>>(values, null_values, end_positions);
+    return make_on<RunLengthSegment<T>>(resource, values, null_values, end_positions);
 }
 
 template <typename T>
@@ -289,7 +294,8 @@ std::shared_ptr<FrameOfReferenceSegment<T>> BinaryParser::_import_frame_of_refer
 
     auto offset_values = _import_offset_value_vector(file, row_count, compressed_vector_type_id);
 
-    return std::make_shared<FrameOfReferenceSegment<T>>(block_minima, null_values, std::move(offset_values));
+    return make_on<FrameOfReferenceSegment<T>>(MemManager::get().memory_resources.TableSegmentGen,
+                                                block_minima, null_values, std::move(offset_values));
 }
 
 template <typename T>
@@ -338,35 +344,36 @@ std::shared_ptr<LZ4Segment<T>> BinaryParser::_import_lz4_segment(std::ifstream &
     if (string_offsets_size > 0)
     {
         auto string_offsets = std::make_unique<BitPackingVector>(_read_values_compact_vector<uint32_t>(file, row_count));
-        return std::make_shared<LZ4Segment<T>>(std::move(lz4_blocks), std::move(null_values), std::move(dictionary),
-                                               std::move(string_offsets), block_size, last_block_size, compressed_size,
-                                               num_elements);
+        return make_on<LZ4Segment<T>>(resource, std::move(lz4_blocks), std::move(null_values), std::move(dictionary),
+                                      std::move(string_offsets), block_size, last_block_size, compressed_size,
+                                      num_elements);
     }
 
     if constexpr (std::is_same_v<T, pmr_string>)
     {
-        return std::make_shared<LZ4Segment<T>>(std::move(lz4_blocks), std::move(null_values), std::move(dictionary),
-                                               nullptr, block_size, last_block_size, compressed_size, num_elements);
+        return make_on<LZ4Segment<T>>(resource, std::move(lz4_blocks), std::move(null_values), std::move(dictionary),
+                                      nullptr, block_size, last_block_size, compressed_size, num_elements);
     }
 
-    return std::make_shared<LZ4Segment<T>>(std::move(lz4_blocks), std::move(null_values), std::move(dictionary),
-                                           block_size, last_block_size, compressed_size, num_elements);
+    return make_on<LZ4Segment<T>>(resource, std::move(lz4_blocks), std::move(null_values), std::move(dictionary),
+                                  block_size, last_block_size, compressed_size, num_elements);
 }
 
 std::shared_ptr<BaseCompressedVector> BinaryParser::_import_attribute_vector(
     std::ifstream &file, const ChunkOffset row_count, const CompressedVectorTypeID compressed_vector_type_id)
 {
+    auto *resource = MemManager::get().memory_resources.TableSegmentGen;
     const auto compressed_vector_type = static_cast<CompressedVectorType>(compressed_vector_type_id);
     switch (compressed_vector_type)
     {
     case CompressedVectorType::BitPacking:
-        return std::make_shared<BitPackingVector>(_read_values_compact_vector<uint32_t>(file, row_count));
+        return make_on<BitPackingVector>(resource, _read_values_compact_vector<uint32_t>(file, row_count));
     case CompressedVectorType::FixedWidthInteger1Byte:
-        return std::make_shared<FixedWidthIntegerVector<uint8_t>>(_read_values<uint8_t>(file, row_count));
+        return make_on<FixedWidthIntegerVector<uint8_t>>(resource, _read_values<uint8_t>(file, row_count));
     case CompressedVectorType::FixedWidthInteger2Byte:
-        return std::make_shared<FixedWidthIntegerVector<uint16_t>>(_read_values<uint16_t>(file, row_count));
+        return make_on<FixedWidthIntegerVector<uint16_t>>(resource, _read_values<uint16_t>(file, row_count));
     case CompressedVectorType::FixedWidthInteger4Byte:
-        return std::make_shared<FixedWidthIntegerVector<uint32_t>>(_read_values<uint32_t>(file, row_count));
+        return make_on<FixedWidthIntegerVector<uint32_t>>(resource, _read_values<uint32_t>(file, row_count));
     default:
         Fail("Cannot import attribute vector with compressed vector type id: " +
              std::to_string(compressed_vector_type_id));
@@ -395,10 +402,11 @@ std::unique_ptr<const BaseCompressedVector> BinaryParser::_import_offset_value_v
 
 std::shared_ptr<FixedStringVector> BinaryParser::_import_fixed_string_vector(std::ifstream &file, const size_t count)
 {
+    auto *resource = MemManager::get().memory_resources.TableSegmentGen;
     const auto string_length = _read_value<uint32_t>(file);
-    auto values = pmr_vector<char>(string_length * count, PolymorphicAllocator<char>{MemManager::get().memory_resources.TableSegmentGen});
+    auto values = pmr_vector<char>(string_length * count, PolymorphicAllocator<char>{resource});
     file.read(values.data(), static_cast<int64_t>(values.size()));
-    return std::make_shared<FixedStringVector>(std::move(values), string_length, count);
+    return make_on<FixedStringVector>(resource, std::move(values), string_length, count);
 }
 
 } // namespace hyrise
