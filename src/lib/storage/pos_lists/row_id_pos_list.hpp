@@ -1,9 +1,12 @@
 #pragma once
 
+#include <memory>
+#include <memory_resource>
 #include <utility>
 #include <vector>
 
 #include "abstract_pos_list.hpp"
+#include "memory/mem_manager.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
 
@@ -65,6 +68,22 @@ class RowIDPosList final : public AbstractPosList, private pmr_vector<RowID>
         : Vector(std::move(init), alloc) {}
 
     RowIDPosList &operator=(RowIDPosList &&other) = default;
+
+    // Factory: construct an empty RowIDPosList whose object + shared_ptr control block AND
+    // its inner pmr_vector<RowID> backing buffer all live on the given PMR resource.
+    // Uses allocate_shared, so the allocator from `mr` is injected into the RowIDPosList
+    // constructor via uses-allocator construction (matching `RowIDPosList(allocator_type)`).
+    static std::shared_ptr<RowIDPosList> make_on(std::pmr::memory_resource *mr)
+    {
+        return ::hyrise::make_on<RowIDPosList>(mr);
+    }
+
+    // Factory variant that also pre-sizes the inner vector to `initial_size` default-constructed
+    // RowIDs. Routes through constructor (3): RowIDPosList(size_type, allocator_type).
+    static std::shared_ptr<RowIDPosList> make_on(std::pmr::memory_resource *mr, size_type initial_size)
+    {
+        return ::hyrise::make_on<RowIDPosList>(mr, initial_size);
+    }
 
     // If we know that all entries in the RowIDPosList share a single ChunkID, we can optimize the indirection by
     // retrieving the respective chunk once and using only the ChunkOffsets to access values. As the consumer will likely

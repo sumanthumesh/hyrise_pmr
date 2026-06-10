@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "abstract_segment.hpp"
+#include "memory/mem_manager.hpp"
 #include "storage/pos_lists/row_id_pos_list.hpp"
 #include "table.hpp"
 #include "types.hpp"
@@ -24,6 +25,17 @@ class ReferenceSegment : public AbstractSegment
     // Creates a reference segment. The parameters specify the positions and the referenced column.
     ReferenceSegment(const std::shared_ptr<const Table> &referenced_table, const ColumnID referenced_column_id,
                      const std::shared_ptr<const AbstractPosList> &pos);
+
+    // Factory: construct a ReferenceSegment whose object + shared_ptr control block live
+    // on the given PMR resource. Use this in operator output paths so the segment lives
+    // on the same pool as its pos_list (typically MiscExecution or a per-pool of your choice).
+    // Note: the inner _pos_list shared_ptr is a copy of the argument and is NOT migrated by
+    // this factory — make sure the pos_list itself was already constructed on the desired pool.
+    template <typename... Args>
+    static std::shared_ptr<ReferenceSegment> make_on(std::pmr::memory_resource *mr, Args &&...args)
+    {
+        return ::hyrise::make_on<ReferenceSegment>(mr, std::forward<Args>(args)...);
+    }
 
     AllTypeVariant operator[](const ChunkOffset chunk_offset) const override;
 
