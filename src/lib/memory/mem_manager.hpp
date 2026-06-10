@@ -153,4 +153,15 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
     size_t _remote_mem_capacity_bytes{1ull*1024*1024*1024}; //1GB default remote memory capacity
 };
 
+/**
+ * Construct a shared_ptr<T> whose object and control block are allocated through
+ * the given PMR resource (instead of the default heap). Equivalent to
+ * std::make_shared<T>(args...) but routed through `resource`.
+ */
+template <typename T, typename... Args>
+std::shared_ptr<T> make_on(std::pmr::memory_resource *resource, Args &&...args)
+{
+    return std::allocate_shared<T>(PolymorphicAllocator<T>{resource}, std::forward<Args>(args)...);
+}
+
 } // namespace hyrise
