@@ -17,7 +17,7 @@
 #include "hyrise.hpp"
 #include "logical_query_plan/lqp_translator.hpp"
 #include "logical_query_plan/lqp_utils.hpp"
-#include "memory/new_delete.hpp"
+// #include "memory/new_delete.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/import.hpp"
 #include "operators/maintenance/create_prepared_plan.hpp"
@@ -340,7 +340,7 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
 
     size_t vmrss_before = f();
 
-    start_tracking_allocations();
+    // start_tracking_allocations();
     const auto started = std::chrono::steady_clock::now();
 
     Hyrise::get().scheduler()->schedule_and_wait_for_tasks(tasks);
@@ -368,12 +368,12 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(done - started);
 
-    stop_tracking_allocations();
+    // stop_tracking_allocations();
 
     size_t vmrss_after = f();
 
-    auto delta_memory = tracked_bytes();
-    std::cout<< "Memory usage for this query: " << delta_memory << " bytes\n";
+    // auto delta_memory = tracked_bytes();
+    // std::cout<< "Memory usage for this query: " << delta_memory << " bytes\n";
     std::cout<< "VmRSS Change: " << vmrss_after - vmrss_before << " KB\n";
     // OperatorMemoryUsage::get().reset();
 
