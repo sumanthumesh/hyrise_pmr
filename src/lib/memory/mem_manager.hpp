@@ -133,6 +133,22 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
      */
     void set_numa_node_capacities(size_t local_capacity_bytes, size_t remote_capacity_bytes);
 
+    /**
+     * Pick the memory_resource that should back "large, footprint-tracked" runtime execution
+     * allocations — pos lists, reference segments, hash tables, sort buffers, etc. The choice
+     * is driven by the current allocation strategy:
+     *   - Local   : pool 2 (local execution pool, NUMA node 0)
+     *   - Remote  : pool 3 (remote execution pool, NUMA node 1)
+     *   - Greedy  : pool 2 if local has headroom, else pool 3 (decided per call)
+     *   - Heap    : the default resource (heap)
+     *   - TableGen: invalid — runtime execution allocations are not expected in this strategy
+     *
+     * This is the function call sites should use when constructing structures we want to
+     * track and potentially migrate (see ReferenceSegment::make_on, RowIDPosList::make_on,
+     * and similar factories).
+     */
+    std::pmr::memory_resource *pick_runtime_exec_resource() const;
+
   private:
     // Helper to find which pool owns a pointer
     int _find_pool_for_pointer(void *p) const;

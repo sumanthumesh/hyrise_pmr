@@ -425,4 +425,56 @@ void MemManager::set_numa_node_capacities(size_t local_capacity_bytes, size_t re
     _local_mem_capacity_bytes = local_capacity_bytes;
     _remote_mem_capacity_bytes = remote_capacity_bytes;
 }
+
+std::pmr::memory_resource *MemManager::pick_runtime_exec_resource() const
+{
+    switch (_strategy)
+    {
+    case AllocationStrategy::Local:
+    {
+        auto it = _pools.find(2);
+        Assertf(it != _pools.end(),
+                "Local strategy: pool 2 (local execution) does not exist.\n");
+        return it->second.get();
+    }
+    case AllocationStrategy::Remote:
+    {
+        auto it = _pools.find(3);
+        Assertf(it != _pools.end(),
+                "Remote strategy: pool 3 (remote execution) does not exist.\n");
+        return it->second.get();
+    }
+    case AllocationStrategy::Greedy:
+    {
+        // Per-call decision: prefer local, fall back to remote when local is full.
+        // Capacity check uses quick_size_check() which counts both manager pools and
+        // migrated columns toward each node's allocated bytes.
+        const auto usage = quick_size_check();
+        auto local_it = _pools.find(2);
+        auto remote_it = _pools.find(3);
+        Assertf(local_it != _pools.end() && remote_it != _pools.end(),
+                "Greedy strategy: pools 2 and 3 must both exist.\n");
+
+        if (usage.first < _local_mem_capacity_bytes)
+        {
+            return local_it->second.get();
+        }
+        if (usage.second < _remote_mem_capacity_bytes)
+        {
+            return remote_it->second.get();
+        }
+        // Both pools at capacity — hard-stop via the invalid resource so the caller surfaces
+        // the condition immediately rather than overcommitting either pool.
+        std::cerr << "Greedy pick_runtime_exec_resource: both local and remote pools at capacity\n";
+        return _invalid_resource_ptr.get();
+    }
+    case AllocationStrategy::Heap:
+        return &DefaultResource::get();
+    case AllocationStrategy::TableGen:
+    default:
+        // Runtime execution allocations shouldn't happen during table generation; surface this
+        // immediately rather than silently routing to a pool that isn't the caller's intent.
+        return _invalid_resource_ptr.get();
+    }
+}
 } // namespace hyrise
