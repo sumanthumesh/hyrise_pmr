@@ -24,6 +24,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "memory/mem_manager.hpp"
 #include "operators/print.hpp"
 #include "storage/dictionary_segment.hpp"
 #include "storage/encoding_type.hpp"
@@ -100,7 +101,10 @@ class MigrationEngine
 
         // Handle dictionary
         std::pmr::memory_resource *mr = memory_resource.get();
-        auto new_dict_ptr = std::make_shared<pmr_vector<pmr_string>>(PolymorphicAllocator<pmr_string>{mr});
+        // allocate_shared injects the allocator via uses-allocator construction; no need to
+        // pass PolymorphicAllocator as a ctor arg as well (that would request a 2-allocator
+        // vector ctor, which doesn't exist).
+        auto new_dict_ptr = make_on<pmr_vector<pmr_string>>(mr);
         new_dict_ptr->reserve(dict_segment_ptr->dictionary()->size());
         // For each string in the original dictionary, create a new pmr_string and place in new dictionary instead of original
         for (auto &original_str : *dict_segment_ptr->dictionary())
@@ -110,7 +114,7 @@ class MigrationEngine
         }
 
         // Now that we have both new attribute vector and dictionary, create a new segment
-        auto new_dict_segment_ptr = std::make_shared<DictionarySegment<pmr_string>>(new_dict_ptr, new_attribute_vector_ptr);
+        auto new_dict_segment_ptr = make_on<DictionarySegment<pmr_string>>(mr, new_dict_ptr, new_attribute_vector_ptr);
 
         // Replace segment pointer
         chunk_ptr->replace_segment(column_id, new_dict_segment_ptr);
