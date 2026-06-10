@@ -5,6 +5,7 @@
 #include <string>
 #include <type_traits>
 
+#include "memory/mem_manager.hpp"
 #include "operators/table_scan/abstract_table_scan_impl.hpp"
 #include "resolve_type.hpp"
 #include "storage/create_iterable_from_segment.hpp"
@@ -151,7 +152,7 @@ std::shared_ptr<RowIDPosList> __attribute__((noinline)) ColumnVsColumnTableScanI
     ChunkID chunk_id, LeftIterator &left_it, const LeftIterator &left_end, RightIterator &right_it,
     const RightIterator &right_end) const
 {
-    auto matches_out = std::make_shared<RowIDPosList>();
+    auto matches_out = RowIDPosList::make_on(MemManager::get().pick_runtime_exec_resource());
 
     auto condition_was_flipped = false;
     auto maybe_flipped_condition = _predicate_condition;

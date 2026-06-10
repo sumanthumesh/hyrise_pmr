@@ -5,6 +5,7 @@
 
 #include "expression/abstract_expression.hpp"
 #include "expression/evaluation/expression_evaluator.hpp"
+#include "memory/mem_manager.hpp"
 #include "storage/pos_lists/row_id_pos_list.hpp"
 #include "types.hpp"
 
@@ -22,7 +23,12 @@ std::string ExpressionEvaluatorTableScanImpl::description() const
 
 std::shared_ptr<RowIDPosList> ExpressionEvaluatorTableScanImpl::scan_chunk(ChunkID chunk_id)
 {
-    return std::make_shared<RowIDPosList>(
+    // The evaluator returns a RowIDPosList allocated on whatever resource ExpressionEvaluator
+    // uses internally (likely the default heap). The move-with-allocator ctor (RowIDPosList(Vector&&, alloc))
+    // copies the elements into the new pool when allocators differ, so the resulting buffer
+    // ends up on the runtime exec resource.
+    return RowIDPosList::make_on(
+        MemManager::get().pick_runtime_exec_resource(),
         ExpressionEvaluator{_in_table, chunk_id}.evaluate_expression_to_pos_list(*_expression));
 }
 

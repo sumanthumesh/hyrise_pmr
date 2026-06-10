@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "memory/mem_manager.hpp"
 #include "storage/pos_lists/row_id_pos_list.hpp"
 #include "storage/reference_segment.hpp"
 #include "storage/split_pos_list_by_chunk_id.hpp"
@@ -22,7 +23,7 @@ std::shared_ptr<RowIDPosList> AbstractDereferencedColumnTableScanImpl::scan_chun
     const auto chunk = _in_table->get_chunk(chunk_id);
     const auto &segment = chunk->get_segment(_column_id);
 
-    auto matches = std::make_shared<RowIDPosList>();
+    auto matches = RowIDPosList::make_on(MemManager::get().pick_runtime_exec_resource());
 
     if (const auto &reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(segment))
     {

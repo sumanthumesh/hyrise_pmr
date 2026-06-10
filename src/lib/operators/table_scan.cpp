@@ -22,6 +22,7 @@
 #include "expression/is_null_expression.hpp"
 #include "expression/pqp_column_expression.hpp"
 #include "hyrise.hpp"
+#include "memory/mem_manager.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/abstract_read_only_operator.hpp"
 #include "operators/operator_scan_predicate.hpp"
@@ -144,6 +145,11 @@ std::shared_ptr<const Table> TableScan::_on_execute()
         // chunk_in – Copy by value since copy by reference is not possible due to the limited scope of the for-iteration.
         auto perform_table_scan = [this, chunk_id, chunk_in, &in_table, &output_mutex, &output_chunks]()
         {
+            // Pool for the pos_lists and reference segments produced by this scan. One lookup
+            // per chunk; the same resource is used for all wrappers / pos_lists this task creates
+            // so they stay co-located on the same NUMA pool.
+            auto *runtime_mr = MemManager::get().pick_runtime_exec_resource();
+
             // The actual scan happens in the sub classes of BaseTableScanImpl
             const auto matches_out = _impl->scan_chunk(chunk_id);
             if (matches_out->empty())
@@ -196,7 +202,7 @@ std::shared_ptr<const Table> TableScan::_on_execute()
 
                         if (!filtered_pos_list)
                         {
-                            filtered_pos_list = std::make_shared<RowIDPosList>(matches_out->size());
+                            filtered_pos_list = RowIDPosList::make_on(runtime_mr, matches_out->size());
                             if (pos_list_in->references_single_chunk())
                             {
                                 filtered_pos_list->guarantee_single_chunk();
@@ -220,7 +226,7 @@ std::shared_ptr<const Table> TableScan::_on_execute()
                         }
 
                         const auto ref_segment_out =
-                            std::make_shared<ReferenceSegment>(table_out, column_id_out, filtered_pos_list);
+                            ReferenceSegment::make_on(runtime_mr, table_out, column_id_out, filtered_pos_list);
                         out_segments.push_back(ref_segment_out);
                     }
                 }
@@ -237,7 +243,7 @@ std::shared_ptr<const Table> TableScan::_on_execute()
 
                 for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id)
                 {
-                    const auto ref_segment_out = std::make_shared<ReferenceSegment>(in_table, column_id, output_pos_list);
+                    const auto ref_segment_out = ReferenceSegment::make_on(runtime_mr, in_table, column_id, output_pos_list);
                     out_segments.push_back(ref_segment_out);
                 }
             }
