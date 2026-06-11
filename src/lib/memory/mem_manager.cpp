@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include "memory/default_memory_resource.hpp"
+#include "memory/table_segment_gen_resource.hpp"
 
 namespace hyrise
 {
@@ -426,13 +427,20 @@ void MemManager::set_numa_node_capacities(size_t local_capacity_bytes, size_t re
     _remote_mem_capacity_bytes = remote_capacity_bytes;
 }
 
+// Defined here so that base_segment_encoder.hpp (and the four encoder headers downstream
+// of it) can fetch the TableSegmentGen resource without including mem_manager.hpp.
+std::pmr::memory_resource *get_table_segment_gen_resource()
+{
+    return MemManager::get().memory_resources.TableSegmentGen;
+}
+
 std::pmr::memory_resource *MemManager::pick_runtime_exec_resource() const
 {
     switch (_strategy)
     {
     case AllocationStrategy::Local:
     {
-        auto it = _pools.find(2);
+        auto it = _pools.find(3);
         Assertf(it != _pools.end(),
                 "Local strategy: pool 2 (local execution) does not exist.\n");
         return it->second.get();

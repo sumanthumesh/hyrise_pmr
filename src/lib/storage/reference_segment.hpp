@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "abstract_segment.hpp"
-#include "memory/mem_manager.hpp"
+#include "memory/make_on.hpp"
 #include "storage/pos_lists/row_id_pos_list.hpp"
 #include "table.hpp"
 #include "types.hpp"

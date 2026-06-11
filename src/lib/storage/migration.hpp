@@ -24,7 +24,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "memory/mem_manager.hpp"
+#include "memory/make_on.hpp"
 #include "operators/print.hpp"
 #include "storage/dictionary_segment.hpp"
 #include "storage/encoding_type.hpp"
