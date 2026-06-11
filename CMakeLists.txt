@@ -205,6 +205,20 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -O0")
 # print_backtrace() produces resolvable source locations.
 # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gsplit-dwarf")
 # set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gsplit-dwarf")
+
+# Use mold for linking when available (clang only here — gcc's -fuse-ld=mold support is
+# version-dependent and we use clang). mold dramatically cuts link time for libhyrise_impl.so,
+# which is the dominant cost in incremental builds.
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    find_program(MOLD_LINKER mold)
+    if(MOLD_LINKER)
+        add_link_options(-fuse-ld=mold)
+        message(STATUS "Using mold for linking: ${MOLD_LINKER}")
+    else()
+        message(STATUS "mold not found on PATH — using default linker")
+    endif()
+endif()
+
 # Dependencies
 set(DEFAULT_LIB_DIRS $ENV{HOME}/local /opt/local /usr/local /usr)
 find_package(Numa QUIET)
