@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include "memory/default_memory_resource.hpp"
+#include "memory/runtime_exec_resource.hpp"
 #include "memory/table_segment_gen_resource.hpp"
 
 namespace hyrise
@@ -432,6 +433,13 @@ void MemManager::set_numa_node_capacities(size_t local_capacity_bytes, size_t re
 std::pmr::memory_resource *get_table_segment_gen_resource()
 {
     return MemManager::get().memory_resources.TableSegmentGen;
+}
+
+// Defined here so that operator headers (e.g., join_hash_steps.hpp) can fetch the
+// runtime exec resource at construction time without pulling in mem_manager.hpp.
+std::pmr::memory_resource *runtime_exec_resource()
+{
+    return MemManager::get().pick_runtime_exec_resource();
 }
 
 std::pmr::memory_resource *MemManager::pick_runtime_exec_resource() const

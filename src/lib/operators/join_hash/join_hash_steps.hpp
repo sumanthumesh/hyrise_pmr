@@ -17,6 +17,7 @@
 #include "uninitialized_vector.hpp"
 
 #include "hyrise.hpp"
+#include "memory/runtime_exec_resource.hpp"
 #include "operators/join_hash.hpp"
 #include "operators/multi_predicate_join/multi_predicate_join_evaluator.hpp"
 #include "resolve_type.hpp"
@@ -112,16 +113,26 @@ class PosHashTable
 
     // After finalize() is called, the UnifiedPosList holds the concatenation of all SmallPosLists. The SmallPosList at
     // position n can be found at the half-open range [ pos_list[offsets[n]], pos_list[offsets[n+1]] ).
+    // Both pos_list and offsets are routed to the runtime-exec PMR resource so the bulk of the
+    // finalized hash table memory is tracked / NUMA-routed (see MemManager::pick_runtime_exec_resource).
     struct UnifiedPosList
     {
         RowIDPosList pos_list;
-        std::vector<size_t> offsets;
+        pmr_vector<size_t> offsets;
+
+        explicit UnifiedPosList(std::pmr::memory_resource *mr)
+            : pos_list(typename RowIDPosList::allocator_type{mr}),
+              offsets(PolymorphicAllocator<size_t>{mr})
+        {
+        }
     };
 
     explicit PosHashTable(const JoinHashBuildMode mode, const size_t max_size)
         : _mode(mode),
+          _runtime_resource(runtime_exec_resource()),
           _small_pos_lists(mode == JoinHashBuildMode::AllPositions ? max_size + 1 : 0,
-                           SmallPosList{SmallPosList::allocator_type(_memory_pool.get())})
+                           SmallPosList{SmallPosList::allocator_type(_memory_pool.get())},
+                           PolymorphicAllocator<SmallPosList>{_runtime_resource})
     {
         // _small_pos_lists is initialized with an additional element to make the enforcement of the assertions easier. For
         // _JoinHashBuildMode::ExistenceOnly, we do not store positions and thus do not initialize _small_pos_lists.
@@ -158,7 +169,7 @@ class PosHashTable
 
         if (_mode == JoinHashBuildMode::AllPositions)
         {
-            _unified_pos_list = UnifiedPosList{};
+            _unified_pos_list.emplace(_runtime_resource);
             // Resize so that we can store the start offset of each range as well as the final end offset.
             _unified_pos_list->offsets.resize(hash_table_size + 1);
 
@@ -180,7 +191,7 @@ class PosHashTable
             }
 
             // The SmallPosLists are no longer needed. Delete both the lists and the associated memory resources.
-            _small_pos_lists = {};
+            _small_pos_lists = pmr_vector<SmallPosList>(PolymorphicAllocator<SmallPosList>{_runtime_resource});
             _memory_pool = {};
             _monotonic_buffer = {};
         }
@@ -247,8 +258,15 @@ class PosHashTable
         std::make_unique<std::pmr::unsynchronized_pool_resource>(_monotonic_buffer.get());
 
     JoinHashBuildMode _mode{};
+    // PMR resource used for "footprint-tracked" structures owned by this hash table
+    // (the outer _small_pos_lists vector and the post-finalize UnifiedPosList). Fetched
+    // once at construction so a Greedy strategy picks the same pool consistently for
+    // this whole hash table's lifetime. The OffsetHashTable and the inner SmallPosLists
+    // intentionally still use their own local pools (_offset_hash_table is boost::flat,
+    // not yet PMR; SmallPosLists use _memory_pool for fast unsynchronized allocs).
+    std::pmr::memory_resource *_runtime_resource{nullptr};
     OffsetHashTable _offset_hash_table{};
-    std::vector<SmallPosList> _small_pos_lists{};
+    pmr_vector<SmallPosList> _small_pos_lists;
 
     std::optional<UnifiedPosList> _unified_pos_list{};
 };
