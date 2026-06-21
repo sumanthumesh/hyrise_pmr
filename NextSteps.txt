@@ -1,0 +1,107 @@
+PMR / Runtime-Exec-Resource Conversion — Next Steps
+=====================================================
+
+Status as of 2026-06-21
+-----------------------
+Done:
+  - TableScan  (RowIDPosList + ReferenceSegment::make_on + dictionary_matches)
+  - JoinHash   Tier 1: PosHashTable._small_pos_lists, UnifiedPosList (pos_list, offsets)
+               Tier 2: Partition<T> (elements + null_values), RadixContainer<T>,
+                       materialize_input / partition_by_radix / probe / probe_semi_anti
+                       threaded with std::pmr::memory_resource* mr,
+                       build_side_pos_lists / probe_side_pos_lists,
+                       histograms (pmr_vector<pmr_vector<size_t>>),
+                       write_output_chunks signature (pmr_vector<RowIDPosList>&)
+               Tier 3: OffsetHashTable (boost::unordered_flat_map with
+                       PolymorphicAllocator<pair<const HashedType, Offset>>)
+               Tier 4: BloomFilter (boost::dynamic_bitset with
+                       PolymorphicAllocator<unsigned long>)
+
+Outstanding mechanism:
+  - Everything routes through MemManager::pick_runtime_exec_resource() and the
+    thin accessor runtime_exec_resource() (memory/runtime_exec_resource.hpp).
+  - make_on<T>(mr, args...) factory lives in memory/make_on.hpp.
+  - Pools: Local / Remote / Greedy (Greedy hard-stops on capacity exhaustion).
+
+
+High-ticket operators still to convert (in suggested order)
+-----------------------------------------------------------
+
+1. Sort (smallest, one file)
+   File: src/lib/operators/sort.cpp
+   What allocates:
+     - Big std::vector<std::pair<T, RowID>> per sort column (materialization for std::sort).
+       Size = input_rows * (sizeof(T) + 8B). Multi-GB on TPCH scale.
+     - The final sorted RowIDPosList.
+     - Per-chunk value vectors.
+   Plan:
+     - Fetch runtime_mr at top of _on_execute.
+     - Convert materialization vectors to pmr_vector with PolymorphicAllocator{runtime_mr}.
+     - Use RowIDPosList::make_on(runtime_mr) for the result pos list.
+     - Use ReferenceSegment::make_on(runtime_mr, ...) for output segments.
+
+2. AggregateHash (bigger payoff, more surface area)
+   Files: src/lib/operators/aggregate_hash.{hpp,cpp}
+   What allocates:
+     - AggregateResultIdMap: the group-key -> result-idx hash table. Dominant for
+       high-cardinality group-by. Same template-allocator pattern as Tier 3
+       (PosHashTable's OffsetHashTable). Plug in PolymorphicAllocator and construct
+       with runtime_mr.
+     - AggregateResults (already pmr_vector<AggregateResult>): construct with
+       PolymorphicAllocator{runtime_mr}.
+     - KeysPerChunk (already pmr_vector<AggregateKeys>): same.
+     - _intermediate_result (std::vector<Segments>): convert to pmr_vector if you
+       want completeness.
+     - _groupby_segments: ValueSegment construction sites need make_on(runtime_mr).
+   Watch out for:
+     - Templated AggregateKey types — allocator change ripples through.
+     - The map's value_type is std::pair<const AggregateKey, AggregateResultId>;
+       allocator must be PolymorphicAllocator<pair<const AggregateKey, AggregateResultId>>.
+
+3. ExpressionEvaluator (covers Projection + complex TableScan predicates + JoinHash secondary predicates in one pass)
+   File: src/lib/expression/evaluation/expression_evaluator.cpp
+   What allocates:
+     - Every `std::make_shared<ValueSegment<T>>(...)` in _evaluate_arithmetic,
+       _evaluate_logical, _evaluate_case, _evaluate_in, _evaluate_predicate,
+       _evaluate_cast, _evaluate_extract, etc. — produces a new segment per chunk.
+       For TPCH SF10 projection like `l_extendedprice * (1 - l_discount)` this is multi-GB.
+   Plan:
+     - At each `make_shared<ValueSegment<T>>` site, replace with
+       `ValueSegment<T>::make_on(runtime_exec_resource(), ...)`.
+       (Use the existing make_on factory; no signature change needed in the
+       evaluator constructor.)
+     - The values/null pmr_vectors inside each ValueSegment will automatically
+       inherit the resource via PMR uses-allocator construction.
+   Why this is bigger than 1 or 2:
+     - Many evaluation paths (arithmetic, logical, case, in, predicates, cast, extract).
+     - But: no signature changes — each call site is a localized edit.
+
+4. Validate (cleanup, smaller)
+   File: src/lib/operators/validate.cpp
+   What allocates:
+     - One RowIDPosList per chunk filtered by MVCC visibility.
+     - Linear in input rows; each entry 8B.
+   Plan:
+     - Use RowIDPosList::make_on(runtime_mr) for the per-chunk filtered pos list.
+     - Use ReferenceSegment::make_on(runtime_mr, ...) for output segments.
+     - Same trivial pattern as TableScan.
+
+
+Intentionally skipped (low value)
+---------------------------------
+- UnionPositions: operates on existing PosLists; ReferenceMatrix / VirtualPosList
+  intermediates are small per-row metadata.
+- UnionAll: just chains chunks; no significant new allocations.
+- JoinHash residual: `hash_tables` outer vector, `jobs` vectors, inner SmallPosList
+  overflow via _memory_pool / _monotonic_buffer (kept on thread-local unsync pool
+  for build-phase perf).
+
+
+Verification pattern after each conversion
+------------------------------------------
+1. Build.
+2. Run a representative TPCH query (Q1 for aggregate, Q6 for sort, Q4 for projection).
+3. `hsh mem_usage` — runtime exec pool's allocated_bytes should grow noticeably
+   during the targeted operator's phase.
+4. Switch strategy to Remote, rerun, confirm pool 3 takes the allocations.
+5. Switch to Greedy, rerun, confirm hard-stop behavior on capacity exhaustion.
