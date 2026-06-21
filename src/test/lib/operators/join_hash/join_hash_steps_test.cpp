@@ -108,7 +108,7 @@ TEST_F(JoinHashStepsTest, LargeHashTableExistenceOnly)
 TEST_F(JoinHashStepsTest, MaterializeAndBuildWithKeepNulls)
 {
     const size_t radix_bit_count = 0;
-    std::vector<std::vector<size_t>> histograms;
+    pmr_vector<pmr_vector<size_t>> histograms;
 
     // BloomFilters are ignored in this test
     BloomFilter bloom_filter_with_nulls;
@@ -116,9 +116,9 @@ TEST_F(JoinHashStepsTest, MaterializeAndBuildWithKeepNulls)
 
     // We materialize the table twice, once with keeping NULL values and once without
     auto materialized_with_nulls = materialize_input<int, int, true>(
-        _table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, radix_bit_count, bloom_filter_with_nulls);
+        _table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, std::pmr::get_default_resource(), radix_bit_count, bloom_filter_with_nulls);
     auto materialized_without_nulls = materialize_input<int, int, false>(
-        _table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, radix_bit_count, bloom_filter_without_nulls);
+        _table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, std::pmr::get_default_resource(), radix_bit_count, bloom_filter_without_nulls);
 
     // Partition count should be equal to chunk count
     EXPECT_EQ(materialized_with_nulls.size(),
@@ -174,10 +174,10 @@ TEST_F(JoinHashStepsTest, MaterializeAndBuildWithKeepNulls)
 TEST_F(JoinHashStepsTest, MaterializeOutputBloomFilter)
 {
     {
-        std::vector<std::vector<size_t>> histograms; // Ignored in this test
+        pmr_vector<pmr_vector<size_t>> histograms; // Ignored in this test
         BloomFilter bloom_filter;
 
-        materialize_input<int, int, false>(_table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, 1,
+        materialize_input<int, int, false>(_table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, std::pmr::get_default_resource(), 1,
                                            bloom_filter);
 
         // For all input values, their position in the bloom filter should be correctly set to true
@@ -197,7 +197,7 @@ TEST_F(JoinHashStepsTest, MaterializeOutputBloomFilter)
 TEST_F(JoinHashStepsTest, MaterializeInputBloomFilter)
 {
     {
-        std::vector<std::vector<size_t>> histograms; // Ignored in this test
+        pmr_vector<pmr_vector<size_t>> histograms; // Ignored in this test
         BloomFilter output_bloom_filter;
 
         // Fill input_bloom_filter
@@ -208,7 +208,7 @@ TEST_F(JoinHashStepsTest, MaterializeInputBloomFilter)
         }
 
         auto container = materialize_input<int, int, false>(_table_with_nulls_and_zeros->get_output(), ColumnID{0},
-                                                            histograms, 1, output_bloom_filter, input_bloom_filter);
+                                                            histograms, std::pmr::get_default_resource(), 1, output_bloom_filter, input_bloom_filter);
 
         auto materialized_values = std::vector<int>{};
         auto chunk_offsets = std::vector<int>{};
@@ -233,12 +233,12 @@ TEST_F(JoinHashStepsTest, MaterializeInputBloomFilter)
 TEST_F(JoinHashStepsTest, MaterializeInputHistograms)
 {
     {
-        std::vector<std::vector<size_t>> histograms;
+        pmr_vector<pmr_vector<size_t>> histograms;
         BloomFilter bloom_filter; // Ignored in this test
 
         // When using 1 bit for radix partitioning, we have two radix clusters determined on the least
         // significant bit. For the 0/1 table, we should thus cluster the ones and the zeros.
-        materialize_input<int, int, false>(_table_zero_one, ColumnID{0}, histograms, 1, bloom_filter);
+        materialize_input<int, int, false>(_table_zero_one, ColumnID{0}, histograms, std::pmr::get_default_resource(), 1, bloom_filter);
         size_t histogram_offset_sum = 0;
         EXPECT_EQ(histograms.size(), this->_table_size_zero_one / this->_chunk_size_zero_one);
         for (const auto &radix_count_per_chunk : histograms)
@@ -253,7 +253,7 @@ TEST_F(JoinHashStepsTest, MaterializeInputHistograms)
     }
 
     {
-        std::vector<std::vector<size_t>> histograms;
+        pmr_vector<pmr_vector<size_t>> histograms;
         BloomFilter bloom_filter; // Ignored in this test
 
         // When using 2 bits for radix partitioning, we have four radix clusters determined on the two least
@@ -261,7 +261,7 @@ TEST_F(JoinHashStepsTest, MaterializeInputHistograms)
         // Since the radix clusters are determine by hashing the value, we do not know in which cluster
         // the values are going to be stored.
         size_t empty_cluster_count = 0;
-        materialize_input<int, int, false>(_table_zero_one, ColumnID{0}, histograms, 2, bloom_filter);
+        materialize_input<int, int, false>(_table_zero_one, ColumnID{0}, histograms, std::pmr::get_default_resource(), 2, bloom_filter);
         for (const auto &radix_count_per_chunk : histograms)
         {
             for (auto count : radix_count_per_chunk)
@@ -282,17 +282,17 @@ TEST_F(JoinHashStepsTest, MaterializeInputHistograms)
 TEST_F(JoinHashStepsTest, RadixClusteringOfNulls)
 {
     const size_t radix_bit_count = 1;
-    std::vector<std::vector<size_t>> histograms;
+    pmr_vector<pmr_vector<size_t>> histograms;
     BloomFilter bloom_filter; // Ignored in this test
 
     const auto materialized_without_null_handling = materialize_input<int, int, true>(
-        _table_int_with_nulls->get_output(), ColumnID{0}, histograms, radix_bit_count, bloom_filter);
+        _table_int_with_nulls->get_output(), ColumnID{0}, histograms, std::pmr::get_default_resource(), radix_bit_count, bloom_filter);
     // Ensure we created NULL value information
     EXPECT_EQ(materialized_without_null_handling[0].null_values.size(),
               materialized_without_null_handling[0].elements.size());
 
     const auto radix_cluster_result =
-        partition_by_radix<int, int, true>(materialized_without_null_handling, histograms, radix_bit_count);
+        partition_by_radix<int, int, true>(materialized_without_null_handling, histograms, std::pmr::get_default_resource(), radix_bit_count);
 
     // Loaded table does not include int=0 values, so all int=0 values are NULLs
     for (const auto &partition : radix_cluster_result)
@@ -315,7 +315,7 @@ TEST_F(JoinHashStepsTest, RadixClusteringOfNulls)
 
 TEST_F(JoinHashStepsTest, BuildRespectsBloomFilter)
 {
-    std::vector<std::vector<size_t>> histograms; // Ignored in this test
+    pmr_vector<pmr_vector<size_t>> histograms; // Ignored in this test
     BloomFilter output_bloom_filter;             // Ignored in this test
 
     // Fill input_bloom_filter
@@ -326,7 +326,7 @@ TEST_F(JoinHashStepsTest, BuildRespectsBloomFilter)
     }
 
     auto container = materialize_input<int, int, false>(_table_with_nulls_and_zeros->get_output(), ColumnID{0},
-                                                        histograms, 1, output_bloom_filter);
+                                                        histograms, std::pmr::get_default_resource(), 1, output_bloom_filter);
 
     auto hash_tables = build<int, int>(container, JoinHashBuildMode::AllPositions, 0, input_bloom_filter);
 
@@ -353,7 +353,7 @@ TEST_F(JoinHashStepsTest, ThrowWhenNoNullValuesArePassed)
     BloomFilter bloom_filter; // Ignored in this test
 
     const auto materialized_without_null_handling = materialize_input<int, int, false>(
-        _table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, radix_bit_count, bloom_filter);
+        _table_with_nulls_and_zeros->get_output(), ColumnID{0}, histograms, std::pmr::get_default_resource(), radix_bit_count, bloom_filter);
     // We want to test a non-NULL-considering Radix Container, ensure we did it correctly
     EXPECT_EQ(materialized_without_null_handling[0].null_values.size(), 0);
 
@@ -361,7 +361,7 @@ TEST_F(JoinHashStepsTest, ThrowWhenNoNullValuesArePassed)
     // because we did not create NULL value information during materialization.
     // Note, the extra parantheses are required for Gtest since otherwise the preprocessor
     // has problems resolving this code line (see https://stackoverflow.com/a/35957776/1147726)
-    EXPECT_THROW((partition_by_radix<int, int, true>)(materialized_without_null_handling, histograms, radix_bit_count),
+    EXPECT_THROW((partition_by_radix<int, int, true>)(materialized_without_null_handling, histograms, std::pmr::get_default_resource(), radix_bit_count),
                  std::logic_error);
 }
 

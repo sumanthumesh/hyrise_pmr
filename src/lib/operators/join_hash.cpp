@@ -17,6 +17,7 @@
 #include "all_type_variant.hpp"
 #include "hyrise.hpp"
 #include "join_hash/join_hash_steps.hpp"
+#include "memory/mem_manager.hpp"
 #include "join_hash/join_hash_traits.hpp"
 #include "join_helper/join_output_writing.hpp"
 #include "operators/abstract_join_operator.hpp"
@@ -305,19 +306,24 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
         const auto keep_nulls_probe_column = _mode == JoinMode::Left || _mode == JoinMode::Right ||
                                              _mode == JoinMode::AntiNullAsTrue || _mode == JoinMode::AntiNullAsFalse;
 
+        // PMR resource for all "large, footprint-tracked" allocations in this join — materialized
+        // partitions, histograms, output pos lists, etc. Fetched once so a Greedy strategy picks
+        // the same pool for the whole join's lifetime.
+        auto *runtime_mr = MemManager::get().pick_runtime_exec_resource();
+
         // Containers used to store histograms for (potentially subsequent) radix partitioning step (in cases
         // _radix_bits > 0). Created during materialization step.
-        auto histograms_build_column = std::vector<std::vector<size_t>>{};
-        auto histograms_probe_column = std::vector<std::vector<size_t>>{};
+        auto histograms_build_column = pmr_vector<pmr_vector<size_t>>{PolymorphicAllocator<pmr_vector<size_t>>{runtime_mr}};
+        auto histograms_probe_column = pmr_vector<pmr_vector<size_t>>{PolymorphicAllocator<pmr_vector<size_t>>{runtime_mr}};
 
         // Output containers of materialization step. Uses the same output type as the radix partitioning step to allow
         // shortcut for _radix_bits == 0 (in this case, we can skip the partitioning altogether).
-        auto materialized_build_column = RadixContainer<BuildColumnType>{};
-        auto materialized_probe_column = RadixContainer<ProbeColumnType>{};
+        auto materialized_build_column = RadixContainer<BuildColumnType>{PolymorphicAllocator<Partition<BuildColumnType>>{runtime_mr}};
+        auto materialized_probe_column = RadixContainer<ProbeColumnType>{PolymorphicAllocator<Partition<ProbeColumnType>>{runtime_mr}};
 
         // Containers for potential (skipped when build side small) radix partitioning step
-        auto radix_build_column = RadixContainer<BuildColumnType>{};
-        auto radix_probe_column = RadixContainer<ProbeColumnType>{};
+        auto radix_build_column = RadixContainer<BuildColumnType>{PolymorphicAllocator<Partition<BuildColumnType>>{runtime_mr}};
+        auto radix_probe_column = RadixContainer<ProbeColumnType>{PolymorphicAllocator<Partition<ProbeColumnType>>{runtime_mr}};
 
         // HashTables for the build column, one for each partition
         std::vector<std::optional<PosHashTable<HashedType>>> hash_tables;
@@ -358,14 +364,14 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
             if (keep_nulls_build_column)
             {
                 materialized_build_column = materialize_input<BuildColumnType, HashedType, true>(
-                    _build_input_table, _column_ids.first, histograms_build_column, _radix_bits, build_side_bloom_filter,
-                    input_bloom_filter);
+                    _build_input_table, _column_ids.first, histograms_build_column, runtime_mr, _radix_bits,
+                    build_side_bloom_filter, input_bloom_filter);
             }
             else
             {
                 materialized_build_column = materialize_input<BuildColumnType, HashedType, false>(
-                    _build_input_table, _column_ids.first, histograms_build_column, _radix_bits, build_side_bloom_filter,
-                    input_bloom_filter);
+                    _build_input_table, _column_ids.first, histograms_build_column, runtime_mr, _radix_bits,
+                    build_side_bloom_filter, input_bloom_filter);
             }
         };
 
@@ -378,14 +384,14 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
             if (keep_nulls_probe_column)
             {
                 materialized_probe_column = materialize_input<ProbeColumnType, HashedType, true>(
-                    _probe_input_table, _column_ids.second, histograms_probe_column, _radix_bits, probe_side_bloom_filter,
-                    input_bloom_filter);
+                    _probe_input_table, _column_ids.second, histograms_probe_column, runtime_mr, _radix_bits,
+                    probe_side_bloom_filter, input_bloom_filter);
             }
             else
             {
                 materialized_probe_column = materialize_input<ProbeColumnType, HashedType, false>(
-                    _probe_input_table, _column_ids.second, histograms_probe_column, _radix_bits, probe_side_bloom_filter,
-                    input_bloom_filter);
+                    _probe_input_table, _column_ids.second, histograms_probe_column, runtime_mr, _radix_bits,
+                    probe_side_bloom_filter, input_bloom_filter);
             }
         };
 
@@ -438,10 +444,10 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
         // radix partition the build table
         if (keep_nulls_build_column) {
           radix_build_column = partition_by_radix<BuildColumnType, HashedType, true>(
-              materialized_build_column, histograms_build_column, _radix_bits);
+              materialized_build_column, histograms_build_column, runtime_mr, _radix_bits);
         } else {
           radix_build_column = partition_by_radix<BuildColumnType, HashedType, false>(
-              materialized_build_column, histograms_build_column, _radix_bits);
+              materialized_build_column, histograms_build_column, runtime_mr, _radix_bits);
         }
 
         // After the data in materialized_build_column has been partitioned, it is not needed anymore.
@@ -452,10 +458,10 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
         // radix partition the probe column.
         if (keep_nulls_probe_column) {
           radix_probe_column = partition_by_radix<ProbeColumnType, HashedType, true>(
-              materialized_probe_column, histograms_probe_column, _radix_bits);
+              materialized_probe_column, histograms_probe_column, runtime_mr, _radix_bits);
         } else {
           radix_probe_column = partition_by_radix<ProbeColumnType, HashedType, false>(
-              materialized_probe_column, histograms_probe_column, _radix_bits);
+              materialized_probe_column, histograms_probe_column, runtime_mr, _radix_bits);
         }
 
         // After the data in materialized_probe_column has been partitioned, it is not needed anymore.
@@ -544,11 +550,20 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
         /**
          * 4. Probe step
          */
-        auto build_side_pos_lists = std::vector<RowIDPosList>{};
-        auto probe_side_pos_lists = std::vector<RowIDPosList>{};
+        // Outer pmr_vector routed to runtime_mr; each inner RowIDPosList is also constructed
+        // with runtime_mr so the per-partition pos list data is allocated on the same pool.
+        auto build_side_pos_lists =
+            pmr_vector<RowIDPosList>{PolymorphicAllocator<RowIDPosList>{runtime_mr}};
+        auto probe_side_pos_lists =
+            pmr_vector<RowIDPosList>{PolymorphicAllocator<RowIDPosList>{runtime_mr}};
         const size_t partition_count = radix_probe_column.size();
-        build_side_pos_lists.resize(partition_count);
-        probe_side_pos_lists.resize(partition_count);
+        build_side_pos_lists.reserve(partition_count);
+        probe_side_pos_lists.reserve(partition_count);
+        for (auto i = size_t{0}; i < partition_count; ++i)
+        {
+            build_side_pos_lists.emplace_back();
+            probe_side_pos_lists.emplace_back();
+        }
 
         // simple heuristic: half of the rows of the probe side will match
         const size_t result_rows_per_partition =
@@ -564,33 +579,33 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
         {
         case JoinMode::Inner:
             probe<ProbeColumnType, HashedType, false>(radix_probe_column, hash_tables, build_side_pos_lists,
-                                                      probe_side_pos_lists, _mode, *_build_input_table, *_probe_input_table,
-                                                      _secondary_predicates);
+                                                      probe_side_pos_lists, runtime_mr, _mode, *_build_input_table,
+                                                      *_probe_input_table, _secondary_predicates);
             break;
 
         case JoinMode::Left:
         case JoinMode::Right:
             probe<ProbeColumnType, HashedType, true>(radix_probe_column, hash_tables, build_side_pos_lists,
-                                                     probe_side_pos_lists, _mode, *_build_input_table, *_probe_input_table,
-                                                     _secondary_predicates);
+                                                     probe_side_pos_lists, runtime_mr, _mode, *_build_input_table,
+                                                     *_probe_input_table, _secondary_predicates);
             break;
 
         case JoinMode::Semi:
-            probe_semi_anti<ProbeColumnType, HashedType, JoinMode::Semi>(radix_probe_column, hash_tables,
-                                                                         probe_side_pos_lists, *_build_input_table,
-                                                                         *_probe_input_table, _secondary_predicates);
+            probe_semi_anti<ProbeColumnType, HashedType, JoinMode::Semi>(
+                radix_probe_column, hash_tables, probe_side_pos_lists, runtime_mr, *_build_input_table,
+                *_probe_input_table, _secondary_predicates);
             break;
 
         case JoinMode::AntiNullAsTrue:
             probe_semi_anti<ProbeColumnType, HashedType, JoinMode::AntiNullAsTrue>(
-                radix_probe_column, hash_tables, probe_side_pos_lists, *_build_input_table, *_probe_input_table,
-                _secondary_predicates);
+                radix_probe_column, hash_tables, probe_side_pos_lists, runtime_mr, *_build_input_table,
+                *_probe_input_table, _secondary_predicates);
             break;
 
         case JoinMode::AntiNullAsFalse:
             probe_semi_anti<ProbeColumnType, HashedType, JoinMode::AntiNullAsFalse>(
-                radix_probe_column, hash_tables, probe_side_pos_lists, *_build_input_table, *_probe_input_table,
-                _secondary_predicates);
+                radix_probe_column, hash_tables, probe_side_pos_lists, runtime_mr, *_build_input_table,
+                *_probe_input_table, _secondary_predicates);
             break;
 
         default:

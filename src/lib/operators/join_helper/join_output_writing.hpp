@@ -33,7 +33,7 @@ enum class OutputColumnOrder
  */
 
 std::vector<std::shared_ptr<Chunk>> write_output_chunks(
-    std::vector<RowIDPosList> &pos_lists_left, std::vector<RowIDPosList> &pos_lists_right,
+    pmr_vector<RowIDPosList> &pos_lists_left, pmr_vector<RowIDPosList> &pos_lists_right,
     const std::shared_ptr<const Table> &left_input_table, const std::shared_ptr<const Table> &right_input_table,
     bool create_left_side_pos_lists_by_column, bool create_right_side_pos_lists_by_column,
     OutputColumnOrder output_column_order, bool allow_partition_merge);

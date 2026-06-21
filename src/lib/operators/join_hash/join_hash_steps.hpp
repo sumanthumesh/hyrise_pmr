@@ -65,19 +65,35 @@ struct PartitionedElement
 // performed, all partitions on the probe side have to be checked against all partitions on the build side (m:n). If
 // radix partitioning is used, each partition on the probe side finds its matching rows in exactly one partition on
 // the build side (1:1).
+//
+// Both `elements` and `null_values` are PMR-allocated so the bulk per-row memory of a join lands on the runtime
+// exec resource (see MemManager::pick_runtime_exec_resource). The Partition is default-constructible (uses the
+// default PMR resource — only used as a fallback path); the construction site (materialize_input /
+// partition_by_radix) is expected to pass a memory_resource* via the explicit constructor.
 template <typename T>
 struct Partition
 {
+    using ElementsContainer = std::conditional_t<
+        std::is_trivially_destructible_v<T>,
+        uninitialized_vector<PartitionedElement<T>, PolymorphicAllocator<PartitionedElement<T>>>,
+        pmr_vector<PartitionedElement<T>>>;
+
     // Initializing the partition vector takes some time. This is not necessary, because it will be overwritten anyway.
     // The uninitialized_vector behaves like a regular std::vector, but the entries are initially invalid.
-    std::conditional_t<std::is_trivially_destructible_v<T>, uninitialized_vector<PartitionedElement<T>>,
-                       std::vector<PartitionedElement<T>>>
-        elements;
+    ElementsContainer elements;
 
     // Bit vector to store NULL flags - not using uninitialized_vector because it is not specialized for bool.
     // It is stored independently of the elements as adding a single bit to PartitionedElement would cause memory waste
     // due to padding.
-    std::vector<bool> null_values;
+    pmr_vector<bool> null_values;
+
+    Partition() = default;
+
+    explicit Partition(std::pmr::memory_resource *mr)
+        : elements(typename ElementsContainer::allocator_type{mr}),
+          null_values(PolymorphicAllocator<bool>{mr})
+    {
+    }
 };
 
 // This alias is used in two phases:
@@ -86,8 +102,11 @@ struct Partition
 //   - the result of the radix clustering phase
 // As the radix clustering might be skipped (when radix_bits == 0), both the materialization as well as the radix
 // clustering methods yield RadixContainers.
+//
+// pmr_vector<Partition<T>> means the outer vector is also tracked. Construction sites supply the allocator and
+// emplace per-partition with the same memory_resource* so all per-partition allocations route to the same pool.
 template <typename T>
-using RadixContainer = std::vector<Partition<T>>;
+using RadixContainer = pmr_vector<Partition<T>>;
 
 // Stores the mapping from HashedType to positions. Conceptually, this is similar to an (unordered_)multimap, but it has
 // some optimizations for the performance-critical probe() method. Instead of storing the matches directly in the
@@ -309,7 +328,8 @@ static const auto ALL_TRUE_BLOOM_FILTER = ~BloomFilter(BLOOM_FILTER_SIZE);
 //                             Bloom filter is false
 template <typename T, typename HashedType, bool keep_null_values>
 RadixContainer<T> materialize_input(const std::shared_ptr<const Table> &in_table, const ColumnID column_id,
-                                    std::vector<std::vector<size_t>> &histograms, const size_t radix_bits,
+                                    pmr_vector<pmr_vector<size_t>> &histograms,
+                                    std::pmr::memory_resource *mr, const size_t radix_bits,
                                     BloomFilter &output_bloom_filter,
                                     const BloomFilter &input_bloom_filter = ALL_TRUE_BLOOM_FILTER)
 {
@@ -317,9 +337,14 @@ RadixContainer<T> materialize_input(const std::shared_ptr<const Table> &in_table
     auto chunk_count = in_table->chunk_count();
 
     const std::hash<HashedType> hash_function;
-    // List of all elements that will be partitioned
-    auto radix_container = RadixContainer<T>{};
-    radix_container.resize(chunk_count);
+    // List of all elements that will be partitioned. Outer vector + each Partition's inner
+    // elements/null_values vectors are routed to `mr` so all bulk per-row data is tracked.
+    auto radix_container = RadixContainer<T>{PolymorphicAllocator<Partition<T>>{mr}};
+    radix_container.reserve(chunk_count);
+    for (auto i = size_t{0}; i < chunk_count; ++i)
+    {
+        radix_container.emplace_back(mr);
+    }
 
     // Fan-out
     const size_t num_radix_partitions = 1ull << radix_bits;
@@ -378,8 +403,9 @@ RadixContainer<T> materialize_input(const std::shared_ptr<const Table> &in_table
             auto elements_iter = elements.begin();
             [[maybe_unused]] auto null_values_iter = null_values.begin();
 
-            // prepare histogram
-            auto histogram = std::vector<size_t>(num_radix_partitions);
+            // prepare histogram. Constructed with `mr` so the histogram slot (later moved into
+            // `histograms[chunk_id]`) is tracked on the same pool as the rest of the join's state.
+            auto histogram = pmr_vector<size_t>(num_radix_partitions, PolymorphicAllocator<size_t>{mr});
 
             auto reference_chunk_offset = ChunkOffset{0};
 
@@ -586,12 +612,13 @@ std::vector<std::optional<PosHashTable<HashedType>>> build(const RadixContainer<
 
 template <typename T, typename HashedType, bool keep_null_values>
 RadixContainer<T> partition_by_radix(const RadixContainer<T> &radix_container,
-                                     std::vector<std::vector<size_t>> &histograms, const size_t radix_bits,
+                                     pmr_vector<pmr_vector<size_t>> &histograms,
+                                     std::pmr::memory_resource *mr, const size_t radix_bits,
                                      const BloomFilter &input_bloom_filter = ALL_TRUE_BLOOM_FILTER)
 {
     if (radix_container.empty())
     {
-        return radix_container;
+        return RadixContainer<T>{PolymorphicAllocator<Partition<T>>{mr}};
     }
 
     if constexpr (keep_null_values)
@@ -610,20 +637,29 @@ RadixContainer<T> partition_by_radix(const RadixContainer<T> &radix_container,
     const size_t pass = 0;
     const size_t radix_mask = static_cast<uint32_t>(std::pow(2, radix_bits * (pass + 1)) - 1);
 
-    // allocate new (shared) output
-    auto output = RadixContainer<T>(output_partition_count);
+    // Allocate new output container. Outer vector + each Partition's inner vectors are routed to `mr`.
+    auto output = RadixContainer<T>{PolymorphicAllocator<Partition<T>>{mr}};
+    output.reserve(output_partition_count);
+    for (auto i = size_t{0}; i < output_partition_count; ++i)
+    {
+        output.emplace_back(mr);
+    }
 
     Assert(histograms.size() == input_partition_count, "Expected one histogram per input partition");
     Assert(histograms[0].size() == output_partition_count, "Expected one histogram bucket per output partition");
 
     // Writing to std::vector<bool> is not thread-safe if the same byte is being written to. For now, we temporarily
-    // use a std::vector<char> and compress it into an std::vector<bool> later.
-    auto null_values_as_char = std::vector<std::vector<char>>(output_partition_count);
+    // use a pmr_vector<char> and compress it into an pmr_vector<bool> later. Both outer and inner routed to `mr`.
+    auto null_values_as_char = pmr_vector<pmr_vector<char>>(
+        output_partition_count, pmr_vector<char>(PolymorphicAllocator<char>{mr}),
+        PolymorphicAllocator<pmr_vector<char>>{mr});
 
     // output_offsets_by_input_partition[input_partition_idx][output_partition_idx] holds the first offset in the
     // bucket written for input_partition_idx
-    auto output_offsets_by_input_partition =
-        std::vector<std::vector<size_t>>(input_partition_count, std::vector<size_t>(output_partition_count));
+    auto output_offsets_by_input_partition = pmr_vector<pmr_vector<size_t>>(
+        input_partition_count,
+        pmr_vector<size_t>(output_partition_count, PolymorphicAllocator<size_t>{mr}),
+        PolymorphicAllocator<pmr_vector<size_t>>{mr});
     for (auto output_partition_idx = size_t{0}; output_partition_idx < output_partition_count; ++output_partition_idx)
     {
         auto this_output_partition_size = size_t{0};
@@ -722,8 +758,8 @@ RadixContainer<T> partition_by_radix(const RadixContainer<T> &radix_container,
 template <typename ProbeColumnType, typename HashedType, bool keep_null_values>
 void probe(const RadixContainer<ProbeColumnType> &probe_radix_container,
            const std::vector<std::optional<PosHashTable<HashedType>>> &hash_tables,
-           std::vector<RowIDPosList> &pos_lists_build_side, std::vector<RowIDPosList> &pos_lists_probe_side,
-           const JoinMode mode, const Table &build_table, const Table &probe_table,
+           pmr_vector<RowIDPosList> &pos_lists_build_side, pmr_vector<RowIDPosList> &pos_lists_probe_side,
+           std::pmr::memory_resource *mr, const JoinMode mode, const Table &build_table, const Table &probe_table,
            const std::vector<OperatorJoinPredicate> &secondary_join_predicates)
 {
     std::vector<std::shared_ptr<AbstractTask>> jobs;
@@ -753,8 +789,11 @@ void probe(const RadixContainer<ProbeColumnType> &probe_radix_container,
         {
             const auto &null_values = partition.null_values;
 
-            RowIDPosList pos_list_build_side_local;
-            RowIDPosList pos_list_probe_side_local;
+            // Locally-built pos lists routed to `mr` so their inner pmr_vector<RowID> backings
+            // land on the runtime exec pool. The move into pos_lists_build/probe_side[partition_idx]
+            // is allocator-preserving because the destinations were constructed with the same `mr`.
+            RowIDPosList pos_list_build_side_local{typename RowIDPosList::allocator_type{mr}};
+            RowIDPosList pos_list_probe_side_local{typename RowIDPosList::allocator_type{mr}};
 
             if constexpr (keep_null_values)
             {
@@ -911,7 +950,8 @@ void probe(const RadixContainer<ProbeColumnType> &probe_radix_container,
 template <typename ProbeColumnType, typename HashedType, JoinMode mode>
 void probe_semi_anti(const RadixContainer<ProbeColumnType> &probe_radix_container,
                      const std::vector<std::optional<PosHashTable<HashedType>>> &hash_tables,
-                     std::vector<RowIDPosList> &pos_lists, const Table &build_table, const Table &probe_table,
+                     pmr_vector<RowIDPosList> &pos_lists, std::pmr::memory_resource *mr,
+                     const Table &build_table, const Table &probe_table,
                      const std::vector<OperatorJoinPredicate> &secondary_join_predicates)
 {
     std::vector<std::shared_ptr<AbstractTask>> jobs;
@@ -936,7 +976,7 @@ void probe_semi_anti(const RadixContainer<ProbeColumnType> &probe_radix_containe
             // Get information from work queue
             const auto &null_values = partition.null_values;
 
-            RowIDPosList pos_list_local;
+            RowIDPosList pos_list_local{typename RowIDPosList::allocator_type{mr}};
 
             const auto hash_table_idx = hash_tables.size() > 1 ? partition_idx : 0;
             if (!hash_tables.empty() && hash_tables.at(hash_table_idx))

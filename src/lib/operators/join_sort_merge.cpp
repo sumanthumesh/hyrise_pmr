@@ -163,9 +163,12 @@ class JoinSortMerge::JoinSortMergeImpl : public AbstractReadOnlyOperatorImpl
     // The cluster count must be a power of two, i.e. 1, 2, 4, 8, 16, ...
     size_t _cluster_count;
 
-    // Contains the output row ids for each cluster.
-    std::vector<RowIDPosList> _output_pos_lists_left;
-    std::vector<RowIDPosList> _output_pos_lists_right;
+    // Contains the output row ids for each cluster. Default-constructed pmr_vector uses the
+    // default resource — same as the previous std::vector<...> behavior for this operator,
+    // which is out of scope for runtime-exec-resource tracking. Type kept pmr to match the
+    // shared write_output_chunks() signature now used by JoinHash.
+    pmr_vector<RowIDPosList> _output_pos_lists_left;
+    pmr_vector<RowIDPosList> _output_pos_lists_right;
 
     struct RowHasher
     {
