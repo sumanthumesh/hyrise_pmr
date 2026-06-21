@@ -312,7 +312,7 @@ static constexpr auto BLOOM_FILTER_MASK = BLOOM_FILTER_SIZE - 1;
 // Using dynamic_bitset because, different from vector<bool>, it has an efficient operator| implementation, which is
 // needed for merging partial Bloom filters created by different threads. Note that the dynamic_bitset(n, value)
 // constructor does not do what you would expect it to, so try to avoid it.
-using BloomFilter = boost::dynamic_bitset<>;
+using BloomFilter = boost::dynamic_bitset<unsigned long, PolymorphicAllocator<unsigned long>>;
 
 // ALL_TRUE_BLOOM_FILTER is initialized by creating a BloomFilter with every value being false and using bitwise
 // negation (~x). As the negation is surprisingly expensive, we create a static empty Bloom filter and reference
@@ -378,12 +378,12 @@ RadixContainer<T> materialize_input(const std::shared_ptr<const Table> &in_table
 
         const auto materialize = [&, chunk_in, chunk_id, num_rows]()
         {
-            auto local_output_bloom_filter = BloomFilter{};
+            auto local_output_bloom_filter = BloomFilter{PolymorphicAllocator<unsigned long>{mr}};
             std::reference_wrapper<BloomFilter> used_output_bloom_filter = output_bloom_filter;
             if (Hyrise::get().is_multi_threaded())
             {
                 // We cannot write to BloomFilter concurrently, so we build a local one first.
-                local_output_bloom_filter = BloomFilter(BLOOM_FILTER_SIZE, false);
+                local_output_bloom_filter.resize(BLOOM_FILTER_SIZE, false);
                 used_output_bloom_filter = local_output_bloom_filter;
             }
 

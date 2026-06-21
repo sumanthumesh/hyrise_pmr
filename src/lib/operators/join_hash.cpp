@@ -356,8 +356,8 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
          * 1.1. Materialize the build partition, which is expected to be smaller. Create a Bloom filter.
          */
 
-        auto build_side_bloom_filter = BloomFilter{};
-        auto probe_side_bloom_filter = BloomFilter{};
+        auto build_side_bloom_filter = BloomFilter{PolymorphicAllocator<unsigned long>{runtime_mr}};
+        auto probe_side_bloom_filter = BloomFilter{PolymorphicAllocator<unsigned long>{runtime_mr}};
 
         const auto materialize_build_side = [&](const auto &input_bloom_filter)
         {
