@@ -123,7 +123,9 @@ class PosHashTable
   public:
     // If we end up with a partition that has more values than Offset can hold, the partitioning algorithm is at fault.
     using Offset = uint32_t;
-    using OffsetHashTable = boost::unordered_flat_map<HashedType, Offset>;
+    using OffsetHashTable =
+        boost::unordered_flat_map<HashedType, Offset, boost::hash<HashedType>, std::equal_to<HashedType>,
+                                  PolymorphicAllocator<std::pair<const HashedType, Offset>>>;
 
     // The small_vector holds the first n values in local storage and only resorts to heap storage after that. 1 is chosen
     // as n because in many cases, we join on primary key attributes where by definition we have only one match on the
@@ -149,6 +151,7 @@ class PosHashTable
     explicit PosHashTable(const JoinHashBuildMode mode, const size_t max_size)
         : _mode(mode),
           _runtime_resource(runtime_exec_resource()),
+          _offset_hash_table(PolymorphicAllocator<std::pair<const HashedType, Offset>>{_runtime_resource}),
           _small_pos_lists(mode == JoinHashBuildMode::AllPositions ? max_size + 1 : 0,
                            SmallPosList{SmallPosList::allocator_type(_memory_pool.get())},
                            PolymorphicAllocator<SmallPosList>{_runtime_resource})
@@ -278,13 +281,12 @@ class PosHashTable
 
     JoinHashBuildMode _mode{};
     // PMR resource used for "footprint-tracked" structures owned by this hash table
-    // (the outer _small_pos_lists vector and the post-finalize UnifiedPosList). Fetched
-    // once at construction so a Greedy strategy picks the same pool consistently for
-    // this whole hash table's lifetime. The OffsetHashTable and the inner SmallPosLists
-    // intentionally still use their own local pools (_offset_hash_table is boost::flat,
-    // not yet PMR; SmallPosLists use _memory_pool for fast unsynchronized allocs).
+    // (the outer _small_pos_lists vector, the OffsetHashTable bucket array, and the
+    // post-finalize UnifiedPosList). Fetched once at construction so a Greedy strategy
+    // picks the same pool consistently for this whole hash table's lifetime. The inner
+    // SmallPosLists still use _memory_pool for fast unsynchronized allocs during build.
     std::pmr::memory_resource *_runtime_resource{nullptr};
-    OffsetHashTable _offset_hash_table{};
+    OffsetHashTable _offset_hash_table;
     pmr_vector<SmallPosList> _small_pos_lists;
 
     std::optional<UnifiedPosList> _unified_pos_list{};
