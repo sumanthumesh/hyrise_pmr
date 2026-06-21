@@ -52,7 +52,7 @@ class ColumnLikeTableScanImpl : public AbstractDereferencedColumnTableScanImpl
      * @returns number of matches and the result of each dictionary entry
      */
     template <typename D>
-    std::pair<size_t, std::vector<bool>> _find_matches_in_dictionary(const D &dictionary) const;
+    std::pair<size_t, pmr_vector<bool>> _find_matches_in_dictionary(const D &dictionary) const;
 
     const LikeMatcher _matcher;
 };

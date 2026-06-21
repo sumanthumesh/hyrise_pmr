@@ -9,6 +9,7 @@
 
 #include "abstract_dereferenced_column_table_scan_impl.hpp"
 #include "expression/evaluation/like_matcher.hpp"
+#include "memory/mem_manager.hpp"
 #include "storage/abstract_segment.hpp"
 #include "storage/base_dictionary_segment.hpp"
 #include "storage/create_iterable_from_segment.hpp"
@@ -85,7 +86,7 @@ void ColumnLikeTableScanImpl::_scan_dictionary_segment(const BaseDictionarySegme
     // First, build a bitmap containing 1s/0s for matching/non-matching dictionary values. Second, iterate over the
     // attribute vector and check against the bitmap. If too many input rows have already been removed (are not part of
     // position_filter), this optimization is detrimental. See caller for that case.
-    auto result = std::pair<size_t, std::vector<bool>>{};
+    auto result = std::pair<size_t, pmr_vector<bool>>{};
 
     if (segment.encoding_type() == EncodingType::Dictionary)
     {
@@ -133,11 +134,12 @@ void ColumnLikeTableScanImpl::_scan_dictionary_segment(const BaseDictionarySegme
 }
 
 template <typename D>
-std::pair<size_t, std::vector<bool>> ColumnLikeTableScanImpl::_find_matches_in_dictionary(const D &dictionary) const
+std::pair<size_t, pmr_vector<bool>> ColumnLikeTableScanImpl::_find_matches_in_dictionary(const D &dictionary) const
 {
     auto match_count = size_t{0};
     const auto dictionary_size = dictionary.size();
-    auto dictionary_matches = std::vector<bool>(dictionary_size);
+    auto dictionary_matches = pmr_vector<bool>(
+        dictionary_size, PolymorphicAllocator<bool>{MemManager::get().pick_runtime_exec_resource()});
     auto offset = ChunkOffset{0};
 
     _matcher.resolve([&](const auto &matcher)
