@@ -24,6 +24,8 @@
 #include "expression/pqp_column_expression.hpp"
 #include "expression/window_function_expression.hpp"
 #include "hyrise.hpp"
+#include "memory/mem_manager.hpp"
+#include "memory/runtime_exec_resource.hpp"
 #include "operators/abstract_aggregate_operator.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/operator_performance_data.hpp"
@@ -58,8 +60,8 @@ template <typename ColumnDataType, typename AggregateType, WindowFunction aggreg
 requires(aggregate_func == WindowFunction::Min || aggregate_func == WindowFunction::Max ||
          aggregate_func == WindowFunction::Sum || aggregate_func == WindowFunction::Any)
 bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_func> &results,
-                            std::vector<pmr_vector<AggregateType>> &value_vectors,
-                            std::vector<pmr_vector<bool>> &null_vectors)
+                            pmr_vector<pmr_vector<AggregateType>> &value_vectors,
+                            pmr_vector<pmr_vector<bool>> &null_vectors)
 {
     auto null_written = std::atomic<bool>{};
     split_results_chunk_wise(true, results, value_vectors, null_vectors,
@@ -100,8 +102,8 @@ bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_fun
 template <typename ColumnDataType, typename AggregateType, WindowFunction aggregate_func>
 requires(aggregate_func == WindowFunction::Count)
 bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_func> &results,
-                            std::vector<pmr_vector<AggregateType>> &value_vectors,
-                            std::vector<pmr_vector<bool>> &null_vectors)
+                            pmr_vector<pmr_vector<AggregateType>> &value_vectors,
+                            pmr_vector<pmr_vector<bool>> &null_vectors)
 {
     split_results_chunk_wise(false, results, value_vectors, null_vectors,
                              [&](auto begin, const auto end, const ChunkID chunk_id)
@@ -130,8 +132,8 @@ bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_fun
 template <typename ColumnDataType, typename AggregateType, WindowFunction aggregate_func>
 requires(aggregate_func == WindowFunction::CountDistinct)
 bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_func> &results,
-                            std::vector<pmr_vector<AggregateType>> &value_vectors,
-                            std::vector<pmr_vector<bool>> &null_vectors)
+                            pmr_vector<pmr_vector<AggregateType>> &value_vectors,
+                            pmr_vector<pmr_vector<bool>> &null_vectors)
 {
     split_results_chunk_wise(false, results, value_vectors, null_vectors,
                              [&](auto begin, const auto end, const ChunkID chunk_id)
@@ -160,8 +162,8 @@ bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_fun
 template <typename ColumnDataType, typename AggregateType, WindowFunction aggregate_func>
 requires(aggregate_func == WindowFunction::Avg && std::is_arithmetic_v<AggregateType>)
 bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_func> &results,
-                            std::vector<pmr_vector<AggregateType>> &value_vectors,
-                            std::vector<pmr_vector<bool>> &null_vectors)
+                            pmr_vector<pmr_vector<AggregateType>> &value_vectors,
+                            pmr_vector<pmr_vector<bool>> &null_vectors)
 {
     auto null_written = std::atomic<bool>{};
     split_results_chunk_wise(
@@ -195,8 +197,8 @@ bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_fun
 template <typename ColumnDataType, typename AggregateType, WindowFunction aggregate_func>
 requires(aggregate_func == WindowFunction::Avg && !std::is_arithmetic_v<AggregateType>)
 bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_func> & /*results*/,
-                            std::vector<pmr_vector<AggregateType>> & /* values */,
-                            std::vector<pmr_vector<bool>> & /* null_vectors */)
+                            pmr_vector<pmr_vector<AggregateType>> & /* values */,
+                            pmr_vector<pmr_vector<bool>> & /* null_vectors */)
 {
     Fail("Invalid aggregate.");
 }
@@ -205,8 +207,8 @@ bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_fun
 template <typename ColumnDataType, typename AggregateType, WindowFunction aggregate_func>
 requires(aggregate_func == WindowFunction::StandardDeviationSample && std::is_arithmetic_v<AggregateType>)
 bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_func> &results,
-                            std::vector<pmr_vector<AggregateType>> &value_vectors,
-                            std::vector<pmr_vector<bool>> &null_vectors)
+                            pmr_vector<pmr_vector<AggregateType>> &value_vectors,
+                            pmr_vector<pmr_vector<bool>> &null_vectors)
 {
     auto null_written = std::atomic<bool>{};
     split_results_chunk_wise(true, results, value_vectors, null_vectors,
@@ -248,8 +250,8 @@ bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_fun
 template <typename ColumnDataType, typename AggregateType, WindowFunction aggregate_func>
 requires(aggregate_func == WindowFunction::StandardDeviationSample && !std::is_arithmetic_v<AggregateType>)
 bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_func> & /*results*/,
-                            std::vector<pmr_vector<AggregateType>> & /* values */,
-                            std::vector<pmr_vector<bool>> & /* null_vectors */)
+                            pmr_vector<pmr_vector<AggregateType>> & /* values */,
+                            pmr_vector<pmr_vector<bool>> & /* null_vectors */)
 {
     Fail("Invalid aggregate.");
 }
@@ -261,13 +263,17 @@ bool write_aggregate_values(const AggregateResults<ColumnDataType, aggregate_fun
  */
 template <typename ColumnDataType, WindowFunction aggregate_func, typename ResultConsumer, typename ValueVectorType>
 void split_results_chunk_wise(const bool write_nulls, const AggregateResults<ColumnDataType, aggregate_func> &results,
-                              std::vector<ValueVectorType> &value_vectors, std::vector<pmr_vector<bool>> &null_vectors,
+                              pmr_vector<ValueVectorType> &value_vectors, pmr_vector<pmr_vector<bool>> &null_vectors,
                               const ResultConsumer consumer_function)
 {
     if (results.empty())
     {
         return;
     }
+
+    // Derive the runtime exec resource from the outer pmr_vector — that's the resource the
+    // caller chose for this operator. Used below to track-allocate the per-chunk RowIDPosLists.
+    auto *runtime_mr = value_vectors.get_allocator().resource();
 
     auto results_begin = results.cbegin();
 
@@ -301,7 +307,7 @@ void split_results_chunk_wise(const bool write_nulls, const AggregateResults<Col
             const auto element_count = std::distance(begin, end);
             if constexpr (std::is_same_v<ValueVectorType, std::shared_ptr<RowIDPosList>>)
             {
-                value_vectors[output_chunk_id] = std::make_shared<RowIDPosList>();
+                value_vectors[output_chunk_id] = RowIDPosList::make_on(runtime_mr);
                 value_vectors[output_chunk_id]->reserve(element_count);
             }
             else
@@ -331,7 +337,7 @@ void split_results_chunk_wise(const bool write_nulls, const AggregateResults<Col
     Hyrise::get().scheduler()->schedule_and_wait_for_tasks(jobs); // No-op for `output_chunk_count` < 2.
 }
 
-void prepare_output(std::vector<Segments> &output, const size_t chunk_count, const size_t column_count)
+void prepare_output(pmr_vector<Segments> &output, const size_t chunk_count, const size_t column_count)
 {
     DebugAssert(output.empty() || output.size() == chunk_count,
                 "Output data structure should be either empty or already prepared.");
@@ -484,7 +490,7 @@ void write_groupby_output(const std::shared_ptr<const Table> &input_table,
                           const std::vector<std::shared_ptr<WindowFunctionExpression>> &aggregates,
                           const std::vector<ColumnID> &groupby_column_ids, const Results &results,
                           TableColumnDefinitions &intermediate_result_column_definitions,
-                          std::vector<Segments> &intermediate_result)
+                          pmr_vector<Segments> &intermediate_result, std::pmr::memory_resource *runtime_mr)
 {
     DebugAssert(intermediate_result.empty(), "Expected output data structure to be empty.");
 
@@ -524,8 +530,10 @@ void write_groupby_output(const std::shared_ptr<const Table> &input_table,
             TableColumnDefinition{input_table->column_name(input_column_id), input_table->column_data_type(input_column_id),
                                   input_table->column_is_nullable(input_column_id)};
 
-        auto pos_lists = std::vector<std::shared_ptr<RowIDPosList>>{};
-        auto unused_nulls = std::vector<pmr_vector<bool>>{}; // Not used for PosList writing.
+        auto pos_lists = pmr_vector<std::shared_ptr<RowIDPosList>>{
+            PolymorphicAllocator<std::shared_ptr<RowIDPosList>>{runtime_mr}};
+        auto unused_nulls = pmr_vector<pmr_vector<bool>>{
+            PolymorphicAllocator<pmr_vector<bool>>{runtime_mr}}; // Not used for PosList writing.
 
         auto referenced_table = std::shared_ptr<const Table>{};
         auto referenced_column_id = input_column_id;
@@ -605,7 +613,7 @@ void write_groupby_output(const std::shared_ptr<const Table> &input_table,
             {
                 const auto &pos_list = pos_lists[output_chunk_id];
                 intermediate_result[output_chunk_id][output_column_id] =
-                    std::make_shared<ReferenceSegment>(referenced_table, referenced_column_id, pos_list);
+                    ReferenceSegment::make_on(runtime_mr, referenced_table, referenced_column_id, pos_list);
             }
         }
     }
@@ -660,8 +668,12 @@ struct AggregateResultContext : SegmentVisitorContext
 
     // In cases where we know how many values to expect, we can preallocate the context in order to avoid later
     // re-allocations.
+    // The monotonic_buffer's upstream is the runtime-exec PMR resource so that buffer-refill
+    // allocations (which back both `results` and `AggregateContext::result_ids`) are tracked /
+    // NUMA-routed via MemManager::pick_runtime_exec_resource. Bump-allocation behavior is preserved.
     explicit AggregateResultContext(const size_t preallocated_size = 0)
-        : results(preallocated_size, AggregateResultAllocator{&buffer}) {}
+        : buffer(runtime_exec_resource()),
+          results(preallocated_size, AggregateResultAllocator{&buffer}) {}
 
     std::pmr::monotonic_buffer_resource buffer;
     AggregateResults<ColumnDataType, aggregate_function> results;
@@ -750,14 +762,16 @@ __attribute__((hot)) void AggregateHash::_aggregate_segment(ChunkID chunk_id, Co
 template <typename AggregateKey>
 KeysPerChunk<AggregateKey> AggregateHash::_partition_by_groupby_keys()
 {
-    auto keys_per_chunk = KeysPerChunk<AggregateKey>{};
+    auto keys_per_chunk =
+        KeysPerChunk<AggregateKey>{PolymorphicAllocator<AggregateKeys<AggregateKey>>{_runtime_mr}};
 
     if constexpr (!std::is_same_v<AggregateKey, EmptyAggregateKey>)
     {
         const auto &input_table = left_input_table();
         const auto chunk_count = input_table->chunk_count();
 
-        // Create the actual data structure
+        // Create the actual data structure. Each inner AggregateKeys<...> is sized to the chunk's
+        // row count and constructed with `_runtime_mr` so the per-row group-key storage is tracked.
         keys_per_chunk.reserve(chunk_count);
         for (auto chunk_id = ChunkID{0}; chunk_id < chunk_count; ++chunk_id)
         {
@@ -767,6 +781,9 @@ KeysPerChunk<AggregateKey> AggregateHash::_partition_by_groupby_keys()
                 continue;
             }
 
+            // No explicit inner allocator: the outer pmr_vector's uses-allocator construction
+            // propagates `_runtime_mr` automatically. Passing an explicit allocator collides with
+            // the appended outer allocator (no constructor matches the doubled signature).
             if constexpr (std::is_same_v<AggregateKey, AggregateKeySmallVector>)
             {
                 keys_per_chunk.emplace_back(chunk->size(), AggregateKey(_groupby_column_ids.size()));
@@ -1072,7 +1089,8 @@ void AggregateHash::_aggregate()
     /**
      * AGGREGATION STEP
      */
-    _contexts_per_column = std::vector<std::shared_ptr<SegmentVisitorContext>>(_aggregates.size());
+    _contexts_per_column = pmr_vector<std::shared_ptr<SegmentVisitorContext>>(
+        _aggregates.size(), PolymorphicAllocator<std::shared_ptr<SegmentVisitorContext>>{_runtime_mr});
 
     if (!_has_aggregate_functions)
     {
@@ -1302,6 +1320,17 @@ void AggregateHash::_aggregate()
 
 std::shared_ptr<const Table> AggregateHash::_on_execute()
 {
+    // Fetch the runtime exec resource ONCE so a Greedy strategy keeps a consistent pool for
+    // the entire operator. All downstream allocations of large structures (KeysPerChunk, the
+    // intermediate result staging, value/null vectors, output segments) route through this.
+    _runtime_mr = MemManager::get().pick_runtime_exec_resource();
+
+    _intermediate_result = pmr_vector<Segments>{PolymorphicAllocator<Segments>{_runtime_mr}};
+    _groupby_segments = pmr_vector<std::shared_ptr<BaseValueSegment>>{
+        PolymorphicAllocator<std::shared_ptr<BaseValueSegment>>{_runtime_mr}};
+    _contexts_per_column = pmr_vector<std::shared_ptr<SegmentVisitorContext>>{
+        PolymorphicAllocator<std::shared_ptr<SegmentVisitorContext>>{_runtime_mr}};
+
     // We do not want the overhead of a vector with heap storage when we have a limited number of aggregate columns.
     // However, more specializations mean more compile time. We now have specializations for 0, 1, 2, and >2 GROUP BY
     // columns.
@@ -1337,7 +1366,7 @@ std::shared_ptr<const Table> AggregateHash::_on_execute()
             _contexts_per_column[0]);
         auto groupby_columns_writing_timer = Timer{};
         write_groupby_output(left_input_table(), _aggregates, _groupby_column_ids, context->results,
-                             _output_column_definitions, _intermediate_result);
+                             _output_column_definitions, _intermediate_result, _runtime_mr);
         DebugAssert(groupby_columns_writing_duration == std::chrono::nanoseconds{0},
                     "groupby_columns_writing_duration() was apparently called more than once.");
         groupby_columns_writing_duration = groupby_columns_writing_timer.lap();
@@ -1491,8 +1520,9 @@ std::shared_ptr<const Table> AggregateHash::_on_execute()
                                     ColumnID{materialized_table_column_id})),
                             "Unexpected reference segment at this position.");
                 const auto entire_chunk_pos_list = std::make_shared<EntireChunkPosList>(chunk_id, chunk_size);
-                reference_segments[entireposlist_indexes[materialized_table_column_id]] = std::make_shared<ReferenceSegment>(
-                    aggregate_columns_result_table, materialized_table_column_id, entire_chunk_pos_list);
+                reference_segments[entireposlist_indexes[materialized_table_column_id]] =
+                    ReferenceSegment::make_on(_runtime_mr, aggregate_columns_result_table, materialized_table_column_id,
+                                              entire_chunk_pos_list);
             }
             operator_output->append_chunk(reference_segments);
         }
@@ -1543,7 +1573,7 @@ void AggregateHash::_write_aggregate_output(ColumnID aggregate_index)
     {
         auto groupby_columns_writing_timer = Timer{};
         write_groupby_output(left_input_table(), _aggregates, _groupby_column_ids, results, _output_column_definitions,
-                             _intermediate_result);
+                             _intermediate_result, _runtime_mr);
         const auto groupby_columns_writing_runtime = groupby_columns_writing_timer.lap();
         DebugAssert(groupby_columns_writing_duration == std::chrono::nanoseconds{0},
                     "groupby_columns_writing_duration() was apparently called more than once.");
@@ -1555,14 +1585,16 @@ void AggregateHash::_write_aggregate_output(ColumnID aggregate_index)
         (aggregate_function != WindowFunction::Count && aggregate_function != WindowFunction::CountDistinct);
     const auto output_column_id = _groupby_column_ids.size() + aggregate_index;
 
-    auto value_vectors = std::vector<pmr_vector<aggregate_type>>{};
-    auto null_vectors = std::vector<pmr_vector<bool>>{};
+    auto value_vectors = pmr_vector<pmr_vector<aggregate_type>>{
+        PolymorphicAllocator<pmr_vector<aggregate_type>>{_runtime_mr}};
+    auto null_vectors = pmr_vector<pmr_vector<bool>>{PolymorphicAllocator<pmr_vector<bool>>{_runtime_mr}};
     auto aggregate_result_contains_nulls =
         write_aggregate_values<ColumnDataType, aggregate_type, aggregate_function>(results, value_vectors, null_vectors);
 
     if (_groupby_column_ids.empty() && value_vectors.empty())
     {
         // If we did not GROUP BY anything and we have no results, we need to add NULL for most aggregates and 0 for count.
+        // emplace_back() with no args triggers uses-allocator construction → inner pmr_vector inherits `_runtime_mr`.
         value_vectors.emplace_back();
         value_vectors[0].emplace_back();
         if constexpr (NEEDS_NULL)
@@ -1587,14 +1619,15 @@ void AggregateHash::_write_aggregate_output(ColumnID aggregate_index)
         auto output_segment = std::shared_ptr<ValueSegment<aggregate_type>>{};
         if (!NEEDS_NULL || !aggregate_result_contains_nulls)
         {
-            output_segment = std::make_shared<ValueSegment<aggregate_type>>(std::move(value_vectors[segment_id]));
+            output_segment =
+                ValueSegment<aggregate_type>::make_on(_runtime_mr, std::move(value_vectors[segment_id]));
         }
         else
         {
             DebugAssert(value_vectors[segment_id].size() == null_vectors[segment_id].size(),
                         "Sizes of value and NULL vectors differ.");
-            output_segment = std::make_shared<ValueSegment<aggregate_type>>(std::move(value_vectors[segment_id]),
-                                                                            std::move(null_vectors[segment_id]));
+            output_segment = ValueSegment<aggregate_type>::make_on(
+                _runtime_mr, std::move(value_vectors[segment_id]), std::move(null_vectors[segment_id]));
         }
         _intermediate_result[segment_id][output_column_id] = output_segment;
     }

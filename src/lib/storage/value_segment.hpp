@@ -8,6 +8,7 @@
 
 #include "base_value_segment.hpp"
 #include "chunk.hpp"
+#include "memory/make_on.hpp"
 
 namespace hyrise
 {
@@ -22,6 +23,15 @@ class ValueSegment : public BaseValueSegment
     // Create a ValueSegment with the given values.
     explicit ValueSegment(pmr_vector<T> &&values);
     explicit ValueSegment(pmr_vector<T> &&values, pmr_vector<bool> &&null_values);
+
+    // Factory: construct a ValueSegment whose shared_ptr control block + payload live on the given
+    // PMR resource. The inner pmr_vectors are forwarded as-is — they should already be on the
+    // desired pool.
+    template <typename... Args>
+    static std::shared_ptr<ValueSegment> make_on(std::pmr::memory_resource *mr, Args &&...args)
+    {
+        return ::hyrise::make_on<ValueSegment>(mr, std::forward<Args>(args)...);
+    }
 
     // Return the value at a certain position. If you want to write efficient operators, back off!
     // Use values() and null_values() to get the vectors and check the content yourself.

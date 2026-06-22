@@ -3,6 +3,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <memory_resource>
 #include <optional>
 #include <set>
 #include <string>
@@ -189,13 +190,23 @@ class AggregateHash : public AbstractAggregateOperator
     std::shared_ptr<SegmentVisitorContext> _create_aggregate_context(const DataType data_type,
                                                                      const WindowFunction aggregate_function) const;
 
+    // PMR resource used for all "footprint-tracked" structures owned by this operator
+    // (KeysPerChunk and its inner AggregateKeys, the intermediate result and groupby
+    // segment vectors, value/null write-out vectors, and output Value/ReferenceSegments).
+    // Fetched once at _on_execute() so a Greedy strategy picks a consistent pool for the
+    // whole query. The AggregateResultContext's monotonic_buffer is backed by
+    // runtime_exec_resource() directly (see aggregate_hash.cpp).
+    std::pmr::memory_resource *_runtime_mr{nullptr};
+
     // Data structure used to gather intermediate results of grouping and aggregation. This data structure stores both
     // the PosLists for group-by columns as well as the materialized aggregate results that are later returned as
     // EntirePosList ReferenceSegments in the output table.
-    std::vector<Segments> _intermediate_result;
+    pmr_vector<Segments> _intermediate_result{PolymorphicAllocator<Segments>{std::pmr::get_default_resource()}};
 
-    std::vector<std::shared_ptr<BaseValueSegment>> _groupby_segments;
-    std::vector<std::shared_ptr<SegmentVisitorContext>> _contexts_per_column;
+    pmr_vector<std::shared_ptr<BaseValueSegment>> _groupby_segments{
+        PolymorphicAllocator<std::shared_ptr<BaseValueSegment>>{std::pmr::get_default_resource()}};
+    pmr_vector<std::shared_ptr<SegmentVisitorContext>> _contexts_per_column{
+        PolymorphicAllocator<std::shared_ptr<SegmentVisitorContext>>{std::pmr::get_default_resource()}};
     bool _has_aggregate_functions;
 
     std::atomic_size_t _expected_result_size{};
