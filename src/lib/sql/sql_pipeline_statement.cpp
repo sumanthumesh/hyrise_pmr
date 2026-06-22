@@ -9,6 +9,8 @@
 #include <vector>
 #include <functional>
 
+#include "nlohmann/json.hpp"
+
 #include "SQLParser.h"
 #include "SQLParserResult.h"
 
@@ -377,11 +379,14 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     std::cout<< "VmRSS Change: " << vmrss_after - vmrss_before << " KB\n";
     // OperatorMemoryUsage::get().reset();
 
-    std::ofstream query_exec_info_file("query_exec_info_"+std::to_string(Hyrise::get().query_counter())+".txt");
-    query_exec_info_file << Hyrise::get().label << "\n";
-    query_exec_info_file << Hyrise::get().recently_parsed_script_file << "\n";
-    query_exec_info_file << get_sql_string() << "\n";
-    query_exec_info_file << duration.count() <<"\n";
+    auto query_exec_info = nlohmann::json{
+        {"label", Hyrise::get().label},
+        {"script_file", Hyrise::get().recently_parsed_script_file},
+        {"sql", get_sql_string()},
+        {"duration", duration.count()},
+    };
+    std::ofstream query_exec_info_file("query_exec_info_" + std::to_string(Hyrise::get().query_counter()) + ".json");
+    query_exec_info_file << query_exec_info.dump(2) << "\n";
     query_exec_info_file.close();
 
     Hyrise::get().query_counter()++;
