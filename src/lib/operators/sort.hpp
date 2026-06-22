@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <memory_resource>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -64,6 +65,12 @@ class Sort : public AbstractReadOnlyOperator
     const std::vector<SortColumnDefinition> _sort_definitions;
     const ChunkOffset _output_chunk_size;
     const ForceMaterialization _force_materialization;
+
+    // Set in _on_execute(); routes the dominant Sort allocations (per-row pair vectors,
+    // per-chunk value/null vectors, output pos lists, output segments) through the runtime
+    // exec pool selected by MemManager::pick_runtime_exec_resource(). Fetched once so a
+    // Greedy strategy keeps a consistent pool for the whole operator.
+    std::pmr::memory_resource *_runtime_mr{nullptr};
 };
 
 } // namespace hyrise

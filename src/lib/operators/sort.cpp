@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "all_type_variant.hpp"
+#include "memory/mem_manager.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/abstract_read_only_operator.hpp"
 #include "operators/operator_performance_data.hpp"
@@ -44,7 +45,8 @@ size_t div_ceil(const size_t lhs, const ChunkOffset rhs)
 // Given an unsorted_table and a pos_list that defines the output order, this materializes all columns in the table,
 // creating chunks of output_chunk_size rows at maximum.
 std::shared_ptr<Table> write_materialized_output_table(const std::shared_ptr<const Table> &unsorted_table,
-                                                       RowIDPosList pos_list, const ChunkOffset output_chunk_size)
+                                                       RowIDPosList pos_list, const ChunkOffset output_chunk_size,
+                                                       std::pmr::memory_resource *runtime_mr)
 {
     // First, we create a new table as the output
     // We have decided against duplicating MVCC data in https://github.com/hyrise/hyrise/issues/408
@@ -76,8 +78,8 @@ std::shared_ptr<Table> write_materialized_output_table(const std::shared_ptr<con
       auto chunk_it = output_segments_by_chunk.begin();
       auto current_segment_size = size_t{0};
 
-      auto value_segment_value_vector = pmr_vector<ColumnDataType>{};
-      auto value_segment_null_vector = pmr_vector<bool>{};
+      auto value_segment_value_vector = pmr_vector<ColumnDataType>{PolymorphicAllocator<ColumnDataType>{runtime_mr}};
+      auto value_segment_null_vector = pmr_vector<bool>{PolymorphicAllocator<bool>{runtime_mr}};
 
       {
         const auto next_chunk_size = std::min(static_cast<size_t>(output_chunk_size), static_cast<size_t>(row_count));
@@ -113,15 +115,18 @@ std::shared_ptr<Table> write_materialized_output_table(const std::shared_ptr<con
 
           std::shared_ptr<ValueSegment<ColumnDataType>> value_segment;
           if (column_is_nullable) {
-            value_segment = std::make_shared<ValueSegment<ColumnDataType>>(std::move(value_segment_value_vector),
-                                                                           std::move(value_segment_null_vector));
+            value_segment = ValueSegment<ColumnDataType>::make_on(runtime_mr,
+                                                                  std::move(value_segment_value_vector),
+                                                                  std::move(value_segment_null_vector));
           } else {
-            value_segment = std::make_shared<ValueSegment<ColumnDataType>>(std::move(value_segment_value_vector));
+            value_segment = ValueSegment<ColumnDataType>::make_on(runtime_mr,
+                                                                  std::move(value_segment_value_vector));
           }
 
           chunk_it->push_back(value_segment);
-          value_segment_value_vector = pmr_vector<ColumnDataType>{};
-          value_segment_null_vector = pmr_vector<bool>{};
+          // Reset with the runtime allocator so the next chunk's pmr_vectors stay tracked.
+          value_segment_value_vector = pmr_vector<ColumnDataType>{PolymorphicAllocator<ColumnDataType>{runtime_mr}};
+          value_segment_null_vector = pmr_vector<bool>{PolymorphicAllocator<bool>{runtime_mr}};
 
           const auto next_chunk_size =
               std::min(static_cast<size_t>(output_chunk_size), static_cast<size_t>(row_count - row_index));
@@ -138,10 +143,12 @@ std::shared_ptr<Table> write_materialized_output_table(const std::shared_ptr<con
       if (current_segment_size > 0) {
         std::shared_ptr<ValueSegment<ColumnDataType>> value_segment;
         if (column_is_nullable) {
-          value_segment = std::make_shared<ValueSegment<ColumnDataType>>(std::move(value_segment_value_vector),
-                                                                         std::move(value_segment_null_vector));
+          value_segment = ValueSegment<ColumnDataType>::make_on(runtime_mr,
+                                                                std::move(value_segment_value_vector),
+                                                                std::move(value_segment_null_vector));
         } else {
-          value_segment = std::make_shared<ValueSegment<ColumnDataType>>(std::move(value_segment_value_vector));
+          value_segment = ValueSegment<ColumnDataType>::make_on(runtime_mr,
+                                                                std::move(value_segment_value_vector));
         }
         chunk_it->push_back(value_segment);
       } });
@@ -164,7 +171,8 @@ std::shared_ptr<Table> write_materialized_output_table(const std::shared_ptr<con
 // If unsorted_table is of TableType::Data, this is trivial and the input_pos_list is used to create the output
 // reference table. If the input is already a reference table, the double indirection needs to be resolved.
 std::shared_ptr<Table> write_reference_output_table(const std::shared_ptr<const Table> &unsorted_table,
-                                                    RowIDPosList input_pos_list, const ChunkOffset output_chunk_size)
+                                                    RowIDPosList input_pos_list, const ChunkOffset output_chunk_size,
+                                                    std::pmr::memory_resource *runtime_mr)
 {
     // First we create a new table as the output
     // We have decided against duplicating MVCC data in https://github.com/hyrise/hyrise/issues/408
@@ -182,11 +190,12 @@ std::shared_ptr<Table> write_reference_output_table(const std::shared_ptr<const 
     if (!resolve_indirection && input_pos_list.size() <= output_chunk_size)
     {
         // Shortcut: No need to copy RowIDs if input_pos_list is small enough and we do not need to resolve the indirection.
-        const auto output_pos_list = std::make_shared<RowIDPosList>(std::move(input_pos_list));
+        const auto output_pos_list = RowIDPosList::make_on(runtime_mr, std::move(input_pos_list));
         auto &output_segments = output_segments_by_chunk.at(0);
         for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id)
         {
-            output_segments[column_id] = std::make_shared<ReferenceSegment>(unsorted_table, column_id, output_pos_list);
+            output_segments[column_id] =
+                ReferenceSegment::make_on(runtime_mr, unsorted_table, column_id, output_pos_list);
         }
     }
     else
@@ -198,7 +207,7 @@ std::shared_ptr<Table> write_reference_output_table(const std::shared_ptr<const 
             // slightly more expensive to generate and slightly less efficient for following operators, we assume that the
             // lion's share of the work has been done before the Sort operator is executed and that the relative cost of this
             // is acceptable. In the future, this could be improved.
-            auto output_pos_list = std::make_shared<RowIDPosList>();
+            auto output_pos_list = RowIDPosList::make_on(runtime_mr);
             output_pos_list->reserve(output_chunk_size);
 
             // Collect all input segments for the current column
@@ -220,10 +229,10 @@ std::shared_ptr<Table> write_reference_output_table(const std::shared_ptr<const 
             {
                 DebugAssert(!output_pos_list->empty(), "Asked to write empty output_pos_list");
                 output_segments_by_chunk.at(output_chunk_id)[column_id] =
-                    std::make_shared<ReferenceSegment>(referenced_table, referenced_column_id, output_pos_list);
+                    ReferenceSegment::make_on(runtime_mr, referenced_table, referenced_column_id, output_pos_list);
                 ++output_chunk_id;
 
-                output_pos_list = std::make_shared<RowIDPosList>();
+                output_pos_list = RowIDPosList::make_on(runtime_mr);
                 if (output_chunk_id < output_chunk_count)
                 {
                     output_pos_list->reserve(output_chunk_size);
@@ -312,6 +321,10 @@ void Sort::_on_set_parameters(const std::unordered_map<ParameterID, AllTypeVaria
 
 std::shared_ptr<const Table> Sort::_on_execute()
 {
+    // Fetch the runtime exec resource ONCE so a Greedy strategy keeps a consistent pool for
+    // the entire operator. All downstream allocations of large structures route through this.
+    _runtime_mr = MemManager::get().pick_runtime_exec_resource();
+
     const auto &input_table = left_input_table();
 
     for (const auto &column_sort_definition : _sort_definitions)
@@ -354,7 +367,7 @@ std::shared_ptr<const Table> Sort::_on_execute()
                           {
       using ColumnDataType = typename decltype(type)::type;
 
-      auto sort_impl = SortImpl<ColumnDataType>(input_table, sort_definition.column, sort_definition.sort_mode);
+      auto sort_impl = SortImpl<ColumnDataType>(input_table, sort_definition.column, _runtime_mr, sort_definition.sort_mode);
       previously_sorted_pos_list = sort_impl.sort(previously_sorted_pos_list);
 
       total_materialization_time += sort_impl.materialization_time;
@@ -408,13 +421,13 @@ std::shared_ptr<const Table> Sort::_on_execute()
 
     if (must_materialize)
     {
-        sorted_table =
-            write_materialized_output_table(input_table, std::move(*previously_sorted_pos_list), _output_chunk_size);
+        sorted_table = write_materialized_output_table(input_table, std::move(*previously_sorted_pos_list),
+                                                       _output_chunk_size, _runtime_mr);
     }
     else
     {
-        sorted_table =
-            write_reference_output_table(input_table, std::move(*previously_sorted_pos_list), _output_chunk_size);
+        sorted_table = write_reference_output_table(input_table, std::move(*previously_sorted_pos_list),
+                                                    _output_chunk_size, _runtime_mr);
     }
 
     const auto &final_sort_definition = _sort_definitions[0];
@@ -443,8 +456,14 @@ class Sort::SortImpl
     std::chrono::nanoseconds sort_time{};
 
     SortImpl(const std::shared_ptr<const Table> &table_in, const ColumnID column_id,
+             std::pmr::memory_resource *runtime_mr,
              const SortMode sort_mode = SortMode::AscendingNullsFirst)
-        : _table_in(table_in), _column_id(column_id), _sort_mode(sort_mode)
+        : _table_in(table_in),
+          _column_id(column_id),
+          _sort_mode(sort_mode),
+          _runtime_mr(runtime_mr),
+          _row_id_value_vector(PolymorphicAllocator<RowIDValuePair>{runtime_mr}),
+          _null_value_rows(PolymorphicAllocator<RowIDValuePair>{runtime_mr})
     {
         const auto row_count = _table_in->row_count();
         _row_id_value_vector.reserve(row_count);
@@ -491,7 +510,7 @@ class Sort::SortImpl
             _row_id_value_vector.insert(_row_id_value_vector.begin(), _null_value_rows.begin(), _null_value_rows.end());
         }
 
-        auto pos_list = RowIDPosList{};
+        auto pos_list = RowIDPosList{typename RowIDPosList::allocator_type{_runtime_mr}};
         pos_list.reserve(_row_id_value_vector.size());
         for (const auto &[row_id, _] : _row_id_value_vector)
         {
@@ -570,10 +589,14 @@ class Sort::SortImpl
     const SortMode _sort_mode;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
-    std::vector<RowIDValuePair> _row_id_value_vector;
+    // PMR resource captured at Sort::_on_execute() so this impl's allocations route to a
+    // consistent pool (matters for the Greedy strategy).
+    std::pmr::memory_resource *_runtime_mr;
+
+    pmr_vector<RowIDValuePair> _row_id_value_vector;
 
     // Stored as RowIDValuePair for better type compatibility even if value is unused.
-    std::vector<RowIDValuePair> _null_value_rows;
+    pmr_vector<RowIDValuePair> _null_value_rows;
 };
 
 } // namespace hyrise
