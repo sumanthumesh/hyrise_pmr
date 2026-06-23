@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <memory_resource>
 #include <vector>
 
 #include <boost/variant.hpp>
@@ -59,8 +60,13 @@ class ExpressionEvaluator final
      * For Expressions that reference segments from a single table
      * @param uncorrelated_subquery_results  Results from pre-computed uncorrelated selects, so they do not need to be
      *                                     evaluated for every chunk. Solely for performance.
+     * @param mr   PMR resource that big result allocations (values/null vectors, ValueSegments,
+     *             RowIDPosLists) are routed through. Defaults to the heap so existing callers and
+     *             tests keep working unchanged; callers wanting tracked / NUMA-routed allocations
+     *             (e.g., Projection) should pass MemManager::pick_runtime_exec_resource().
      */
-    ExpressionEvaluator(const std::shared_ptr<const Table> &table, const ChunkID chunk_id);
+    ExpressionEvaluator(const std::shared_ptr<const Table> &table, const ChunkID chunk_id,
+                        std::pmr::memory_resource *mr = std::pmr::get_default_resource());
 
     std::shared_ptr<BaseValueSegment> evaluate_expression_to_segment(const AbstractExpression &expression);
     RowIDPosList evaluate_expression_to_pos_list(const AbstractExpression &expression);
@@ -186,6 +192,9 @@ class ExpressionEvaluator final
     std::shared_ptr<const Chunk> _chunk;
     const ChunkID _chunk_id;
     size_t _output_row_count{1};
+
+    // PMR resource for result allocations (see constructor doc).
+    std::pmr::memory_resource *_mr{std::pmr::get_default_resource()};
 
     // One entry for each segment in the _chunk, may be nullptr if the segment hasn't been materialized
     std::vector<std::shared_ptr<BaseExpressionResult>> _segment_materializations;

@@ -195,8 +195,9 @@ void execute_correlated_subquery_recursively(const std::shared_ptr<AbstractOpera
 namespace hyrise
 {
 
-ExpressionEvaluator::ExpressionEvaluator(const std::shared_ptr<const Table> &table, const ChunkID chunk_id)
-    : _table(table), _chunk(_table->get_chunk(chunk_id)), _chunk_id(chunk_id)
+ExpressionEvaluator::ExpressionEvaluator(const std::shared_ptr<const Table> &table, const ChunkID chunk_id,
+                                          std::pmr::memory_resource *mr)
+    : _table(table), _chunk(_table->get_chunk(chunk_id)), _chunk_id(chunk_id), _mr(mr)
 {
     _output_row_count = _chunk->size();
     _segment_materializations.resize(_chunk->column_count());
@@ -1170,7 +1171,7 @@ std::shared_ptr<BaseValueSegment> ExpressionEvaluator::evaluate_expression_to_se
     const AbstractExpression &expression)
 {
     auto segment = std::shared_ptr<BaseValueSegment>{};
-    auto nulls = pmr_vector<bool>{};
+    auto nulls = pmr_vector<bool>{PolymorphicAllocator<bool>{_mr}};
 
     _resolve_to_expression_result_view(expression, [&](const auto &view)
                                        {
@@ -1179,7 +1180,7 @@ std::shared_ptr<BaseValueSegment> ExpressionEvaluator::evaluate_expression_to_se
     if constexpr (std::is_same_v<ColumnDataType, NullValue>) {
       Fail("Cannot create a Segment from a NULL.");
     } else {
-      auto values = pmr_vector<ColumnDataType>(_output_row_count);
+      auto values = pmr_vector<ColumnDataType>(_output_row_count, PolymorphicAllocator<ColumnDataType>{_mr});
 
       for (auto chunk_offset = ChunkOffset{0}; chunk_offset < static_cast<ChunkOffset>(_output_row_count);
            ++chunk_offset) {
@@ -1192,9 +1193,9 @@ std::shared_ptr<BaseValueSegment> ExpressionEvaluator::evaluate_expression_to_se
              ++chunk_offset) {
           nulls[chunk_offset] = view.is_null(chunk_offset);
         }
-        segment = std::make_shared<ValueSegment<ColumnDataType>>(std::move(values), std::move(nulls));
+        segment = ValueSegment<ColumnDataType>::make_on(_mr, std::move(values), std::move(nulls));
       } else {
-        segment = std::make_shared<ValueSegment<ColumnDataType>>(std::move(values));
+        segment = ValueSegment<ColumnDataType>::make_on(_mr, std::move(values));
       }
     } });
 
@@ -1213,7 +1214,7 @@ RowIDPosList ExpressionEvaluator::evaluate_expression_to_pos_list(const Abstract
      * All other Expression types have dedicated, hopefully fast, implementations.
      */
 
-    auto result_pos_list = RowIDPosList{};
+    auto result_pos_list = RowIDPosList{typename RowIDPosList::allocator_type{_mr}};
     const auto row_count = static_cast<ChunkOffset>(_output_row_count);
 
     switch (expression.type)

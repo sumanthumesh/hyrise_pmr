@@ -16,6 +16,7 @@
 #include "expression/expression_utils.hpp"
 #include "expression/pqp_column_expression.hpp"
 #include "hyrise.hpp"
+#include "memory/mem_manager.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/abstract_read_only_operator.hpp"
 #include "operators/operator_performance_data.hpp"
@@ -72,6 +73,10 @@ void Projection::_on_set_transaction_context(const std::weak_ptr<TransactionCont
 
 std::shared_ptr<const Table> Projection::_on_execute()
 {
+    // Fetch the runtime exec resource ONCE so a Greedy strategy keeps a consistent pool for
+    // the entire operator. Passed into ExpressionEvaluator and used for output ReferenceSegments.
+    _runtime_mr = MemManager::get().pick_runtime_exec_resource();
+
     auto timer = Timer{};
 
     const auto &input_table = *left_input_table();
@@ -170,7 +175,7 @@ std::shared_ptr<const Table> Projection::_on_execute()
         auto perform_projection_evaluation = [this, chunk_id, expression_count, &output_segments_by_chunk,
                                               &column_is_nullable, &forwarded_pqp_columns]()
         {
-            auto evaluator = ExpressionEvaluator{left_input_table(), chunk_id};
+            auto evaluator = ExpressionEvaluator{left_input_table(), chunk_id, _runtime_mr};
 
             for (auto column_id = ColumnID{0}; column_id < expression_count; ++column_id)
             {
@@ -273,8 +278,8 @@ std::shared_ptr<const Table> Projection::_on_execute()
                 const auto projection_result_column_id =
                     ColumnID{static_cast<ColumnID::base_type>(projection_result_segments.size() - 1)};
 
-                output_segments_by_chunk[chunk_id][column_id] = std::make_shared<ReferenceSegment>(
-                    projection_result_table, projection_result_column_id, entire_chunk_pos_list);
+                output_segments_by_chunk[chunk_id][column_id] = ReferenceSegment::make_on(
+                    _runtime_mr, projection_result_table, projection_result_column_id, entire_chunk_pos_list);
             }
         }
 

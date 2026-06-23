@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <memory_resource>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -69,6 +70,13 @@ class Projection : public AbstractReadOnlyOperator
         std::unordered_map<const AbstractOperator *, std::shared_ptr<AbstractOperator>> &copied_ops) const override;
 
     ExpressionUnorderedSet _determine_forwarded_columns(const TableType table_type) const;
+
+    // Set in _on_execute(); routes the dominant Projection allocations (per-chunk values/null
+    // vectors and output ValueSegments inside ExpressionEvaluator, and per-chunk
+    // ReferenceSegments wrapping them) through the runtime exec pool selected by
+    // MemManager::pick_runtime_exec_resource(). Fetched once per execution so a Greedy
+    // strategy keeps a consistent pool for the whole operator.
+    std::pmr::memory_resource *_runtime_mr{nullptr};
 };
 
 } // namespace hyrise
