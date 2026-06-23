@@ -1213,6 +1213,25 @@ int Console::_change_runtime_setting(const std::string &input)
         }
         return 0;
     }
+    if (property == "track_per_op_mem")
+    {
+        if (value == "on")
+        {
+            AbstractOperator::track_per_operator_memory = true;
+            out("Per-operator memory delta tracking turned on (use SINGLE-worker only)\n");
+        }
+        else if (value == "off")
+        {
+            AbstractOperator::track_per_operator_memory = false;
+            out("Per-operator memory delta tracking turned off\n");
+        }
+        else
+        {
+            out("Usage: track_per_op_mem (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
     if (property == "track_segment_type")
     {
         if (value == "on")
