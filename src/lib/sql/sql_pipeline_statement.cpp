@@ -5,11 +5,14 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <functional>
 
 #include "nlohmann/json.hpp"
+
+#include "memory/mem_manager.hpp"
 
 #include "SQLParser.h"
 #include "SQLParserResult.h"
@@ -342,6 +345,16 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
 
     size_t vmrss_before = f();
 
+    // Snapshot per-resource total_allocated_bytes before execution so we can compute deltas.
+    // Keyed by resource_id; numa_node is captured alongside for the output JSON.
+    const auto pool_status_before = MemManager::get().all_pool_status();
+    auto total_allocated_before = std::unordered_map<size_t, size_t>{};
+    total_allocated_before.reserve(pool_status_before.size());
+    for (const auto &status : pool_status_before)
+    {
+        total_allocated_before[status.resource_id] = status.total_allocated_bytes;
+    }
+
     // start_tracking_allocations();
     const auto started = std::chrono::steady_clock::now();
 
@@ -379,11 +392,27 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     std::cout<< "VmRSS Change: " << vmrss_after - vmrss_before << " KB\n";
     // OperatorMemoryUsage::get().reset();
 
+    // Compute per-resource total_allocated_bytes delta. Resources present after but not
+    // before are reported with a "before" value of 0.
+    auto memory_deltas = nlohmann::json::array();
+    for (const auto &status_after : MemManager::get().all_pool_status())
+    {
+        const auto before_it = total_allocated_before.find(status_after.resource_id);
+        const auto before_value = before_it == total_allocated_before.end() ? size_t{0} : before_it->second;
+        memory_deltas.push_back({
+            {"resource_id", status_after.resource_id},
+            {"numa_node", status_after.numa_node},
+            {"total_allocated_bytes_delta", static_cast<int64_t>(status_after.total_allocated_bytes) -
+                                                static_cast<int64_t>(before_value)},
+        });
+    }
+
     auto query_exec_info = nlohmann::json{
         {"label", Hyrise::get().label},
         {"script_file", Hyrise::get().recently_parsed_script_file},
         {"sql", get_sql_string()},
         {"duration", duration.count()},
+        {"memory_deltas", memory_deltas},
     };
     std::ofstream query_exec_info_file("query_exec_info_" + std::to_string(Hyrise::get().query_counter()) + ".json");
     query_exec_info_file << query_exec_info.dump(2) << "\n";
