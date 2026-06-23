@@ -13,6 +13,7 @@
 #include "nlohmann/json.hpp"
 
 #include "memory/mem_manager.hpp"
+#include "operators/pqp_utils.hpp"
 
 #include "SQLParser.h"
 #include "SQLParserResult.h"
@@ -414,6 +415,33 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
         {"duration", duration.count()},
         {"memory_deltas", memory_deltas},
     };
+
+    // Per-operator deltas: only emitted when the corresponding console flag is on. Walks
+    // the PQP and pulls the snapshot stashed on each operator's performance_data by
+    // AbstractOperator::execute().
+    if (AbstractOperator::track_per_operator_memory && _root_operator_task)
+    {
+        auto operator_memory_deltas = nlohmann::json::array();
+        visit_pqp(_root_operator_task->get_operator(), [&](const auto &op)
+                  {
+            auto resources = nlohmann::json::array();
+            for (const auto &[resource_id, delta] : op->performance_data->per_resource_allocation_delta)
+            {
+                resources.push_back({
+                    {"resource_id", resource_id},
+                    {"numa_node", delta.numa_node},
+                    {"total_allocated_bytes_delta", delta.total_allocated_bytes_delta},
+                });
+            }
+            operator_memory_deltas.push_back({
+                {"operator_id", op->operator_id},
+                {"name", std::string{op->name()}},
+                {"walltime_ns", op->performance_data->walltime.count()},
+                {"resources", resources},
+            });
+            return PQPVisitation::VisitInputs; });
+        query_exec_info["operator_memory_deltas"] = operator_memory_deltas;
+    }
     std::ofstream query_exec_info_file("query_exec_info_" + std::to_string(Hyrise::get().query_counter()) + ".json");
     query_exec_info_file << query_exec_info.dump(2) << "\n";
     query_exec_info_file.close();
