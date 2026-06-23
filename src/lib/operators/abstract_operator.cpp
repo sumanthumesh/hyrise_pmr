@@ -16,6 +16,7 @@
 #include "expression/expression_utils.hpp"
 #include "expression/pqp_subquery_expression.hpp"
 #include "logical_query_plan/dummy_table_node.hpp"
+#include "memory/mem_manager.hpp"
 #include "operators/operator_performance_data.hpp"
 #include "resolve_type.hpp"
 #include "scheduler/operator_task.hpp"
@@ -194,6 +195,19 @@ void AbstractOperator::execute()
                                                           { OperatorMemoryUsage::get().track_memory(tracker_handle); });
     }
 
+    // Snapshot per-resource total_allocated_bytes BEFORE _on_execute(). Only meaningful
+    // under SINGLE-worker execution — concurrent operators would contaminate the delta.
+    auto total_allocated_before = std::unordered_map<size_t, size_t>{};
+    if (track_per_operator_memory)
+    {
+        const auto pool_status_before = MemManager::get().all_pool_status();
+        total_allocated_before.reserve(pool_status_before.size());
+        for (const auto &status : pool_status_before)
+        {
+            total_allocated_before[status.resource_id] = status.total_allocated_bytes;
+        }
+    }
+
     auto performance_timer = Timer{};
 
     auto transaction_context = this->transaction_context();
@@ -220,6 +234,23 @@ void AbstractOperator::execute()
 
     // release any temporary data if possible
     _on_cleanup();
+
+    // Compute per-resource delta after _on_cleanup() so the operator's internal freed
+    // state isn't double-counted. Numa node captured alongside since resource_id alone
+    // doesn't carry it.
+    if (track_per_operator_memory)
+    {
+        for (const auto &status_after : MemManager::get().all_pool_status())
+        {
+            const auto before_it = total_allocated_before.find(status_after.resource_id);
+            const auto before_value =
+                before_it == total_allocated_before.end() ? size_t{0} : before_it->second;
+            const auto delta = static_cast<int64_t>(status_after.total_allocated_bytes) -
+                               static_cast<int64_t>(before_value);
+            performance_data->per_resource_allocation_delta[status_after.resource_id] =
+                {status_after.numa_node, delta};
+        }
+    }
 
     // Signal this specific tracker thread to stop
     if (OperatorMemoryUsage::tracking_enabled)

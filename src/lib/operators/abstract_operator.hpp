@@ -230,6 +230,13 @@ class AbstractOperator : public std::enable_shared_from_this<AbstractOperator>, 
     static size_t global_operator_id;
     size_t operator_id{std::numeric_limits<size_t>::max()};
 
+    // When true, AbstractOperator::execute() snapshots per-resource total_allocated_bytes
+    // before and after _on_execute() and stores the deltas on performance_data. Intended
+    // for completeness checks (verifying every operator's allocations land on tracked
+    // resources) under SINGLE-worker execution. Concurrent operators on the same pool will
+    // contaminate each other's deltas — do not use for performance measurement.
+    inline static bool track_per_operator_memory{false};
+
   protected:
     friend class OperatorTaskTest;
     // abstract method to actually execute the operator

@@ -1,8 +1,10 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 // Warning: In the past, magic_enum has led to problems with TSan. See #2154 for details.
 #include "magic_enum/magic_enum.hpp"
@@ -31,6 +33,16 @@ struct AbstractOperatorPerformanceData : public Noncopyable
     bool has_output{false};
     uint64_t output_row_count{0};
     uint64_t output_chunk_count{0};
+
+    // Populated only when AbstractOperator::track_per_operator_memory is on. Keyed by
+    // MemResourceStatus::resource_id. Holds the delta of total_allocated_bytes over this
+    // operator's _on_execute() call.
+    struct ResourceDelta
+    {
+        int numa_node{-1};
+        int64_t total_allocated_bytes_delta{0};
+    };
+    std::unordered_map<size_t, ResourceDelta> per_resource_allocation_delta;
 };
 
 /**
