@@ -1,7 +1,7 @@
 PMR / Runtime-Exec-Resource Conversion — Next Steps
 =====================================================
 
-Status as of 2026-06-21
+Status as of 2026-06-22
 -----------------------
 Done:
   - TableScan  (RowIDPosList + ReferenceSegment::make_on + dictionary_matches)
@@ -16,6 +16,40 @@ Done:
                        PolymorphicAllocator<pair<const HashedType, Offset>>)
                Tier 4: BloomFilter (boost::dynamic_bitset with
                        PolymorphicAllocator<unsigned long>)
+  - Sort       _row_id_value_vector, _null_value_rows, returned RowIDPosList,
+               write_materialized_output_table (per-chunk value/null pmr_vectors +
+               output ValueSegments via make_on), write_reference_output_table
+               (output_pos_list via RowIDPosList::make_on + output ReferenceSegments
+               via make_on).
+  - AggregateHash
+               AggregateResultContext.buffer upstream = runtime_exec_resource() →
+               routes AggregateResultIdMap, AggregateResults, DistinctValues.
+               KeysPerChunk + inner AggregateKeys via outer pmr allocator with
+               uses-allocator propagation.
+               _intermediate_result / _groupby_segments / _contexts_per_column as
+               pmr_vector on _runtime_mr.
+               value_vectors / null_vectors (pmr_vector<pmr_vector<...>>) on _runtime_mr.
+               pos_lists + unused_nulls in write_groupby_output on _runtime_mr.
+               RowIDPosList::make_on for the per-output-chunk pos lists.
+               Output ValueSegment / ReferenceSegment via make_on.
+               Added ValueSegment<T>::make_on factory.
+  - Projection ExpressionEvaluator gained an optional std::pmr::memory_resource*
+               constructor arg (defaulted to heap). evaluate_expression_to_segment
+               builds values/nulls on _mr and uses ValueSegment::make_on(_mr).
+               evaluate_expression_to_pos_list returns a RowIDPosList on _mr.
+               Projection::_on_execute captures _runtime_mr and passes it to the
+               evaluator + uses ReferenceSegment::make_on for the per-chunk wrappers.
+
+  - Per-operator memory delta tracking (instrumentation, not a conversion)
+               AbstractOperator::execute() snapshots all-pool total_allocated_bytes
+               before/after _on_execute() and stores deltas on
+               AbstractOperatorPerformanceData::per_resource_allocation_delta.
+               Gated by static flag AbstractOperator::track_per_operator_memory.
+               Toggle via console: `setting track_per_op_mem on|off`.
+               sql_pipeline_statement.cpp walks the PQP and emits
+               operator_memory_deltas[] in the query_exec_info_<n>.json output.
+               INTENDED FOR SINGLE-WORKER COVERAGE CHECKS — concurrent operators
+               on the same pool contaminate each other's deltas.
 
 Outstanding mechanism:
   - Everything routes through MemManager::pick_runtime_exec_resource() and the
@@ -24,67 +58,59 @@ Outstanding mechanism:
   - Pools: Local / Remote / Greedy (Greedy hard-stops on capacity exhaustion).
 
 
-High-ticket operators still to convert (in suggested order)
------------------------------------------------------------
+High-ticket operators still to convert
+--------------------------------------
 
-1. Sort (smallest, one file)
-   File: src/lib/operators/sort.cpp
-   What allocates:
-     - Big std::vector<std::pair<T, RowID>> per sort column (materialization for std::sort).
-       Size = input_rows * (sizeof(T) + 8B). Multi-GB on TPCH scale.
-     - The final sorted RowIDPosList.
-     - Per-chunk value vectors.
-   Plan:
-     - Fetch runtime_mr at top of _on_execute.
-     - Convert materialization vectors to pmr_vector with PolymorphicAllocator{runtime_mr}.
-     - Use RowIDPosList::make_on(runtime_mr) for the result pos list.
-     - Use ReferenceSegment::make_on(runtime_mr, ...) for output segments.
-
-2. AggregateHash (bigger payoff, more surface area)
-   Files: src/lib/operators/aggregate_hash.{hpp,cpp}
-   What allocates:
-     - AggregateResultIdMap: the group-key -> result-idx hash table. Dominant for
-       high-cardinality group-by. Same template-allocator pattern as Tier 3
-       (PosHashTable's OffsetHashTable). Plug in PolymorphicAllocator and construct
-       with runtime_mr.
-     - AggregateResults (already pmr_vector<AggregateResult>): construct with
-       PolymorphicAllocator{runtime_mr}.
-     - KeysPerChunk (already pmr_vector<AggregateKeys>): same.
-     - _intermediate_result (std::vector<Segments>): convert to pmr_vector if you
-       want completeness.
-     - _groupby_segments: ValueSegment construction sites need make_on(runtime_mr).
-   Watch out for:
-     - Templated AggregateKey types — allocator change ripples through.
-     - The map's value_type is std::pair<const AggregateKey, AggregateResultId>;
-       allocator must be PolymorphicAllocator<pair<const AggregateKey, AggregateResultId>>.
-
-3. ExpressionEvaluator (covers Projection + complex TableScan predicates + JoinHash secondary predicates in one pass)
-   File: src/lib/expression/evaluation/expression_evaluator.cpp
-   What allocates:
-     - Every `std::make_shared<ValueSegment<T>>(...)` in _evaluate_arithmetic,
-       _evaluate_logical, _evaluate_case, _evaluate_in, _evaluate_predicate,
-       _evaluate_cast, _evaluate_extract, etc. — produces a new segment per chunk.
-       For TPCH SF10 projection like `l_extendedprice * (1 - l_discount)` this is multi-GB.
-   Plan:
-     - At each `make_shared<ValueSegment<T>>` site, replace with
-       `ValueSegment<T>::make_on(runtime_exec_resource(), ...)`.
-       (Use the existing make_on factory; no signature change needed in the
-       evaluator constructor.)
-     - The values/null pmr_vectors inside each ValueSegment will automatically
-       inherit the resource via PMR uses-allocator construction.
-   Why this is bigger than 1 or 2:
-     - Many evaluation paths (arithmetic, logical, case, in, predicates, cast, extract).
-     - But: no signature changes — each call site is a localized edit.
-
-4. Validate (cleanup, smaller)
+1. Validate (cleanup, smaller)
    File: src/lib/operators/validate.cpp
    What allocates:
      - One RowIDPosList per chunk filtered by MVCC visibility.
      - Linear in input rows; each entry 8B.
    Plan:
+     - Fetch runtime_mr at top of _on_execute.
      - Use RowIDPosList::make_on(runtime_mr) for the per-chunk filtered pos list.
      - Use ReferenceSegment::make_on(runtime_mr, ...) for output segments.
      - Same trivial pattern as TableScan.
+
+
+Follow-ups to the Projection / ExpressionEvaluator conversion
+-------------------------------------------------------------
+
+A. Route ExpressionEvaluator's resource into the OTHER callers
+   Currently only Projection passes a real mr; everyone else defaults to heap.
+   Two-line fix at each call site. After this, every operator's complex-expression
+   work lands on the runtime exec pool too.
+
+   File: src/lib/operators/table_scan/expression_evaluator_table_scan_impl.cpp
+     - Site: ExpressionEvaluator{_in_table, chunk_id} (around line 32).
+     - Fetch MemManager::get().pick_runtime_exec_resource() once (e.g., as a
+       member set in _on_execute) and pass to the evaluator constructor.
+     - Benefit: the per-chunk RowIDPosList returned by
+       evaluate_expression_to_pos_list for complex predicates is tracked.
+
+   File: src/lib/operators/join_hash.cpp (and friends) — secondary-predicate path
+     - Find the ExpressionEvaluator{...} construction used by JoinHash's
+       secondary predicate evaluation.
+     - Pass runtime_mr (already captured in JoinHash::_on_execute) to the
+       constructor.
+
+   Leave alone:
+     - operators/limit.cpp                                 (single scalar)
+     - optimizer/strategy/expression_reduction_rule.cpp    (constant folding,
+                                                            not runtime hot)
+     - tests/                                              (defaults are fine)
+
+B. Convert ExpressionEvaluator's internal intermediate buffers
+   ExpressionEvaluator has ~30+ transient pmr_vector<...> scratch allocations
+   across the _evaluate_* paths (arithmetic, logical, case, in, predicate,
+   cast, extract, etc.). They use the default heap allocator today.
+   - Each call is small relative to the final values/nulls vectors returned to
+     the caller (which ARE now on _mr).
+   - Only worth doing if per-operator delta JSON shows a Projection / TableScan
+     / JoinHash with a non-zero gap between its measured delta and the sum of
+     its segment payloads.
+   - Mechanical edit: route each `pmr_vector<X>{}` / `pmr_vector<X>(n)` site
+     through `PolymorphicAllocator<X>{_mr}`. No signature changes.
 
 
 Intentionally skipped (low value)
@@ -95,13 +121,23 @@ Intentionally skipped (low value)
 - JoinHash residual: `hash_tables` outer vector, `jobs` vectors, inner SmallPosList
   overflow via _memory_pool / _monotonic_buffer (kept on thread-local unsync pool
   for build-phase perf).
+- AggregateHash residual: per-AggregateResultContext monotonic_buffer is upstream
+  to runtime_exec_resource() but not the captured _runtime_mr — under Greedy
+  strategy a per-context buffer constructed mid-query could land on a different
+  pool than the operator's other state if a pool just filled. Acceptable.
 
 
 Verification pattern after each conversion
 ------------------------------------------
 1. Build.
-2. Run a representative TPCH query (Q1 for aggregate, Q6 for sort, Q4 for projection).
-3. `hsh mem_usage` — runtime exec pool's allocated_bytes should grow noticeably
-   during the targeted operator's phase.
-4. Switch strategy to Remote, rerun, confirm pool 3 takes the allocations.
-5. Switch to Greedy, rerun, confirm hard-stop behavior on capacity exhaustion.
+2. In Console: `setting track_per_op_mem on` and pick a strategy
+   (`setting mem_strategy local|remote`).
+3. Run with a SINGLE worker (concurrent operators contaminate per-op deltas).
+4. Run a representative TPCH query (Q1 for aggregate, Q6 for sort,
+   Q4 for projection, any q with WHERE for table_scan/validate).
+5. Inspect query_exec_info_<n>.json:
+   - "memory_deltas" — per-pool total for the whole query.
+   - "operator_memory_deltas" — per-operator breakdown. Any operator showing 0
+     on the runtime pool but >0 on heap (resource_id 0) is unconverted.
+6. Switch strategy to Remote, rerun, confirm pool 3 takes the allocations.
+7. Switch to Greedy, rerun, confirm hard-stop behavior on capacity exhaustion.
