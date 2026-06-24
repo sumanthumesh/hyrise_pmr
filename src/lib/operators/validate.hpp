@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <memory_resource>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -41,6 +42,11 @@ class Validate : public AbstractReadOnlyOperator
     bool _is_entire_chunk_visible(const std::shared_ptr<const Chunk> &chunk, const CommitID snapshot_commit_id) const;
 
     bool _can_use_chunk_shortcut = true;
+
+    // Set in _on_execute(); routes the per-chunk filtered RowIDPosLists and output
+    // ReferenceSegments through the runtime exec pool selected by
+    // MemManager::pick_runtime_exec_resource(). Read by _validate_chunks() (const).
+    std::pmr::memory_resource *_runtime_mr{nullptr};
 
   protected:
     std::shared_ptr<const Table> _on_execute(std::shared_ptr<TransactionContext> transaction_context) override;

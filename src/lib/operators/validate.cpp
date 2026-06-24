@@ -11,6 +11,7 @@
 #include "all_type_variant.hpp"
 #include "concurrency/transaction_context.hpp"
 #include "hyrise.hpp"
+#include "memory/mem_manager.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/abstract_read_only_operator.hpp"
 #include "operators/abstract_read_write_operator.hpp" // IWYU pragma: keep
@@ -99,6 +100,10 @@ std::shared_ptr<const Table> Validate::_on_execute(std::shared_ptr<TransactionCo
 {
     DebugAssert(transaction_context, "Validate requires a valid TransactionContext.");
     DebugAssert(transaction_context->phase() == TransactionPhase::Active, "Transaction is not active anymore.");
+
+    // Fetch the runtime exec resource ONCE so a Greedy strategy keeps a consistent pool for
+    // the entire operator. Used by _validate_chunks for the per-chunk pos lists + output segments.
+    _runtime_mr = MemManager::get().pick_runtime_exec_resource();
 
     const auto input_table = left_input_table();
     const auto chunk_count = input_table->chunk_count();
@@ -189,7 +194,7 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
         const auto expected_number_of_valid_rows = chunk_in->size() - chunk_in->invalid_row_count();
 
         auto output_segments = Segments{};
-        std::shared_ptr<const AbstractPosList> pos_list_out = std::make_shared<const RowIDPosList>();
+        std::shared_ptr<const AbstractPosList> pos_list_out = RowIDPosList::make_on(_runtime_mr);
 
         const auto ref_segment_in = std::dynamic_pointer_cast<const ReferenceSegment>(chunk_in->get_segment(ColumnID{0}));
 
@@ -233,7 +238,7 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
                 }
                 else
                 {
-                    auto temp_pos_list = RowIDPosList{};
+                    auto temp_pos_list = RowIDPosList{typename RowIDPosList::allocator_type{_runtime_mr}};
                     temp_pos_list.guarantee_single_chunk();
                     for (const auto row_id : *pos_list_in)
                     {
@@ -242,7 +247,7 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
                             temp_pos_list.emplace_back(row_id);
                         }
                     }
-                    pos_list_out = std::make_shared<const RowIDPosList>(std::move(temp_pos_list));
+                    pos_list_out = RowIDPosList::make_on(_runtime_mr, std::move(temp_pos_list));
                 }
             }
             else
@@ -251,7 +256,7 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
                 // build a list of entirely visible chunks. Rows with chunk ids from that list do not need to be tested
                 // individually. For chunk ids that are NOT in the list of entirely visible chunks, we need to actually look at
                 // their MVCC information.
-                auto temp_pos_list = RowIDPosList{};
+                auto temp_pos_list = RowIDPosList{typename RowIDPosList::allocator_type{_runtime_mr}};
                 temp_pos_list.reserve(expected_number_of_valid_rows);
 
                 if (entirely_visible_chunks.empty())
@@ -285,7 +290,7 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
                         temp_pos_list.emplace_back(row_id);
                     }
                 }
-                pos_list_out = std::make_shared<const RowIDPosList>(std::move(temp_pos_list));
+                pos_list_out = RowIDPosList::make_on(_runtime_mr, std::move(temp_pos_list));
             }
 
             // Construct the actual ReferenceSegment objects and add them to the chunk.
@@ -294,7 +299,8 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
                 const auto reference_segment =
                     std::static_pointer_cast<const ReferenceSegment>(chunk_in->get_segment(column_id));
                 const auto referenced_column_id = reference_segment->referenced_column_id();
-                auto ref_segment_out = std::make_shared<ReferenceSegment>(referenced_table, referenced_column_id, pos_list_out);
+                auto ref_segment_out =
+                    ReferenceSegment::make_on(_runtime_mr, referenced_table, referenced_column_id, pos_list_out);
                 output_segments.push_back(ref_segment_out);
             }
 
@@ -314,7 +320,7 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
             else
             {
                 const auto mvcc_data = chunk_in->mvcc_data();
-                auto temp_pos_list = RowIDPosList{};
+                auto temp_pos_list = RowIDPosList{typename RowIDPosList::allocator_type{_runtime_mr}};
                 temp_pos_list.reserve(expected_number_of_valid_rows);
                 temp_pos_list.guarantee_single_chunk();
                 // Generate pos_list_out.
@@ -326,13 +332,14 @@ void Validate::_validate_chunks(const std::shared_ptr<const Table> &input_table,
                         temp_pos_list.emplace_back(chunk_id, chunk_offset);
                     }
                 }
-                pos_list_out = std::make_shared<const RowIDPosList>(std::move(temp_pos_list));
+                pos_list_out = RowIDPosList::make_on(_runtime_mr, std::move(temp_pos_list));
             }
 
             // Create actual ReferenceSegment objects.
             for (auto column_id = ColumnID{0}; column_id < column_count; ++column_id)
             {
-                auto ref_segment_out = std::make_shared<ReferenceSegment>(referenced_table, column_id, pos_list_out);
+                auto ref_segment_out =
+                    ReferenceSegment::make_on(_runtime_mr, referenced_table, column_id, pos_list_out);
                 output_segments.push_back(ref_segment_out);
             }
         }
