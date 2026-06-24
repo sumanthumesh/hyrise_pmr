@@ -23,13 +23,12 @@ std::string ExpressionEvaluatorTableScanImpl::description() const
 
 std::shared_ptr<RowIDPosList> ExpressionEvaluatorTableScanImpl::scan_chunk(ChunkID chunk_id)
 {
-    // The evaluator returns a RowIDPosList allocated on whatever resource ExpressionEvaluator
-    // uses internally (likely the default heap). The move-with-allocator ctor (RowIDPosList(Vector&&, alloc))
-    // copies the elements into the new pool when allocators differ, so the resulting buffer
-    // ends up on the runtime exec resource.
+    // Pass runtime_mr into the evaluator so its returned RowIDPosList is built directly
+    // on the runtime exec resource — no copy needed. The outer make_on then wraps the
+    // shared_ptr control block on the same pool.
+    auto *runtime_mr = MemManager::get().pick_runtime_exec_resource();
     return RowIDPosList::make_on(
-        MemManager::get().pick_runtime_exec_resource(),
-        ExpressionEvaluator{_in_table, chunk_id}.evaluate_expression_to_pos_list(*_expression));
+        runtime_mr, ExpressionEvaluator{_in_table, chunk_id, runtime_mr}.evaluate_expression_to_pos_list(*_expression));
 }
 
 } // namespace hyrise
