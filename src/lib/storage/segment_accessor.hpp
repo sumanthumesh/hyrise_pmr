@@ -47,6 +47,22 @@ std::unique_ptr<AbstractSegmentAccessor<T>> create_segment_accessor(
  *
  * Accessors are not guaranteed to be thread-safe. For multiple threads that access the same segment, create one
  * accessor each.
+ *
+ * PMR / memory-tracking note (T == pmr_string):
+ *   access() returns std::optional<T> BY VALUE, which copy-constructs a fresh pmr_string. The copy uses
+ *   polymorphic_allocator::select_on_container_copy_construction(), which returns a default-constructed
+ *   allocator — i.e., std::pmr::get_default_resource(). Under a non-Heap MemManager strategy this is
+ *   whatever the strategy set as the process default (e.g., pool 2 under Local), NOT the runtime-exec
+ *   pool captured by callers like MultiPredicateJoinEvaluator's FieldComparator.
+ *
+ *   For string-typed secondary-predicate joins (e.g., TPC-H Q13's `o_comment NOT LIKE ...`), every probe
+ *   row triggers two such copies. The cumulative total_allocated_bytes shows up on the strategy's
+ *   default-resource pool and inflates the per-operator delta JSON for that JoinHash even though
+ *   steady-state residency is just two transient strings per compare() call.
+ *
+ *   This is a tracking artifact of the by-value accessor API, not a true leak. Fixing it cleanly would
+ *   require a get_value_ref()-style API that returns `const T&` (or string_view) for string types
+ *   without copying, plus a parallel nullability check. Deliberately deferred.
  */
 template <typename T, typename SegmentType>
 class SegmentAccessor final : public AbstractSegmentAccessor<T>
