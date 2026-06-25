@@ -324,7 +324,9 @@ std::vector<std::shared_ptr<Chunk>> write_output_chunks(
         // result in const shared_ptrs and write_output_segments expects non-const).
         auto write_output_segments_task = [&, chunk_input_position](auto left_side_pos_list, auto right_side_pos_list)
         {
-            auto output_segments = Segments{};
+            // `Segments` is a pmr_vector<shared_ptr<AbstractSegment>>; route it through runtime_mr
+            // so its (geometrically-growing) backing storage doesn't land on the process-default heap.
+            auto output_segments = Segments{PolymorphicAllocator<std::shared_ptr<AbstractSegment>>{runtime_mr}};
 
             // Swap back the inputs, so that the order of the output columns is not changed.
             switch (output_column_order)
