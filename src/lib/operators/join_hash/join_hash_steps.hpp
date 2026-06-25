@@ -269,23 +269,27 @@ class PosHashTable
     }
 
   private:
+    JoinHashBuildMode _mode{};
+    // PMR resource used for "footprint-tracked" structures owned by this hash table
+    // (the outer _small_pos_lists vector, the OffsetHashTable bucket array, and the
+    // post-finalize UnifiedPosList). Fetched once at construction so a Greedy strategy
+    // picks the same pool consistently for this whole hash table's lifetime.
+    // Declared BEFORE _monotonic_buffer so the NSDMI below can reference it (NSDMI
+    // runs in member declaration order).
+    std::pmr::memory_resource *_runtime_resource{nullptr};
+
     // During the build phase, the small_vectors cause many small allocations. Instead of going to malloc every time,
     // we create our own pool, which is discarded once finalize() is called. The pool is unsynchronized (i.e., non-thread-
     // safe) by design. This way, we can quickly perform a high number of allocations without having to synchronize with
     // other threads for each allocation. Instead, we synchronize only when we refill the underlying
     // monotonic_buffer_resource. This works because each PosHashTable is used by exactly one thread.
+    // Upstream is `_runtime_resource` so the buffer's chunk-refill allocations land on the runtime exec
+    // pool (tracked / NUMA-routed) instead of the process-default heap.
     std::unique_ptr<std::pmr::monotonic_buffer_resource> _monotonic_buffer =
-        std::make_unique<std::pmr::monotonic_buffer_resource>();
+        std::make_unique<std::pmr::monotonic_buffer_resource>(_runtime_resource);
     std::unique_ptr<std::pmr::unsynchronized_pool_resource> _memory_pool =
         std::make_unique<std::pmr::unsynchronized_pool_resource>(_monotonic_buffer.get());
 
-    JoinHashBuildMode _mode{};
-    // PMR resource used for "footprint-tracked" structures owned by this hash table
-    // (the outer _small_pos_lists vector, the OffsetHashTable bucket array, and the
-    // post-finalize UnifiedPosList). Fetched once at construction so a Greedy strategy
-    // picks the same pool consistently for this whole hash table's lifetime. The inner
-    // SmallPosLists still use _memory_pool for fast unsynchronized allocs during build.
-    std::pmr::memory_resource *_runtime_resource{nullptr};
     OffsetHashTable _offset_hash_table;
     pmr_vector<SmallPosList> _small_pos_lists;
 

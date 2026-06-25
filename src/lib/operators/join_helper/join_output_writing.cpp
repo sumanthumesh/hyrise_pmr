@@ -99,7 +99,8 @@ PosListsByColumn setup_pos_list_mapping(const std::shared_ptr<const Table> &inpu
  * @param pos_list contains the positions of rows to use from the input table
  */
 void write_output_segments(Segments &output_segments, const std::shared_ptr<const Table> &input_table,
-                           const PosListsByColumn &input_pos_lists_by_column, std::shared_ptr<RowIDPosList> &pos_list)
+                           const PosListsByColumn &input_pos_lists_by_column, std::shared_ptr<RowIDPosList> &pos_list,
+                           std::pmr::memory_resource *runtime_mr)
 {
     auto output_pos_list_cache = std::unordered_map<std::shared_ptr<PosLists>, std::shared_ptr<RowIDPosList>>{};
 
@@ -125,7 +126,7 @@ void write_output_segments(Segments &output_segments, const std::shared_ptr<cons
                 {
                     dummy_table = Table::create_dummy_table(input_table->column_definitions());
                 }
-                output_segments.push_back(std::make_shared<ReferenceSegment>(dummy_table, column_id, pos_list));
+                output_segments.push_back(ReferenceSegment::make_on(runtime_mr, dummy_table, column_id, pos_list));
                 continue;
             }
 
@@ -137,7 +138,7 @@ void write_output_segments(Segments &output_segments, const std::shared_ptr<cons
             if (iter == output_pos_list_cache.end())
             {
                 // Get the row ids that are referenced.
-                auto new_pos_list = std::make_shared<RowIDPosList>();
+                auto new_pos_list = RowIDPosList::make_on(runtime_mr);
                 new_pos_list->reserve(pos_list->size());
 
                 auto common_chunk_id = std::optional<ChunkID>{};
@@ -178,8 +179,9 @@ void write_output_segments(Segments &output_segments, const std::shared_ptr<cons
 
             auto reference_segment =
                 std::static_pointer_cast<const ReferenceSegment>(input_table->get_chunk(ChunkID{0})->get_segment(column_id));
-            output_segments.push_back(std::make_shared<ReferenceSegment>(
-                reference_segment->referenced_table(), reference_segment->referenced_column_id(), iter->second));
+            output_segments.push_back(ReferenceSegment::make_on(
+                runtime_mr, reference_segment->referenced_table(), reference_segment->referenced_column_id(),
+                iter->second));
 
             continue;
         }
@@ -219,7 +221,7 @@ void write_output_segments(Segments &output_segments, const std::shared_ptr<cons
             pos_list->guarantee_single_chunk();
         }
 
-        output_segments.push_back(std::make_shared<ReferenceSegment>(input_table, column_id, pos_list));
+        output_segments.push_back(ReferenceSegment::make_on(runtime_mr, input_table, column_id, pos_list));
     }
 }
 } // namespace
@@ -231,7 +233,7 @@ std::vector<std::shared_ptr<Chunk>> write_output_chunks(
     pmr_vector<RowIDPosList> &pos_lists_left, pmr_vector<RowIDPosList> &pos_lists_right,
     const std::shared_ptr<const Table> &left_input_table, const std::shared_ptr<const Table> &right_input_table,
     bool create_left_side_pos_lists_by_column, bool create_right_side_pos_lists_by_column,
-    OutputColumnOrder output_column_order, bool allow_partition_merge)
+    OutputColumnOrder output_column_order, bool allow_partition_merge, std::pmr::memory_resource *runtime_mr)
 {
     /**
      * Two caches to avoid redundant reference materialization for Reference input tables. As there might be hundreds of
@@ -277,8 +279,8 @@ std::vector<std::shared_ptr<Chunk>> write_output_chunks(
     {
         // Moving the values into a shared PosList saves us some work in write_output_segments. We know that
         // left_side_pos_list and right_side_pos_list will not be used again.
-        auto left_side_pos_list = std::make_shared<RowIDPosList>(std::move(pos_lists_left[partition_id]));
-        auto right_side_pos_list = std::make_shared<RowIDPosList>(std::move(pos_lists_right[partition_id]));
+        auto left_side_pos_list = RowIDPosList::make_on(runtime_mr, std::move(pos_lists_left[partition_id]));
+        auto right_side_pos_list = RowIDPosList::make_on(runtime_mr, std::move(pos_lists_right[partition_id]));
 
         if (left_side_pos_list->empty() && right_side_pos_list->empty())
         {
@@ -328,20 +330,22 @@ std::vector<std::shared_ptr<Chunk>> write_output_chunks(
             switch (output_column_order)
             {
             case OutputColumnOrder::LeftFirstRightSecond:
-                write_output_segments(output_segments, left_input_table, left_side_pos_lists_by_column, left_side_pos_list);
+                write_output_segments(output_segments, left_input_table, left_side_pos_lists_by_column, left_side_pos_list,
+                                      runtime_mr);
                 write_output_segments(output_segments, right_input_table, right_side_pos_lists_by_column,
-                                      right_side_pos_list);
+                                      right_side_pos_list, runtime_mr);
                 break;
 
             case OutputColumnOrder::RightFirstLeftSecond:
                 write_output_segments(output_segments, right_input_table, right_side_pos_lists_by_column,
-                                      right_side_pos_list);
-                write_output_segments(output_segments, left_input_table, left_side_pos_lists_by_column, left_side_pos_list);
+                                      right_side_pos_list, runtime_mr);
+                write_output_segments(output_segments, left_input_table, left_side_pos_lists_by_column, left_side_pos_list,
+                                      runtime_mr);
                 break;
 
             case OutputColumnOrder::RightOnly:
                 write_output_segments(output_segments, right_input_table, right_side_pos_lists_by_column,
-                                      right_side_pos_list);
+                                      right_side_pos_list, runtime_mr);
                 break;
             }
 

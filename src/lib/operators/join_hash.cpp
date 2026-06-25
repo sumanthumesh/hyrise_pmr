@@ -638,7 +638,7 @@ class JoinHash::JoinHashImpl : public AbstractReadOnlyOperatorImpl
         auto output_chunks =
             write_output_chunks(build_side_pos_lists, probe_side_pos_lists, _build_input_table, _probe_input_table,
                                 create_left_side_pos_lists_by_segment, create_right_side_pos_lists_by_segment,
-                                _output_column_order, ALLOW_PARTITION_MERGE);
+                                _output_column_order, ALLOW_PARTITION_MERGE, runtime_mr);
 
         _performance_data.set_step_runtime(OperatorSteps::OutputWriting, timer_output_writing.lap());
 
