@@ -927,7 +927,9 @@ KeysPerChunk<AggregateKey> AggregateHash::_partition_by_groupby_keys()
             // This time, we have no idea how much space we need, so we take some memory and then rely on the automatic
             // resizing. The size is quite random, but since single memory allocations do not cost too much, we rather
             // allocate a bit too much.
-            auto temp_buffer = std::pmr::monotonic_buffer_resource(1'000'000);
+            // Upstream is `_runtime_mr` so the 1 MB initial chunk and any subsequent refills are routed to the
+            // runtime exec pool (tracked / NUMA-routed) instead of the process-default heap.
+            auto temp_buffer = std::pmr::monotonic_buffer_resource(1'000'000, _runtime_mr);
             auto allocator = PolymorphicAllocator<std::pair<const ColumnDataType, AggregateKeyEntry>>{&temp_buffer};
 
             auto id_map = boost::unordered_flat_map<ColumnDataType, AggregateKeyEntry, std::hash<ColumnDataType>,
