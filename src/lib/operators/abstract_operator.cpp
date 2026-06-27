@@ -248,7 +248,7 @@ void AbstractOperator::execute()
             const auto delta = static_cast<int64_t>(status_after.total_allocated_bytes) -
                                static_cast<int64_t>(before_value);
             performance_data->per_resource_allocation_delta[status_after.resource_id] =
-                {status_after.numa_node, delta};
+                {status_after.numa_node, delta, status_after.allocated_bytes};
         }
     }
 

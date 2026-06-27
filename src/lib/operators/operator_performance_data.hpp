@@ -36,11 +36,12 @@ struct AbstractOperatorPerformanceData : public Noncopyable
 
     // Populated only when AbstractOperator::track_per_operator_memory is on. Keyed by
     // MemResourceStatus::resource_id. Holds the delta of total_allocated_bytes over this
-    // operator's _on_execute() call.
+    // operator's _on_execute() call, and the currently allocated_bytes when the operator finishes.
     struct ResourceDelta
     {
         int numa_node{-1};
         int64_t total_allocated_bytes_delta{0};
+        size_t allocated_bytes{0};
     };
     std::unordered_map<size_t, ResourceDelta> per_resource_allocation_delta;
 };

@@ -405,6 +405,7 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
             {"numa_node", status_after.numa_node},
             {"total_allocated_bytes_delta", static_cast<int64_t>(status_after.total_allocated_bytes) -
                                                 static_cast<int64_t>(before_value)},
+            {"allocated_bytes", status_after.allocated_bytes},
         });
     }
 
@@ -431,6 +432,7 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
                     {"resource_id", resource_id},
                     {"numa_node", delta.numa_node},
                     {"total_allocated_bytes_delta", delta.total_allocated_bytes_delta},
+                    {"allocated_bytes", delta.allocated_bytes},
                 });
             }
             operator_memory_deltas.push_back({
