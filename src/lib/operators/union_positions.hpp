@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <memory_resource>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -127,5 +128,7 @@ class UnionPositions : public AbstractReadOnlyOperator
 
     // For each column_idx in the input tables, specifies the referenced column in the referenced table.
     std::vector<ColumnID> _referenced_column_ids;
+
+    std::pmr::memory_resource *_runtime_mr{nullptr};
 };
 } // namespace hyrise

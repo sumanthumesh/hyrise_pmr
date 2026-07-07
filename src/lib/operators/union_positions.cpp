@@ -13,6 +13,7 @@
 
 #include "all_type_variant.hpp"
 #include "hyrise.hpp"
+#include "memory/mem_manager.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/abstract_read_only_operator.hpp"
 #include "scheduler/abstract_task.hpp"
@@ -102,6 +103,8 @@ const std::string &UnionPositions::name() const
 
 std::shared_ptr<const Table> UnionPositions::_on_execute()
 {
+    _runtime_mr = MemManager::get().pick_runtime_exec_resource();
+
     auto early_result = _prepare_operator();
     if (early_result)
     {
@@ -170,7 +173,7 @@ std::shared_ptr<const Table> UnionPositions::_on_execute()
 
     auto pos_lists = std::vector<std::shared_ptr<RowIDPosList>>(reference_matrix_left.size());
     std::ranges::generate(pos_lists, [&]
-                          { return std::make_shared<RowIDPosList>(); });
+                          { return RowIDPosList::make_on(_runtime_mr); });
 
     const auto pos_list_count = pos_lists.size();
 
@@ -186,7 +189,7 @@ std::shared_ptr<const Table> UnionPositions::_on_execute()
     // Turn `pos_lists` into a new chunk and append it to the table.
     const auto emit_chunk = [&]()
     {
-        auto output_segments = Segments{};
+        auto output_segments = Segments{PolymorphicAllocator<std::shared_ptr<AbstractSegment>>{_runtime_mr}};
 
         const auto left_in_table_column_count = left_in_table.column_count();
         for (auto pos_lists_idx = size_t{0}; pos_lists_idx < pos_list_count; ++pos_lists_idx)
@@ -198,8 +201,9 @@ std::shared_ptr<const Table> UnionPositions::_on_execute()
             for (auto column_id = cluster_column_id_begin;
                  column_id < static_cast<ColumnID::base_type>(cluster_column_id_end); ++column_id)
             {
-                auto ref_segment = std::make_shared<ReferenceSegment>(
-                    _referenced_tables[pos_lists_idx], _referenced_column_ids[column_id], pos_lists[pos_lists_idx]);
+                auto ref_segment = ReferenceSegment::make_on(
+                    _runtime_mr, _referenced_tables[pos_lists_idx], _referenced_column_ids[column_id],
+                    pos_lists[pos_lists_idx]);
                 output_segments.push_back(ref_segment);
             }
         }
@@ -261,7 +265,7 @@ std::shared_ptr<const Table> UnionPositions::_on_execute()
 
             chunk_row_idx = 0;
             std::ranges::generate(pos_lists, [&]
-                                  { return std::make_shared<RowIDPosList>(); });
+                                  { return RowIDPosList::make_on(_runtime_mr); });
         }
     }
 
