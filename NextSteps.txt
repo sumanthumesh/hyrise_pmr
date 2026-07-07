@@ -78,21 +78,25 @@ Follow-ups to the Projection / ExpressionEvaluator conversion
 
 A. Route ExpressionEvaluator's resource into the OTHER callers
    Currently only Projection passes a real mr; everyone else defaults to heap.
-   Two-line fix at each call site. After this, every operator's complex-expression
-   work lands on the runtime exec pool too.
+   Two-line fix at each call site.
 
    File: src/lib/operators/table_scan/expression_evaluator_table_scan_impl.cpp
-     - Site: ExpressionEvaluator{_in_table, chunk_id} (around line 32).
-     - Fetch MemManager::get().pick_runtime_exec_resource() once (e.g., as a
-       member set in _on_execute) and pass to the evaluator constructor.
-     - Benefit: the per-chunk RowIDPosList returned by
-       evaluate_expression_to_pos_list for complex predicates is tracked.
+     - DONE. runtime_mr is captured in _on_execute and passed to the
+       ExpressionEvaluator constructor.
 
-   File: src/lib/operators/join_hash.cpp (and friends) — secondary-predicate path
-     - Find the ExpressionEvaluator{...} construction used by JoinHash's
-       secondary predicate evaluation.
-     - Pass runtime_mr (already captured in JoinHash::_on_execute) to the
-       constructor.
+   JoinHash secondary-predicate path — NOT APPLICABLE.
+     - There is no ExpressionEvaluator constructed inside join_hash.cpp,
+       join_hash_steps.hpp, or multi_predicate_join/. Secondary join predicates
+       are evaluated by MultiPredicateJoinEvaluator::FieldComparator::compare()
+       (multi_predicate_join_evaluator.hpp), which calls
+       SegmentAccessor::access() directly. No ExpressionEvaluator is involved
+       in this path, so there is nothing here to route runtime_mr through.
+     - Observed pool-2 inflation on JoinHash deltas under string secondary
+       predicates (e.g., TPC-H Q13 `o_comment NOT LIKE`) is the pmr_string
+       copy-by-value artifact through SegmentAccessor::access(), documented
+       in src/lib/storage/segment_accessor.hpp (the doc-block above
+       `class SegmentAccessor`). Fixing it requires a get_value_ref()-style
+       API and was deliberately deferred.
 
    Leave alone:
      - operators/limit.cpp                                 (single scalar)
@@ -141,3 +145,351 @@ Verification pattern after each conversion
      on the runtime pool but >0 on heap (resource_id 0) is unconverted.
 6. Switch strategy to Remote, rerun, confirm pool 3 takes the allocations.
 7. Switch to Greedy, rerun, confirm hard-stop behavior on capacity exhaustion.
+
+
+=====================================================
+Audit 2026-06-27 — Untracked / Non-PMR runtime allocations
+=====================================================
+
+Workload-relevant operators only:
+  AggregateHash, Alias, GetTable, JoinHash, Projection, Sort,
+  TableScan, UnionAll, UnionPositions, Validate.
+
+Operators NOT in this workload (skip — kept below for reference only,
+but no action will be taken on them):
+  JoinSortMerge, JoinNestedLoop, JoinIndex, IndexScan,
+  Difference (SQL EXCEPT), Product, AggregateSort, Limit.
+
+
+HIGH PRIORITY — IN-WORKLOAD, still untracked
+--------------------------------------------
+
+UnionPositions (entire operator unconverted)
+  File: [src/lib/operators/union_positions.cpp](src/lib/operators/union_positions.cpp)
+  - L171: `std::vector<std::shared_ptr<RowIDPosList>>(reference_matrix_left.size())` — non-PMR holder.
+  - L173 & L264: `std::make_shared<RowIDPosList>()` — one per cluster per emitted chunk; holds the merged-union output. HIGH (entire output).
+  - L189: `Segments{}` per output chunk — default allocator.
+  - L201-203: `std::make_shared<ReferenceSegment>(...)` per output column * output chunk.
+  Fix: capture runtime_mr from operator base; use make_on / pmr_vector / Segments(PolymorphicAllocator{...}).
+
+
+MEDIUM PRIORITY — IN-WORKLOAD residuals inside already-converted operators
+-------------------------------------------------------------------------
+
+Sort (residual sites)
+  File: [src/lib/operators/sort.cpp](src/lib/operators/sort.cpp)
+  Note: `_runtime_mr` already used for payload pmr_vectors.
+  - L63: `std::vector<Segments>(output_chunk_count)` — output Segments per chunk, default allocator.
+  - L93, L560: `std::vector<std::unique_ptr<AbstractSegmentAccessor<...>>>` per input chunk * sort column.
+  - L188: `std::vector<Segments>(output_chunk_count, Segments(column_count))` — same.
+  - L215: `std::vector<std::shared_ptr<AbstractSegment>>(input_chunk_count)` per column.
+  Fix: pmr versions + `Segments(PolymorphicAllocator{runtime_mr})`.
+
+Projection (residual sites)
+  File: [src/lib/operators/projection.cpp](src/lib/operators/projection.cpp)
+  - L122: `std::vector<Segments>(chunk_count)` — output_segments_by_chunk holder.
+  - L142: `Segments{expression_count}` per chunk — default-alloc, per-chunk.
+  - L269: `Segments{}` per chunk (projection_result_segments).
+
+AggregateHash (residual sites)
+  File: [src/lib/operators/aggregate_hash.cpp](src/lib/operators/aggregate_hash.cpp)
+  - L1467, L1478, L1504: `std::vector<TableColumnDefinition>`, `Segments{}`, `Segments(num_output_columns)` per output chunk.
+
+JoinHash helper (residual sites)
+  File: [src/lib/operators/join_helper/join_output_writing.cpp](src/lib/operators/join_helper/join_output_writing.cpp)
+  - L59: `std::unordered_map<PosLists, std::shared_ptr<PosLists>, PosListsHasher>` — non-PMR cache (size = #input pos-list patterns).
+  - L105: `std::unordered_map<std::shared_ptr<PosLists>, std::shared_ptr<RowIDPosList>>` per partition write call.
+  Fix: pmr unordered_map via Boost or std::pmr with runtime_mr.
+
+ExpressionEvaluator (residual; only matters if correlated subqueries appear in workload)
+  File: [src/lib/expression/evaluation/expression_evaluator.cpp](src/lib/expression/evaluation/expression_evaluator.cpp)
+  - L1110, L1138: `std::vector<std::shared_ptr<const Table>> results(_output_row_count);` for correlated subqueries.
+  - L1155: `std::unordered_map<ParameterID, AllTypeVariant>` per subquery row.
+
+
+LOW PRIORITY — IN-WORKLOAD
+--------------------------
+
+Validate (residual sites)
+  File: [src/lib/operators/validate.cpp](src/lib/operators/validate.cpp)
+  - L113, L114: `std::vector<std::shared_ptr<AbstractTask>>`, `std::vector<std::shared_ptr<Chunk>>`.
+  - L186: `std::vector<bool> entirely_visible_chunks;` resized to referenced_table->chunk_count().
+  - L196: `Segments{}` per chunk default-alloc.
+
+UnionAll (mostly forwards existing segments)
+  File: [src/lib/operators/union_all.cpp](src/lib/operators/union_all.cpp)
+  - L37: `std::vector<std::shared_ptr<Chunk>>{left_chunk_count + right_chunk_count}` — pointer holder.
+  - L60: `std::make_shared<Chunk>(output_segments)` per chunk.
+
+GetTable
+  File: [src/lib/operators/get_table.cpp](src/lib/operators/get_table.cpp)
+  - L260: `std::vector<std::shared_ptr<Chunk>>(...)` per output chunk.
+  - L288: `Segments{column_count - _pruned_column_ids.size()}` per chunk.
+  - L325: `std::make_shared<Chunk>(...)` per chunk.
+  Note: segments are forwarded, so only pointer holders are fresh. Genuinely LOW.
+
+Alias
+  File: [src/lib/operators/alias_operator.cpp](src/lib/operators/alias_operator.cpp)
+  - L80: `std::vector<std::shared_ptr<Chunk>>(input_table.chunk_count())`.
+  - L88: `Segments{}` per chunk — only the shared_ptr-holding vector is fresh.
+  - L96: `std::make_shared<Chunk>(...)` per chunk.
+
+
+SUGGESTED CONVERSION ORDER (in-workload only, highest payoff first)
+-------------------------------------------------------------------
+1. UnionPositions — only HIGH unconverted operator in the workload.
+2. join_output_writing.cpp shared_pos_lists caches (L59, L105) — non-PMR hash maps in JoinHash output path.
+3. Sort + Projection + AggregateHash Segments holders — wrap per-chunk Segments with `PolymorphicAllocator{_runtime_mr}`.
+4. ExpressionEvaluator correlated-subquery results vector (only if workload has correlated subqueries).
+5. UnionAll / GetTable / Alias / Validate residuals — quick wraps, very low impact.
+
+
+===== Reference only: out-of-workload findings =====
+(Originally audited but not applicable to current workload — kept below
+in case the workload expands later. Do not act on these.)
+
+JoinSortMerge (entire operator unconverted)
+  File: [src/lib/operators/join_sort_merge.cpp](src/lib/operators/join_sort_merge.cpp)
+  - L147-148: `MaterializedSegmentList<T> _sorted_left_table; _sorted_right_table;`
+    -> aliases `std::vector<std::vector<MaterializedValue<T>>>` (column_materializer.hpp:38,41)
+    -> non-PMR, scales with LEFT+RIGHT row_count * sizeof(value+RowID).
+    Category: non-PMR container.   Impact: HIGH (whole-table materialization).
+    Fix: parameterize MaterializedSegment/SegmentList with PolymorphicAllocator, thread `_runtime_mr` through ColumnMaterializer + RadixClusterSort.
+  - L151-152: `RowIDPosList _null_rows_left; _null_rows_right;` (default-constructed -> default allocator).
+    Scales with NULLs in join columns. Impact: HIGH for nullable inputs.
+    Fix: construct with `RowIDPosList{allocator_type{_runtime_mr}}`.
+  - L170-171: `pmr_vector<RowIDPosList> _output_pos_lists_left/right;` default-allocator (comment at L166 acknowledges this).
+    Inner vector is sized to `_cluster_count`; each `RowIDPosList` then grows. The OUTER pmr_vector and ALL inner RowIDPosLists default-allocate.
+    Impact: HIGH (these hold every output RowID pair).
+    Fix: construct with `PolymorphicAllocator{_runtime_mr}`; emplace each inner with same allocator at L953-954.
+  - L190-191: `std::vector<RowHashSet> _left_row_ids_emitted_per_chunk; _right_row_ids_emitted_per_chunk;`
+    `RowHashSet = boost::unordered_flat_set<RowID, RowHasher>` — non-PMR.
+    Used only for outer non-equi; still scales with output row count when triggered. Impact: HIGH for those modes, otherwise unused.
+    Fix: switch to a PMR-aware boost flat_set or std::pmr::unordered_set, build with `_runtime_mr`.
+  - L945: `auto jobs = std::vector<std::shared_ptr<AbstractTask>>{};`  — LOW per query (small).
+  - L1042-1043: `RowIDPosList null_output_left/right` default-allocator (outer-join null tail). Impact: MEDIUM.
+
+  File: [src/lib/operators/join_sort_merge/column_materializer.hpp](src/lib/operators/join_sort_merge/column_materializer.hpp)
+  - L38,41: `MaterializedSegment<T> = std::vector<MaterializedValue<T>>`, `MaterializedSegmentList<T> = std::vector<MaterializedSegment<T>>`.
+    Untracked. Impact: HIGH (whole-table materialization, both join sides).
+  - L52: `Subsample::std::vector<T> samples;` — small (~10 per chunk). LOW.
+  - L65-66: returns `(MaterializedSegmentList<T>, RowIDPosList, std::vector<T>)` — all non-PMR.
+  - L71,73,74,77: `MaterializedSegmentList<T>(chunk_count)`, `std::vector<RowIDPosList>(chunk_count)`, `std::vector<Subsample<T>>{}`, `jobs`. The null_rows_per_chunk in particular = chunk_count separate default-allocator RowIDPosLists. Impact: HIGH.
+  - L110: `auto null_rows = RowIDPosList{}` then reserve(null_row_count) — default-allocator, sized to all-NULLs.
+  - L119,124,146: gathered_samples / collected_samples — LOW.
+  - L165: `MaterializedSegment<T> output;` per segment — non-PMR, the actual per-chunk materialized data. Impact: HIGH.
+  Fix: add `std::pmr::memory_resource* _mr` to ColumnMaterializer ctor, propagate to all vectors above (most are easy — switch to pmr_vector or hyrise vector w/ allocator).
+
+  File: [src/lib/operators/join_sort_merge/radix_cluster_sort.hpp](src/lib/operators/join_sort_merge/radix_cluster_sort.hpp)
+  - L104,109,120,121: ChunkInformation/TableInformation histograms — sized cluster_count × chunk_count. MEDIUM.
+  - L153: `MaterializedSegmentList<T>(1)` — concatenation buffer holding full table. HIGH.
+  - L176: `MaterializedSegmentList<T>(_cluster_count)` then each cluster reserved to histogram. HIGH (this IS the clustered output).
+  - L182,228,337: scheduler `jobs` vectors. LOW.
+  - L224: `output_table[cluster_id] = MaterializedSegment<T>(cluster_size);` — per-cluster default-alloc, holds clustered data. HIGH.
+  - L276,287,305: split-value vectors (small). LOW.
+  Fix: same — propagate `_runtime_mr` through RadixClusterSort, make MaterializedSegmentList PMR.
+
+JoinNestedLoop
+  File: [src/lib/operators/join_nested_loop.cpp](src/lib/operators/join_nested_loop.cpp)
+  - L162-163: `pos_list_left = std::make_shared<RowIDPosList>()`, `pos_list_right = std::make_shared<RowIDPosList>()` — primary output PosLists.
+    Category: shared_ptr w/o make_on (control block + payload on default heap).
+    Impact: HIGH (entire join output).
+    Fix: `RowIDPosList::make_on(_runtime_mr)`.
+  - L171,173: `std::vector<std::vector<bool>>(left_table->chunk_count())` and same right — outer-join match bitmaps. Inner bools grow to chunk size.
+    Impact: HIGH for outer joins (bit per input row).
+    Fix: pmr_vector + custom inner.
+  - L195: `auto left_matches = std::vector<bool>{};` per left-chunk inner-loop — MEDIUM.
+  - L300: `auto chunks = std::vector<std::shared_ptr<Chunk>>{};` — per output chunk pointer holder. LOW.
+  - L304: `std::make_shared<Chunk>(std::move(segments))` — control block on heap. LOW per chunk count.
+  - L402: `auto new_pos_list = std::make_shared<RowIDPosList>();` (reference indirection fixup). MEDIUM (one per column).
+  - L422,432,437: `std::make_shared<ReferenceSegment>(...)` — output reference segments, count = chunks * columns. MEDIUM.
+  Needs full conversion analogous to JoinHash (capture `_runtime_mr` in ctor, route through make_on / pmr_vector).
+
+JoinIndex
+  File: [src/lib/operators/join_index.cpp](src/lib/operators/join_index.cpp)
+  - L169-170: `_probe_pos_list = std::make_shared<RowIDPosList>()`, `_index_pos_list = std::make_shared<RowIDPosList>()` (member-init in operator).
+    Impact: HIGH (full output PosLists for index join).
+  - L326: `auto chunks = std::vector<std::shared_ptr<Chunk>>{};` LOW.
+  - L329: `std::make_shared<Chunk>(std::move(output_segments))`.
+  - L425-428: `_index_ranges_for_value` returns/builds `std::vector<IndexRange>` — small per call.
+  - L656: `auto new_pos_list = std::make_shared<RowIDPosList>();` per column ref-indirection fixup.
+  - L693,703,708: `std::make_shared<ReferenceSegment>(...)` output ref segments. MEDIUM.
+  Fix: take/capture runtime_mr; convert above to make_on.
+
+IndexScan
+  File: [src/lib/operators/index_scan.cpp](src/lib/operators/index_scan.cpp)
+  - L88: `auto pos_lists = std::vector<std::shared_ptr<RowIDPosList>>{};` non-PMR holder.
+  - L89: `pos_lists.emplace_back(std::make_shared<RowIDPosList>());` — first PosList default-alloc.
+  - L114: per-chunk `std::make_shared<RowIDPosList>()` (one per matched chunk) — Impact: HIGH (these hold all qualifying RowIDs from the index).
+  - L150: `std::make_shared<ReferenceSegment>(...)` — output ref segments per chunk * column. MEDIUM.
+  Fix: capture `_runtime_mr`, swap to RowIDPosList::make_on / ReferenceSegment::make_on; pos_lists -> pmr_vector.
+
+UnionPositions
+  File: [src/lib/operators/union_positions.cpp](src/lib/operators/union_positions.cpp)
+  - L171: `auto pos_lists = std::vector<std::shared_ptr<RowIDPosList>>(reference_matrix_left.size());` non-PMR holder.
+  - L173 & L264: `std::make_shared<RowIDPosList>()` generate calls — one per cluster, per emitted chunk. Each holds the merged-union output.
+    Impact: HIGH (entire output).
+  - L189: `auto output_segments = Segments{};` per output chunk — control of segment shared_ptrs uses default allocator.
+  - L201-203: `std::make_shared<ReferenceSegment>(...)` per output column * output chunk.
+  Fix: capture runtime_mr from operator base; use make_on / pmr_vector / Segments(PolymorphicAllocator{...}).
+
+Difference
+  File: [src/lib/operators/difference.cpp](src/lib/operators/difference.cpp)
+  - L57: `auto right_input_row_set = std::unordered_set<std::string>(right_input_table()->row_count());` — non-PMR hash set sized to RIGHT row_count, with `std::string` keys holding stringified rows. HIGH (memory ~ right_row_count * avg-row-text).
+  - L68: `auto string_row_vector = std::vector<std::stringstream>(chunk->size());` — per-chunk stringstreams (each heap-allocs its own buffer). MEDIUM/HIGH per chunk.
+  - L94: `output_chunks std::vector<std::shared_ptr<Chunk>>{};` LOW.
+  - L107: `auto out_pos_list_map = std::unordered_map<std::shared_ptr<const AbstractPosList>, std::shared_ptr<RowIDPosList>>{};` per output chunk — non-PMR. MEDIUM.
+  - L133: `pos_list_out = std::make_shared<RowIDPosList>();` per (chunk, column) — output PosList. HIGH (this is the result).
+  - L138: `std::make_shared<ReferenceSegment>(...)` output ref segments.
+  - L182: `std::make_shared<Chunk>(output_segments)` per output chunk.
+  Fix: capture runtime_mr; use pmr_string / pmr_unordered_set / RowIDPosList::make_on.
+
+Product
+  File: [src/lib/operators/product.cpp](src/lib/operators/product.cpp)
+  - L90-91: `std::map<std::shared_ptr<const AbstractPosList>, std::shared_ptr<RowIDPosList>>` for each side — non-PMR, scales with #input-PosLists * #output-chunks. MEDIUM.
+  - L131: `pos_list_out = std::make_shared<RowIDPosList>();` — primary output PosList; output is left_rows * right_rows. HIGH.
+  - L148: `std::make_shared<ReferenceSegment>(...)` output ref segments per column * output chunk.
+  Fix: capture runtime_mr; make_on + pmr_map.
+
+UnionAll
+  File: [src/lib/operators/union_all.cpp](src/lib/operators/union_all.cpp)
+  - L37: `std::vector<std::shared_ptr<Chunk>>{left_chunk_count + right_chunk_count}` — chunk pointer holder. LOW.
+  - L60: `std::make_shared<Chunk>(output_segments)` per chunk — segment shared_ptrs reused, control block per chunk. LOW.
+  Note: UnionAll mostly forwards existing segments; allocation footprint is small. LOW priority.
+
+AggregateSort
+  File: [src/lib/operators/aggregate_sort.cpp](src/lib/operators/aggregate_sort.cpp)
+  - L103-104: `pmr_vector<AggregateType>(num_groups)` and `pmr_vector<bool>(num_groups)` — no allocator argument -> default resource.
+    Impact: HIGH (one allocation per aggregate column per groups-count; this IS the aggregate output).
+  - L113: `auto unique_values = std::unordered_set<ColumnType>{};` non-PMR; for COUNT(DISTINCT) holds every distinct value seen per group.
+    Impact: HIGH for COUNT(DISTINCT) on large groups.
+  - L234,239: `std::make_shared<ValueSegment<AggregateType>>(std::move(aggregate_results), ...)` — payload was the pmr_vectors above; control block heap.
+  - L389: `std::make_shared<EntireChunkPosList>(chunk_id, chunk->size())` — per input chunk; small (just 2 fields). LOW.
+  - L390,412: `Segments{}` per input chunk — default-allocator vector. LOW.
+  - L396: `std::make_shared<ReferenceSegment>(input_table, column_id, pos_list)` per chunk*column.
+  - L508: `std::vector<AllTypeVariant> default_values;` LOW.
+  - L687,689: more `std::make_shared<ValueSegment<...>>(std::move(values), ...)`.
+  Fix: capture `_runtime_mr`; pmr_vector with allocator, ValueSegment::make_on, pmr unordered_set.
+
+Sort (additional sites)
+  File: [src/lib/operators/sort.cpp](src/lib/operators/sort.cpp)
+  Note: `_runtime_mr` is already captured and used for the *payload* pmr_vectors. Residuals:
+  - L63: `std::vector<Segments>(output_chunk_count)` — holds output Segments per output chunk; each Segments uses default allocator. MEDIUM.
+  - L93,560: `std::vector<std::unique_ptr<AbstractSegmentAccessor<...>>>` per input chunk * sort column. MEDIUM (accessors heap-allocate themselves).
+  - L188: `std::vector<Segments>(output_chunk_count, Segments(column_count))` — same. MEDIUM.
+  - L215: `std::vector<std::shared_ptr<AbstractSegment>>(input_chunk_count)` per column. LOW-MEDIUM.
+  Fix: pmr versions + `Segments(PolymorphicAllocator{runtime_mr})`.
+
+ExpressionEvaluator (mostly converted; residuals)
+  File: [src/lib/expression/evaluation/expression_evaluator.cpp](src/lib/expression/evaluation/expression_evaluator.cpp)
+  - L136, L473: `std::vector<std::shared_ptr<AbstractExpression>> type_compatible_elements;` — small (size = IN-list length). LOW.
+  - L1110,1138: `std::vector<std::shared_ptr<const Table>> results(_output_row_count);` — for correlated subqueries: one entry per outer row, but each entry is a Table pointer. MEDIUM if correlated subquery runs.
+  - L1155: `std::unordered_map<ParameterID, AllTypeVariant>` per subquery row — small per row but allocations per outer row in correlated subqueries. MEDIUM.
+
+Limit (out of workload)
+  File: [src/lib/operators/limit.cpp](src/lib/operators/limit.cpp)
+  - L81: `std::vector<std::shared_ptr<Chunk>> output_chunks{};` LOW.
+  - L90: `auto output_segments = Segments{};` per output chunk, default allocator. LOW.
+  - L99: `std::make_shared<RowIDPosList>(output_chunk_row_count);` per column per chunk. Bounded by `num_rows` total. MEDIUM.
+  - L122: `std::make_shared<ReferenceSegment>(...)` per column per chunk. MEDIUM.
+  - L126: `std::make_shared<Chunk>(...)`. LOW.
+  Fix: thread runtime_mr; output is capped by LIMIT so impact is low for small limits, but the column-fanout multiplies.
+
+===== Truncated below — original in-workload medium/low items were
+       moved to the workload-relevant sections above. =====
+
+(Original content below preserved for diff reference but superseded.)
+
+Projection (already converted — residual sites)
+  File: [src/lib/operators/projection.cpp](src/lib/operators/projection.cpp)
+  - L122: `std::vector<Segments>(chunk_count)` — output_segments_by_chunk holder. MEDIUM.
+  - L132: `std::vector<std::atomic_bool>(expressions.size())` — small. LOW.
+  - L142: `Segments{expression_count}` per chunk — default-alloc, per-chunk. MEDIUM.
+  - L243-244: `std::vector<std::shared_ptr<Chunk>>(chunk_count)` x2 — pointer holders. LOW.
+  - L248: `std::unordered_map<ColumnID, ColumnID>` — small. LOW.
+  - L269: `Segments{}` per chunk (projection_result_segments). LOW.
+  - L270: `std::make_shared<EntireChunkPosList>(chunk_id, input_chunk->size())` per chunk. LOW (tiny object).
+  - L292,301: `std::make_shared<Chunk>(...)` per output chunk. LOW.
+
+Validate (already converted — residual sites)
+  File: [src/lib/operators/validate.cpp](src/lib/operators/validate.cpp)
+  - L113,114: `std::vector<std::shared_ptr<AbstractTask>>`, `std::vector<std::shared_ptr<Chunk>>`. LOW.
+  - L186: `std::vector<bool> entirely_visible_chunks;` per call; later resized to referenced_table->chunk_count(). LOW.
+  - L196: `Segments{}` per chunk default-alloc. LOW.
+  - L352: `std::make_shared<Chunk>(...)`. LOW.
+
+AggregateHash (already converted — residual sites)
+  File: [src/lib/operators/aggregate_hash.cpp](src/lib/operators/aggregate_hash.cpp)
+  - L498: `std::vector<std::pair<ColumnID, ColumnID>> unaggregated_columns;` LOW.
+  - L1442-1443: `std::vector<ColumnID>` LOW.
+  - L1467,1478,1504: `std::vector<TableColumnDefinition>`, `Segments{}`, `Segments(num_output_columns)` per output chunk. MEDIUM.
+  - L1524: `std::make_shared<EntireChunkPosList>(chunk_id, chunk_size)` per output chunk. LOW.
+
+JoinHash helper (already converted — residual sites)
+  File: [src/lib/operators/join_helper/join_output_writing.cpp](src/lib/operators/join_helper/join_output_writing.cpp)
+  - L59: `std::unordered_map<PosLists, std::shared_ptr<PosLists>, PosListsHasher>` — non-PMR cache. MEDIUM (size = #input pos-list patterns).
+  - L105: `std::unordered_map<std::shared_ptr<PosLists>, std::shared_ptr<RowIDPosList>>` per partition write call. MEDIUM.
+  - L271-272: `std::vector<std::shared_ptr<Chunk>>(expected_output_chunk_count)`, `std::vector<std::shared_ptr<AbstractTask>>{}` — pointer holders. LOW.
+  - L354: `std::make_shared<Chunk>(std::move(output_segments))` per output chunk. LOW.
+  Fix: pmr unordered_map via Boost or std::pmr with runtime_mr.
+
+LOW PRIORITY — small / per-query / not on hot data path
+-------------------------------------------------------
+
+get_table
+  File: [src/lib/operators/get_table.cpp](src/lib/operators/get_table.cpp)
+  - L183: `std::vector<ChunkID> excluded_chunk_ids;` per query. LOW.
+  - L260: `std::vector<std::shared_ptr<Chunk>>(...)` — pointer holder per output chunk. LOW.
+  - L288: `Segments{column_count - _pruned_column_ids.size()}` per chunk — default allocator. LOW (just shared_ptrs, segments are forwarded).
+  - L325: `std::make_shared<Chunk>(...)` per chunk. LOW.
+  - L393: `std::vector<std::shared_ptr<PredicateNode>>` — optimizer-time. SKIP.
+
+alias_operator
+  File: [src/lib/operators/alias_operator.cpp](src/lib/operators/alias_operator.cpp)
+  - L66: `std::vector<TableColumnDefinition>` once per query. LOW.
+  - L80: `std::vector<std::shared_ptr<Chunk>>(input_table.chunk_count())`. LOW.
+  - L88: `Segments{}` per chunk — segments are forwarded, only the shared_ptr-holding vector is fresh. LOW.
+  - L96: `std::make_shared<Chunk>(...)` per chunk. LOW.
+
+multi_predicate_join_evaluator
+  File: [src/lib/operators/multi_predicate_join/multi_predicate_join_evaluator.cpp](src/lib/operators/multi_predicate_join/multi_predicate_join_evaluator.cpp)
+  - L71: `std::vector<std::unique_ptr<AbstractSegmentAccessor<T>>>` per join column (per evaluator). MEDIUM during sort-merge/nested-loop joins because used per-cluster/per-job — but bounded by chunk_count.
+
+Writes (insert/update/delete/change_meta_table)
+  - delete.cpp / update.cpp / insert.cpp: no significant per-query allocator concerns; touch existing storage chunks via reference segments; control-block allocations are LOW.
+  - insert.cpp L101: `std::make_shared<ChunkCompressionTask>(table, chunk_id)->schedule();` — scheduling overhead, not query memory. SKIP.
+
+Scheduler / abstract_task
+  - All `std::vector<std::shared_ptr<AbstractTask>>` job lists across operators are per-query, sized to chunk/cluster count. Each `JobTask` allocation goes through `std::make_shared<JobTask>` on default heap (control block + lambda capture).
+  Files: [src/lib/scheduler/abstract_scheduler.cpp](src/lib/scheduler/abstract_scheduler.cpp), [src/lib/scheduler/abstract_task.hpp](src/lib/scheduler/abstract_task.hpp), [src/lib/scheduler/node_queue_scheduler.hpp](src/lib/scheduler/node_queue_scheduler.hpp).
+  - abstract_task.hpp L222-223: `_predecessors`, `_successors` `std::vector<reference_wrapper<AbstractTask>>` — small per task.
+  - These are LOW priority on a per-allocation basis but add up to NumChunks * NumOperators control blocks per query. Consider only if profiling shows scheduler hot. NOT a runtime-data-path leak.
+
+PosLists base classes
+  Files: [src/lib/storage/pos_lists/row_id_pos_list.hpp](src/lib/storage/pos_lists/row_id_pos_list.hpp), [src/lib/storage/pos_lists/entire_chunk_pos_list.hpp](src/lib/storage/pos_lists/entire_chunk_pos_list.hpp)
+  - RowIDPosList already inherits from `pmr_vector<RowID>` and exposes `make_on(mr, ...)`; the leaks here are CALLERS using `std::make_shared<RowIDPosList>()`, listed above.
+  - EntireChunkPosList holds two trivial fields; control-block allocation only. LOW. Callers in projection/validate/table_scan/aggregate_sort/aggregate_hash all use `std::make_shared<EntireChunkPosList>(...)`. Could be converted to `make_on` for completeness but payload is ~16 bytes.
+
+segment_accessor / segment_iterables
+  File: [src/lib/storage/segment_accessor.hpp](src/lib/storage/segment_accessor.hpp)
+  - L131: `mutable std::vector<std::unique_ptr<AbstractSegmentAccessor<T>>> _accessors;` cached per multi-segment-accessor; small, per-operator-lifetime. LOW.
+  - No large materializations from segment_iterables themselves found.
+
+SUGGESTED CONVERSION ORDER (highest payoff first)
+-------------------------------------------------
+1. JoinSortMerge + column_materializer + radix_cluster_sort  (3 files, but biggest unconverted allocator footprint — full table materialization * 2 sides + clustered output).
+2. JoinNestedLoop  (PosLists + outer-join match bitmaps).
+3. JoinIndex + IndexScan  (PosLists holding all qualifying RowIDs).
+4. Difference  (unordered_set<string> over right table — pathologically large).
+5. UnionPositions  (output PosLists per cluster).
+6. Product  (cartesian output PosLists).
+7. AggregateSort  (per-group pmr_vector with default allocator + COUNT-DISTINCT set).
+8. Limit  (output column PosLists; small but quick).
+9. Helper cleanup: join_output_writing.cpp shared_pos_lists caches; Sort output_segments_by_chunk holders.
+10. ExpressionEvaluator correlated-subquery results vector.
+
+Out of scope / SKIP
+-------------------
+- Writes (insert/update/delete/change_meta_table) — no per-query large allocations.
+- Scheduler infrastructure — small per-task overhead, not data-path.
+- Optimizer / parser / table loading.
