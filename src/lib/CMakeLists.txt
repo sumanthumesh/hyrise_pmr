@@ -662,6 +662,8 @@ set(
     utils/print_utils.hpp
     utils/pruning_utils.cpp
     utils/pruning_utils.hpp
+    utils/segment_access_summary.cpp
+    utils/segment_access_summary.hpp
     utils/settings/abstract_setting.cpp
     utils/settings/abstract_setting.hpp
     utils/settings_manager.cpp
