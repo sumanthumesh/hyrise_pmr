@@ -1305,6 +1305,26 @@ int Console::_change_runtime_setting(const std::string &input)
         return 0;
     }
 
+    if (property == "access_delta_tracking")
+    {
+        if (value == "on")
+        {
+            Hyrise::get().set_access_delta_tracking(true);
+            out("Access delta tracking turned on\n");
+        }
+        else if (value == "off")
+        {
+            Hyrise::get().set_access_delta_tracking(false);
+            out("Access delta tracking turned off\n");
+        }
+        else
+        {
+            out("Usage: access_delta_tracking (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
+
     out("Error: Unknown property\n");
     return 1;
 }

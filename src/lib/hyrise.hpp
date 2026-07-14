@@ -64,6 +64,8 @@ class Hyrise : public Singleton<Hyrise>
 
     size_t& query_counter() {return _query_counter;}
     bool& print_out() {return _print_out;}
+    void set_access_delta_tracking(bool track_access_delta) { _track_access_delta = track_access_delta; }
+    bool track_access_delta() const { return _track_access_delta; }
 
     std::string recently_parsed_script_file{""};
     std::string label{""};
@@ -77,6 +79,7 @@ class Hyrise : public Singleton<Hyrise>
     std::shared_ptr<AbstractScheduler> _scheduler;
     size_t _query_counter{0};
     bool _print_out{true};
+    bool _track_access_delta{false};
 };
 
 } // namespace hyrise

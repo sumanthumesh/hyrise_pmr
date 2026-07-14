@@ -40,6 +40,7 @@
 #include "sql/sql_translator.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
+#include "utils/segment_access_summary.hpp"
 
 namespace hyrise
 {
@@ -356,6 +357,12 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
         total_allocated_before[status.resource_id] = status.total_allocated_bytes;
     }
 
+    // If access_delta_tracking is enabled, collect the pre-execution access counters for all columns
+    std::vector<hyrise::ColumnAccessSummary> pre_execution_access_counters, post_execution_access_counters;
+    if (Hyrise::get().track_access_delta()) {
+        pre_execution_access_counters = collect_column_access_summary();
+    }
+
     // start_tracking_allocations();
     const auto started = std::chrono::steady_clock::now();
 
@@ -416,6 +423,36 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
         {"duration", duration.count()},
         {"memory_deltas", memory_deltas},
     };
+
+    // Per query segment access deltas
+    if (Hyrise::get().track_access_delta()) {
+        post_execution_access_counters = collect_column_access_summary();
+
+        // Build a map of pre-execution totals keyed by (table_name, column_name), then diff against
+        // post-execution values. Columns present only after execution are treated as having a "before" total of 0.
+        auto pre_totals =
+            std::unordered_map<std::string, uint64_t>{};
+        pre_totals.reserve(pre_execution_access_counters.size());
+        for (const auto &entry : pre_execution_access_counters)
+        {
+            pre_totals[entry.table_name + "." + entry.column_name] = entry.total_accesses;
+        }
+
+        auto column_access_deltas = nlohmann::json::array();
+        for (const auto &entry : post_execution_access_counters)
+        {
+            const auto key = entry.table_name + "." + entry.column_name;
+            const auto before_it = pre_totals.find(key);
+            const auto before_value = before_it == pre_totals.end() ? uint64_t{0} : before_it->second;
+            const auto delta = static_cast<int64_t>(entry.total_accesses) - static_cast<int64_t>(before_value);
+            column_access_deltas.push_back({
+                {"table_name", entry.table_name},
+                {"column_name", entry.column_name},
+                {"access_delta", delta},
+            });
+        }
+        query_exec_info["column_access_deltas"] = column_access_deltas;
+    }
 
     // Per-operator deltas: only emitted when the corresponding console flag is on. Walks
     // the PQP and pulls the snapshot stashed on each operator's performance_data by
