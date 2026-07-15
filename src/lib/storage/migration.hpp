@@ -166,6 +166,25 @@ class MigrationEngine
     std::vector<MemResourceStatus> all_pool_status() const;
     std::unordered_map<int, MemResourceStatus>& aggregate_migrated_status();
     std::pair<size_t,size_t> quick_size_check() const;
+
+    // For every migrated column, sum the currently-live bytes across the bump-allocator pools that back it.
+    // Returns pairs of (column_name, bytes_used). Bytes reflect NumaMonotonicResource::allocated_bytes()
+    // (alloc minus dealloc — the actual current bump-pointer footprint), NOT the pool's provisioned capacity.
+    std::vector<std::pair<std::string, size_t>> column_sizes()
+    {
+        auto result = std::vector<std::pair<std::string, size_t>>{};
+        result.reserve(_columns_to_pools_mapping.size());
+        for (const auto &[column_name, pool_ids] : _columns_to_pools_mapping)
+        {
+            size_t total_bytes = 0;
+            for (const auto pool_id : pool_ids)
+            {
+                total_bytes += _pool_manager.get_pool(pool_id)->allocated_bytes();
+            }
+            result.emplace_back(column_name, total_bytes);
+        }
+        return result;
+    }
     
 
     private:

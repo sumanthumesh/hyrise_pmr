@@ -1966,6 +1966,21 @@ int Console::_hshell(const std::string &args)
             std::cout << "Deleted pool with ID: " << pool_id << "\n";
         }
     }
+    else if (cmd == "col_sizes")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh col_sizes\n");
+            return ReturnCode::Error;
+        }
+        auto column_sizes = Hyrise::get().migration_engine->column_sizes();
+        std::ofstream out("column_sizes.dat");
+        for (const auto &[column_name, bytes] : column_sizes)
+        {
+            out << column_name << ": " << bytes << "\n";
+        }
+    }
     else
     {
         out("Error: Unknown hshell command\n");
