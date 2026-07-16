@@ -62,3 +62,7 @@ compile_commands.json
 myscripts/*all_cols*.sql
 myscripts/tpch_visualize_*.sql
 myscripts/*.bin
+
+
+# Python virtual environment
+pyenv/
