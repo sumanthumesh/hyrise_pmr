@@ -37,6 +37,7 @@
 #include "SQLParser.h"
 #include "SQLParserResult.h"
 #include "magic_enum/magic_enum.hpp"
+#include "nlohmann/json.hpp"
 
 #include "benchmark_config.hpp"
 #include "hyrise.hpp"
@@ -1975,11 +1976,13 @@ int Console::_hshell(const std::string &args)
             return ReturnCode::Error;
         }
         auto column_sizes = Hyrise::get().migration_engine->column_sizes();
-        std::ofstream out("column_sizes.dat");
+        auto json_out = nlohmann::json::object();
         for (const auto &[column_name, bytes] : column_sizes)
         {
-            out << column_name << ": " << bytes << "\n";
+            json_out[column_name] = bytes;
         }
+        std::ofstream json_file("column_sizes.json");
+        json_file << json_out.dump(2) << "\n";
     }
     else
     {
