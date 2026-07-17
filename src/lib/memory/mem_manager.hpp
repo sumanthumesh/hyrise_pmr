@@ -168,6 +168,9 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
     // Sizes of local and remote memories
     size_t _local_mem_capacity_bytes{1ull*1024*1024*1024}; //1GB default local memory capacity
     size_t _remote_mem_capacity_bytes{1ull*1024*1024*1024}; //1GB default remote memory capacity
+
+    // Did we use the local pool for most recent allocation?
+    mutable bool _last_allocation_used_local_pool{false};
 };
 
 // make_on<T>(resource, args...) is declared in memory/make_on.hpp (included above).

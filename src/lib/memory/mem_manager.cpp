@@ -473,10 +473,16 @@ std::pmr::memory_resource *MemManager::pick_runtime_exec_resource() const
 
         if (usage.first < _local_mem_capacity_bytes)
         {
+            _last_allocation_used_local_pool = true;
             return local_it->second.get();
         }
         if (usage.second < _remote_mem_capacity_bytes)
         {
+            if (_last_allocation_used_local_pool)
+            {
+                std::printf("Greedy pick_runtime_exec_resource: local pool full, falling back to remote pool\n");
+            }
+            _last_allocation_used_local_pool = false;
             return remote_it->second.get();
         }
         // Both pools at capacity — hard-stop via the invalid resource so the caller surfaces

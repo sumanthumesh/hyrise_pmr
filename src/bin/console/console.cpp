@@ -1610,6 +1610,10 @@ int Console::_move2cxl(const std::string &args)
     std::ofstream migration_log("migration_log.txt", std::ios_base::app);
     migration_log << table_name << "," << column_name << "," << "," << moved_bytes << "," << duration.count() << "\n";
     migration_log.close();
+
+    // Recalculate memory usage after migration
+    migration_engine->aggregate_migrated_status();
+
     return ReturnCode::Ok;
 }
 
