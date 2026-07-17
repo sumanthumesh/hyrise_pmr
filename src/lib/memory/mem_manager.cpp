@@ -448,7 +448,7 @@ std::pmr::memory_resource *MemManager::pick_runtime_exec_resource() const
     {
     case AllocationStrategy::Local:
     {
-        auto it = _pools.find(3);
+        auto it = _pools.find(2);
         Assertf(it != _pools.end(),
                 "Local strategy: pool 2 (local execution) does not exist.\n");
         return it->second.get();
