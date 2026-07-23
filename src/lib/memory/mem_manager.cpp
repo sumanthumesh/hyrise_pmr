@@ -119,8 +119,8 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         Assertf(exists(3), "Pool with ID 3 for allocating remote execution data does not exist.\n");
         memory_resources.TableSegmentGen = _invalid_resource_ptr.get(); // Table generation is done, should be invalid
         memory_resources.MiscGen = _invalid_resource_ptr.get();         // Table generation is done, should be invalid
-        memory_resources.MiscExecution = this;                          // Use third pool for local heap allocations
-        std::pmr::set_default_resource(this);
+        memory_resources.MiscExecution = pick_runtime_exec_resource();                          // Use third pool for local heap allocations
+        std::pmr::set_default_resource(pick_runtime_exec_resource()); // Default to greedy execution pool for any allocation that doesn't explicitly specify
         break;
     }
 }
