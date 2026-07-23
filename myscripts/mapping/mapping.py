@@ -31,7 +31,7 @@ if __name__ == "__main__":
     parser.add_argument("-c","--mem-capacities", required=True, help="comma-separated list of memory capacities (use 'None' for unbounded)")
     parser.add_argument("-l","--mem-latencies", required=True, help="comma-separated list of memory latencies (must match the number of capacities)")
     parser.add_argument("-o","--output-file", required=True, help="Path to the output json file")
-    parser.add_argument("--sql-out", required=False, help="Path to the output sql file for migration (optional)")
+    parser.add_argument("--sql-out", action="store_true", help="Set to true if you want a sql output file that moves all columns according to the placement")
 
     args = parser.parse_args()
 
@@ -72,15 +72,17 @@ if __name__ == "__main__":
     total_sizes = [sum(col_sizes[col] for col in mem) for mem in placement]
 
     #Write the placement to the output file
-    with open(args.output_file, 'w') as f:
+    placment_output_file = args.output_file
+    with open(placment_output_file, 'w') as f:
         json.dump({
             "placement": [list(mem) for mem in placement],
             "total_sizes": total_sizes,
         }, f, indent=4)
 
     #Based on the mapping, need to move all columns except those in the first memory to remote memory
+    sql_output_file = args.output_file.replace(".json", "_migrate.sql")
     if args.sql_out:
-        with open(args.sql_out, 'w') as f:
+        with open(sql_output_file, 'w') as f:
             for mem_idx, mem in enumerate(placement):
                 for col in mem:
                     f.write(f"move2cxl {table_from_column[col]} {col} {mem_idx}\n")
