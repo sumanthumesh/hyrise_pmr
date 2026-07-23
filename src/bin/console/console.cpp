@@ -1988,6 +1988,38 @@ int Console::_hshell(const std::string &args)
         std::ofstream json_file("column_sizes.json");
         json_file << json_out.dump(2) << "\n";
     }
+    else if (cmd == "clear_plan_caches")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh clear_plan_caches\n");
+            return ReturnCode::Error;
+        }
+        if (Hyrise::get().default_pqp_cache)
+        {
+            Hyrise::get().default_pqp_cache->clear();
+        }
+        if (Hyrise::get().default_lqp_cache)
+        {
+            Hyrise::get().default_lqp_cache->clear();
+        }
+        out("Cleared PQP and LQP caches\n");
+    }
+    else if (cmd == "clear_pipeline")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh clear_pipeline\n");
+            return ReturnCode::Error;
+        }
+        // The most recent SQLPipeline is still owned by the Console; its cached operator tree
+        // transitively holds shared_ptr<AbstractSegment> to every storage segment it touched.
+        // Releasing it is necessary before re-migrating those columns.
+        _sql_pipeline.reset();
+        out("Released last SQLPipeline\n");
+    }
     else
     {
         out("Error: Unknown hshell command\n");
