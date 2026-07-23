@@ -1,0 +1,333 @@
+{
+  "column_access_deltas": [
+    {
+      "access_delta": 0,
+      "column_name": "r_regionkey",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "r_name",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "r_comment",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_custkey",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_name",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_address",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_nationkey",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_phone",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_acctbal",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_mktsegment",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_comment",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "n_nationkey",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "n_name",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "n_regionkey",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "n_comment",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_orderkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 12014810,
+      "column_name": "l_partkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_suppkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_linenumber",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 12176,
+      "column_name": "l_quantity",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 587,
+      "column_name": "l_extendedprice",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_discount",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_tax",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_returnflag",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_linestatus",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_commitdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_receiptdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipinstruct",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipmode",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_comment",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_suppkey",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_name",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_address",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_nationkey",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_phone",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_acctbal",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_comment",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 6496,
+      "column_name": "p_partkey",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_name",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_mfgr",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 5071,
+      "column_name": "p_brand",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_type",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_size",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 200032,
+      "column_name": "p_container",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_retailprice",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_comment",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderkey",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_custkey",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderstatus",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_totalprice",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderdate",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderpriority",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_clerk",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_shippriority",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_comment",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_partkey",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_suppkey",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_availqty",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_supplycost",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_comment",
+      "table_name": "partsupp"
+    }
+  ],
+  "duration": 17423529,
+  "label": "",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 8962736,
+      "numa_node": 1,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 138542900
+    },
+    {
+      "allocated_bytes": 104058150,
+      "numa_node": 0,
+      "resource_id": 1,
+      "total_allocated_bytes_delta": 0
+    }
+  ],
+  "script_file": "/data1/sumanthu/tpch_queries/17.sql",
+  "sql": "select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = 'Brand#23'\n\tand p_container = 'MED BOX'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);"
+}

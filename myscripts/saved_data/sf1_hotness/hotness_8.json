@@ -1,0 +1,333 @@
+{
+  "column_access_deltas": [
+    {
+      "access_delta": 1,
+      "column_name": "r_regionkey",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 10,
+      "column_name": "r_name",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "r_comment",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 29952,
+      "column_name": "c_custkey",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_name",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_address",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 300000,
+      "column_name": "c_nationkey",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_phone",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_acctbal",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_mktsegment",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_comment",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 30,
+      "column_name": "n_nationkey",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 5206,
+      "column_name": "n_name",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 50,
+      "column_name": "n_regionkey",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "n_comment",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 49550,
+      "column_name": "l_orderkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 12002430,
+      "column_name": "l_partkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 2603,
+      "column_name": "l_suppkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_linenumber",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_quantity",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 2603,
+      "column_name": "l_extendedprice",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 2603,
+      "column_name": "l_discount",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_tax",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_returnflag",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_linestatus",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_commitdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_receiptdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipinstruct",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipmode",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_comment",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 10000,
+      "column_name": "s_suppkey",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_name",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_address",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 20000,
+      "column_name": "s_nationkey",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_phone",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_acctbal",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_comment",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 1451,
+      "column_name": "p_partkey",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_name",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_mfgr",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_brand",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 200040,
+      "column_name": "p_type",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_size",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_container",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_retailprice",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_comment",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 91179,
+      "column_name": "o_orderkey",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 914526,
+      "column_name": "o_custkey",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderstatus",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_totalprice",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 1503155,
+      "column_name": "o_orderdate",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderpriority",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_clerk",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_shippriority",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_comment",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_partkey",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_suppkey",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_availqty",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_supplycost",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_comment",
+      "table_name": "partsupp"
+    }
+  ],
+  "duration": 43555157,
+  "label": "",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 1001742,
+      "numa_node": 1,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 187617766
+    },
+    {
+      "allocated_bytes": 104058150,
+      "numa_node": 0,
+      "resource_id": 1,
+      "total_allocated_bytes_delta": 0
+    }
+  ],
+  "script_file": "/data1/sumanthu/tpch_queries/8.sql",
+  "sql": "select\n\to_year,\n\tsum(case\n\t\twhen nation = 'BRAZIL' then volume\n\t\telse 0\n\tend) / sum(volume) as mkt_share\nfrom\n\t(\n\t\tselect\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume,\n\t\t\tn2.n_name as nation\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2,\n\t\t\tregion\n\t\twhere\n\t\t\tp_partkey = l_partkey\n\t\t\tand s_suppkey = l_suppkey\n\t\t\tand l_orderkey = o_orderkey\n\t\t\tand o_custkey = c_custkey\n\t\t\tand c_nationkey = n1.n_nationkey\n\t\t\tand n1.n_regionkey = r_regionkey\n\t\t\tand r_name = 'AMERICA'\n\t\t\tand s_nationkey = n2.n_nationkey\n\t\t\tand o_orderdate between date '1995-01-01' and date '1996-12-31'\n\t\t\tand p_type = 'ECONOMY ANODIZED STEEL'\n\t) as all_nations\ngroup by\n\to_year\norder by\n\to_year;"
+}
