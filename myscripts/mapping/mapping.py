@@ -84,5 +84,3 @@ if __name__ == "__main__":
             for mem_idx, mem in enumerate(placement):
                 for col in mem:
                     f.write(f"move2cxl {table_from_column[col]} {col} {mem_idx}\n")
-                for col in mem:
-                    f.write(f"move2cxl {table_from_column[col]} {col} {mem_idx}\n")
