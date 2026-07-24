@@ -52,11 +52,13 @@ if __name__ == "__main__":
         match_dam_size, match_table_fraction, match_query_id = match.groups()
         dam_size = int(match_dam_size)
         table_fraction = float(match_table_fraction)
-        final_script_text += f"setting label d{match_dam_size}_tf{int(dam_size*table_fraction)}_q{match_query_id}\n"
-        final_script_text += f"hsh set_mem_capacity {dam_size} 1000000000\n"
+        final_script_text += f"setting label d{match_dam_size}_tf{int(dam_size*table_fraction/100)}_q{match_query_id}\n"
+        final_script_text += f"hsh set_mem_capacity {dam_size} 1000000000000\n"
         final_script_text += f"hsh clear_plan_caches\n"
         final_script_text += f"hsh clear_pipeline\n"
+        final_script_text += f"hsh reset_exec_pools\n"
         final_script_text += f"script {migration_script}\n"
+        final_script_text += f"hsh mem_usage\n"
         for trial in range(num_trials):
             final_script_text += f"script /data1/sumanthu/tpch_queries/{match_query_id}.sql\n"
     final_script_text += "hsh mem_usage\n"
