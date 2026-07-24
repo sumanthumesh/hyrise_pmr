@@ -140,6 +140,7 @@ class NumaMonotonicResource : public std::pmr::memory_resource
             new_next = aligned + bytes;
             if (new_next > _end)
             {
+                std::cerr << print_backtrace() << std::endl;
                 throw std::bad_alloc{};
             }
             if (_next.compare_exchange_weak(cur, new_next,
