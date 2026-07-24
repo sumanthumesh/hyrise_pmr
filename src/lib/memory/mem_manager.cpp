@@ -488,6 +488,8 @@ std::pmr::memory_resource *MemManager::pick_runtime_exec_resource() const
         // Both pools at capacity — hard-stop via the invalid resource so the caller surfaces
         // the condition immediately rather than overcommitting either pool.
         std::cerr << "Greedy pick_runtime_exec_resource: both local and remote pools at capacity\n";
+        std::cerr << "Local pool allocated: " << usage.first << " bytes, capacity: " << _local_mem_capacity_bytes << " bytes\n";
+        std::cerr << "Remote pool allocated: " << usage.second << " bytes, capacity: " << _remote_mem_capacity_bytes << " bytes\n";
         return _invalid_resource_ptr.get();
     }
     case AllocationStrategy::Heap:
