@@ -153,6 +153,9 @@ class NumaMonotonicResource : public std::pmr::memory_resource
             new_next = aligned + bytes;
             if (new_next > _end)
             {
+                std::cerr << "NumaMonotonicResource allocation failed: requested " << bytes << " bytes with alignment " << alignment
+                          << ", but only " << (_end - cur) << " bytes remain in the pool of size " << _size
+                          << " on NUMA node " << _numa_node << "\n";
                 std::cerr << print_backtrace() << std::endl;
                 throw std::bad_alloc{};
             }
