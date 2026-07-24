@@ -64,7 +64,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
 
     // Get size of the column
     size_t column_size = get_column_size(table_name, column_id);
-    std::cout << "Migrating column " << column_name << " of size " << column_size << "B to NUMA node " << numa_node_id << "\n";
+    // std::cout << "Migrating column " << column_name << " of size " << column_size << "B to NUMA node " << numa_node_id << "\n";
 
     // Decide on an initial pool size
     size_t pool_size = static_cast<size_t>((float)column_size * 1.2); // 20% overhead
@@ -73,7 +73,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     // Create a new pool of this size
     size_t pool_id = _pool_manager.create_pool(pool_size, numa_node_id);
     auto memory_resource = _pool_manager.get_pool(pool_id);
-    std::cout << "Initial pool " << pool_id << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
+    // std::cout << "Initial pool " << pool_id << " created of size " << pool_size << "B for column " << column_name << " on NUMA node " << numa_node_id << "\n";
 
     size_t bytes_migrated = 0;
 

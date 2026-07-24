@@ -1600,12 +1600,12 @@ int Console::_move2cxl(const std::string &args)
 
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_migration - start_migration);
 
-    print_memory();
-    malloc_trim(0);
-    print_memory();
+    // print_memory();
+    // malloc_trim(0);
+    // print_memory();
 
     // std::cout<<"Migrated "<<moved_bytes<<" in "<<duration.count()<<" ns\n";
-    std::cout << moved_bytes << "," << duration.count() << "," << ((double)moved_bytes * std::pow(2, -30)) / ((double)duration.count() * 1e-9) << "GB/s\n";
+    // std::cout << moved_bytes << "," << duration.count() << "," << ((double)moved_bytes * std::pow(2, -30)) / ((double)duration.count() * 1e-9) << "GB/s\n";
     // std::cout << "Migration Duration: " << duration.count() << "ns\n";
     std::ofstream migration_log("migration_log.txt", std::ios_base::app);
     migration_log << table_name << "," << column_name << "," << "," << moved_bytes << "," << duration.count() << "\n";
@@ -2019,6 +2019,28 @@ int Console::_hshell(const std::string &args)
         // Releasing it is necessary before re-migrating those columns.
         _sql_pipeline.reset();
         out("Released last SQLPipeline\n");
+    }
+    else if (cmd == "reset_exec_pools")
+    {
+        if (arguments.size() != 1)
+        {
+            out("Usage: ");
+            out("  hsh reset_exec_pools\n");
+            return ReturnCode::Error;
+        }
+        // Under Local/Remote/Greedy, pools 2 and 3 are the execution pools. Table-generation
+        // pools 0/1 are frozen after load and migrated-column pools (id >= 100) hold permanent
+        // storage — never reset those. reset() asserts on non-zero live bytes, so call
+        // `hsh clear_plan_caches` and `hsh clear_pipeline` first to drop any lingering
+        // shared_ptrs into these pools.
+        for (const auto pool_id : {size_t{2}, size_t{3}})
+        {
+            if (MemManager::get().exists(pool_id))
+            {
+                MemManager::get().get_pool(pool_id)->reset();
+            }
+        }
+        out("Reset execution pools (2, 3) bump pointers to start\n");
     }
     else
     {

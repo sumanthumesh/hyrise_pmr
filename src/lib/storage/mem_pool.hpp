@@ -87,6 +87,19 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         std::cout << __func__ << "\n";
     }
 
+    // Rewind the bump pointer to the start of the buffer, reusing the underlying pages.
+    // MUST only be called when nothing still holds memory from this pool — otherwise the
+    // next allocation hands back live addresses, causing silent memory corruption.
+    void reset()
+    {
+        const auto live = _allocated_bytes.load(std::memory_order_acquire);
+        Assertf(live == 0, "NumaMonotonicResource::reset called with %lu live bytes remaining\n", live);
+        _next.store(_buffer, std::memory_order_release);
+        _allocated_bytes.store(0, std::memory_order_relaxed);
+        _peak_allocated_bytes.store(0, std::memory_order_relaxed);
+        _total_allocated_bytes.store(0, std::memory_order_relaxed);
+    }
+
     int verify_numa_node() const
     {
         // Allocate a tiny page to test
@@ -216,6 +229,13 @@ class MemPoolManager
         Assertf(it != _pools.end(), "Trying to delete non-existing pool %lu\n", pool_id);
         Assertf(it->second.use_count() == 1, "Pool has %d sharers left, not 1", it->second.use_count());
         _pools.erase(pool_id);
+    }
+
+    void reset_pool(const size_t pool_id)
+    {
+        auto it = _pools.find(pool_id);
+        Assertf(it != _pools.end(), "Trying to reset non-existing pool %lu\n", pool_id);
+        it->second->reset();
     }
 
     void print_status() const
