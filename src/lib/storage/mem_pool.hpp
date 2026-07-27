@@ -59,6 +59,11 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         return reinterpret_cast<std::uintptr_t>(_end);
     }
 
+    std::size_t bump_ptr_offset() const
+    {
+        return static_cast<std::size_t>(_next.load(std::memory_order_relaxed) - _buffer);
+    }
+
     std::size_t size() const
     {
         return _size;
@@ -133,6 +138,7 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         status.peak_allocated_bytes = _peak_allocated_bytes.load(std::memory_order_relaxed);
         status.total_allocated_bytes = _total_allocated_bytes.load(std::memory_order_relaxed);
         status.numa_node = _numa_node;
+        status.bump_ptr_loc = bump_ptr_offset();
         return status;
     }
 

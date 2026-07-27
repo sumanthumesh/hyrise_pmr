@@ -19,15 +19,21 @@ struct MemResourceStatus
     size_t peak_allocated_bytes{0};
     size_t total_allocated_bytes{0};
     int numa_node{-1};
+    size_t bump_ptr_loc{std::numeric_limits<size_t>::max()}; // Offset of bump pointer from pool start; max() means N/A
 
     std::string to_string() const
     {
         std::stringstream ss;
         ss << "MemResourceStatus {" << description << "," << std::dec << resource_id << ","
            << std::dec << capacity_bytes << "," << std::dec << allocated_bytes << ","
-           << std::dec << peak_allocated_bytes << "," 
-           << std::dec << total_allocated_bytes << "," 
-           << std::dec << numa_node << "}";
+           << std::dec << peak_allocated_bytes << ","
+           << std::dec << total_allocated_bytes << ","
+           << std::dec << numa_node << ",";
+        if (bump_ptr_loc == std::numeric_limits<size_t>::max())
+            ss << "N/A";
+        else
+            ss << bump_ptr_loc;
+        ss << "}";
         return ss.str();
     }
 };
