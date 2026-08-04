@@ -54,6 +54,7 @@ class MemManager : public MemoryResource, public Singleton<MemManager>
     enum class AllocationStrategy
     {
         Heap,     // Fallback to heap allocation
+        PartialTableGen, // Use this to allocate table data on Heap but other misc data during generation on NUMA pools
         TableGen, // Use this only while generating tables
         Local,    // Allocate on local node
         Remote,   // Allocate on remote node

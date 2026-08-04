@@ -86,6 +86,17 @@ void MemManager::set_strategy(AllocationStrategy strategy)
         memory_resources.MiscExecution = _invalid_resource_ptr.get(); // Shouldn't be used if still in table generation
         std::pmr::set_default_resource(memory_resources.MiscGen); // Default to misc gen pool for any allocation that doesn't explicitly specify
         break;
+    case AllocationStrategy::PartialTableGen:
+        /**
+         * In this strategy, all table generation allocations go to heap
+         * Any miscellaneous allocation will be to pool 1
+         */
+        Assertf(exists(1), "Pool with ID 1 for allocating miscellaneous data during table generation does not exist.\n");
+        memory_resources.TableSegmentGen = &DefaultResource::get(); // Use heap for table generation
+        memory_resources.MiscGen = get_pool(1).get();                 // Use second pool for misc table gen allocations
+        memory_resources.MiscExecution = _invalid_resource_ptr.get(); // Shouldn't be used if still in table generation
+        std::pmr::set_default_resource(memory_resources.MiscGen); // Default to misc gen pool for any allocation that doesn't explicitly specify
+        break;
     case AllocationStrategy::Local:
         /**
          * In this strategy, table generation has already happened. So table generation resources are not needed.
