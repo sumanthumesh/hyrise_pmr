@@ -1,9 +1,12 @@
 #include "storage/migration.hpp"
 
 #include <deque>
+#include <chrono>
 
 namespace hyrise
 {
+
+bool MigrationEngine::print_migration_stats = false;
 
 void MigrationEngine::migrate_segment(std::shared_ptr<Chunk> &chunk_ptr, std::shared_ptr<AbstractSegment> &segment_ptr, ColumnID column_id, std::shared_ptr<NumaMonotonicResource> &memory_resource)
 {
@@ -80,6 +83,9 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     size_t num_segments_migrated_to_pool = 0;
 
     std::deque<size_t> pools_used_for_column;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    
 
     for (ChunkID chunk_id{0}; chunk_id < table_name->chunk_count(); ++chunk_id)
     {
@@ -164,6 +170,13 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     // std::printf("Columns %s of size %luB migrated to %d with total migrated size %luB across %lu pools\n",
     //             column_name.c_str(), column_size, numa_node_id, total_migrated_size,
     //             _columns_to_pools_mapping[column_name].size());
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    if (print_migration_stats)
+    {
+        std::printf("##Migration: column %s of size %luB to NUMA node %d in %ld ns\n", column_name.c_str(), column_size, numa_node_id, duration);
+    }
+
 }
 
 void MigrationEngine::delete_column_pool(const std::string &column_name)

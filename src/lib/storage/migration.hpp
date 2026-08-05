@@ -186,6 +186,7 @@ class MigrationEngine
         return result;
     }
     
+    static bool print_migration_stats;
 
     private:
     MemPoolManager& _pool_manager;

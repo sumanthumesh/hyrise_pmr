@@ -1331,6 +1331,26 @@ int Console::_change_runtime_setting(const std::string &input)
         return 0;
     }
 
+    if (property == "print_migration_stats")
+    {
+        if (value == "on")
+        {
+            MigrationEngine::print_migration_stats = true;
+            out("Print migration stats turned on\n");
+        }
+        else if (value == "off")
+        {
+            MigrationEngine::print_migration_stats = false;
+            out("Print migration stats turned off\n");
+        }
+        else
+        {
+            out("Usage: print_migration_stats (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
+
     out("Error: Unknown property\n");
     return 1;
 }
