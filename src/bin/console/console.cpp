@@ -1278,6 +1278,11 @@ int Console::_change_runtime_setting(const std::string &input)
             MemManager::get().set_strategy(MemManager::AllocationStrategy::TableGen);
             out("Memory strategy set to TableGen\n");
         }
+        else if (value == "PartialTableGen")
+        {
+            MemManager::get().set_strategy(MemManager::AllocationStrategy::PartialTableGen);
+            out("Memory strategy set to PartialTableGen\n");
+        }
         else if (value == "Local")
         {
             MemManager::get().set_strategy(MemManager::AllocationStrategy::Local);
