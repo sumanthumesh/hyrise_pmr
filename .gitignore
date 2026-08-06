@@ -62,7 +62,7 @@ compile_commands.json
 myscripts/*all_cols*.sql
 myscripts/tpch_visualize_*.sql
 myscripts/*.bin
-
+myscripts/mapping/scratch/
 
 # Python virtual environment
 pyenv/
