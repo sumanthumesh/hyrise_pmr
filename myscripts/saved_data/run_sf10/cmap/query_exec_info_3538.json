@@ -1,0 +1,26 @@
+{
+  "duration": 49810085,
+  "label": "d3145728000_tf629145600_q6",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 712,
+      "numa_node": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 264026704
+    },
+    {
+      "allocated_bytes": 1039541809,
+      "numa_node": 0,
+      "resource_id": 1,
+      "total_allocated_bytes_delta": 0
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/6.sql",
+  "sql": "select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date '1994-01-01'\n\tand l_shipdate < date '1994-01-01' + interval '1' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;"
+}

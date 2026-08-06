@@ -1,0 +1,26 @@
+{
+  "duration": 48460403,
+  "label": "d5242880000_tf1048576000_q17",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 155096,
+      "numa_node": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 1372781496
+    },
+    {
+      "allocated_bytes": 1039541809,
+      "numa_node": 0,
+      "resource_id": 1,
+      "total_allocated_bytes_delta": 0
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/17.sql",
+  "sql": "select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = 'Brand#23'\n\tand p_container = 'MED BOX'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);"
+}

@@ -1,0 +1,26 @@
+{
+  "duration": 333339742,
+  "label": "d10485760000_tf3145728000_q4",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 1072256,
+      "numa_node": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 2287623848
+    },
+    {
+      "allocated_bytes": 1039541809,
+      "numa_node": 0,
+      "resource_id": 1,
+      "total_allocated_bytes_delta": 0
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/4.sql",
+  "sql": "select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date '1993-07-01'\n\tand o_orderdate < date '1993-07-01' + interval '3' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;"
+}
