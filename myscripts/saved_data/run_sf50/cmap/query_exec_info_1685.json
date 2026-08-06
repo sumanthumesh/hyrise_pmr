@@ -1,0 +1,20 @@
+{
+  "duration": 2126052294,
+  "label": "d5368709120_tf1073741824_q12",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 1940512,
+      "numa_node": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 6845090004
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/12.sql",
+  "sql": "select\n\tl_shipmode,\n\tsum(case\n\t\twhen o_orderpriority = '1-URGENT'\n\t\t\tor o_orderpriority = '2-HIGH'\n\t\t\tthen 1\n\t\telse 0\n\tend) as high_line_count,\n\tsum(case\n\t\twhen o_orderpriority <> '1-URGENT'\n\t\t\tand o_orderpriority <> '2-HIGH'\n\t\t\tthen 1\n\t\telse 0\n\tend) as low_line_count\nfrom\n\torders,\n\tlineitem\nwhere\n\to_orderkey = l_orderkey\n\tand l_shipmode in ('MAIL', 'SHIP')\n\tand l_commitdate < l_receiptdate\n\tand l_shipdate < l_commitdate\n\tand l_receiptdate >= date '1994-01-01'\n\tand l_receiptdate < date '1994-01-01' + interval '1' year\ngroup by\n\tl_shipmode\norder by\n\tl_shipmode;"
+}
