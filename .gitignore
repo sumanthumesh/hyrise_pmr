@@ -63,6 +63,7 @@ myscripts/*all_cols*.sql
 myscripts/tpch_visualize_*.sql
 myscripts/*.bin
 myscripts/mapping/scratch/
+myscripts/saved_data/run_sf*/*.csv
 
 # Python virtual environment
 pyenv/
