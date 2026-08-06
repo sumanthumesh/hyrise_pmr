@@ -4,7 +4,8 @@ import argparse
 import re
 
 
-HYRISE_ROOT = "/data1/sumanthu/hyrise_pmr"
+HYRISE_ROOT = "/home/umeshsum/hyrise_pmr"
+TPCH_QUERIES_DIR = "/home/umeshsum/tpch_queries"
 
 migration_file_regex = re.compile(r"map_d(\d+)_f(\d+)_q(\d+)_.*migrate\.sql")
 
@@ -27,17 +28,12 @@ if __name__ == "__main__":
         f"setting print off\n"
         f"setting binary_caching on\n"
         f"setting workers 16\n"
-        f"hsh new_mem 64000000000 0 0\n"
-        f"hsh new_mem 64000000000 0 1\n"
-        f"hsh mem_usage\n"
-        f"setting mem_strategy TableGen\n"
         f"generate_tpch {scaling_factor}\n"
         f"hsh mem_usage\n"
-        f"script {HYRISE_ROOT}/myscripts/move_all_cols_to_remote.sql\n"
-        f"hsh delete_mem 0\n"
+        f"script {HYRISE_ROOT}/myscripts/all_cols_to_remote.sql\n"
         f"hsh mem_usage\n"
-        f"hsh new_mem 50000000000 1 2\n"
-        f"hsh new_mem 50000000000 1 3\n"
+        f"hsh new_mem {int(scaling_factor*2**30)} 0 2\n"
+        f"hsh new_mem {int(scaling_factor*2**30)} 1 3\n"
         f"hsh mem_usage\n"
         f"setting workers 8\n"
         f"setting mem_strategy Greedy\n"
@@ -54,13 +50,17 @@ if __name__ == "__main__":
         table_fraction = float(match_table_fraction)
         final_script_text += f"setting label d{match_dam_size}_tf{int(dam_size*table_fraction/100)}_q{match_query_id}\n"
         final_script_text += f"hsh set_mem_capacity {dam_size} 1000000000000\n"
-        final_script_text += f"hsh clear_plan_caches\n"
-        final_script_text += f"hsh clear_pipeline\n"
-        final_script_text += f"hsh reset_exec_pools\n"
         final_script_text += f"script {migration_script}\n"
         final_script_text += f"hsh mem_usage\n"
         for trial in range(num_trials):
-            final_script_text += f"script /data1/sumanthu/tpch_queries/{match_query_id}.sql\n"
+            final_script_text += f"hsh clear_plan_caches\n"
+            final_script_text += f"hsh clear_pipeline\n"
+            final_script_text += f"hsh reset_exec_pools\n"
+            final_script_text += f"script {TPCH_QUERIES_DIR}/{match_query_id}.sql\n"
+            final_script_text += f"hsh mem_usage\n"
+        final_script_text += f"hsh clear_plan_caches\n"
+        final_script_text += f"hsh clear_pipeline\n"
+        final_script_text += f"hsh reset_exec_pools\n"
     final_script_text += "hsh mem_usage\n"
     final_script_text += "quit\n"
 
