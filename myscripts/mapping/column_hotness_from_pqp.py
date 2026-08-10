@@ -186,18 +186,15 @@ def main():
 
     if args.output:
         with open(args.output, "w") as f:
-            json.dump({
-                "hotness": {f"{table_from_column[col]}.{col}": rows for col, rows in ranked},
-                "by_table": dict(ranked_tables),
-                "totals": {
-                    "column_rows_sum": column_rows_total,
-                    "hotness_sum": hotness_total,
-                    "ratio": ratio,
-                },
-                "dropped_non_columns": dict(sorted(dropped.items(), key=lambda kv: -kv[1])),
-                "recovered_from_descriptions": totals["recovered"],
-                "nodes_with_unattributed_right_input": totals["unattributed_right"],
-            }, f, indent=2)
+            output_dict = {}
+            output_dict["column_access_deltas"] = []
+            for col,rows in ranked:
+                output_dict["column_access_deltas"].append({
+                    "access_delta": rows,
+                    "column_name": f"{col}",
+                    "table_name": f"{table_from_column[col]}"
+                })
+            json.dump(output_dict, f, indent=2)
     else:
         for col, rows in ranked:
             print(f"{table_from_column[col] + '.' + col:30s} {rows:>18,}")
