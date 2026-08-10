@@ -133,25 +133,54 @@ static std::string card_label(double estimated_rows)
     return stream.str();
 }
 
-nlohmann::json LQPVisualizer::_collect_columns(const std::shared_ptr<const AbstractLQPNode> &node)
+LQPVisualizer::LQPColumnsSplit LQPVisualizer::_collect_columns(
+    const std::shared_ptr<const AbstractLQPNode> &node)
 {
-    // LQPColumnExpression::description() already resolves through the original StoredTableNode
-    // to give the storage-column name — so we just visit each expression on this node, pull out
-    // LQPColumnExpression leaves, and take description().
-    std::set<std::string> names;
+    // LQPColumnExpression::description() resolves through the origin StoredTableNode to the
+    // storage-column name. For each column expression we route to `left_names` or `right_names`
+    // depending on which input can find that expression in its output. For unary nodes (no
+    // right input) everything lands on left; for a JoinNode's predicate the two sides split
+    // naturally by find_column_id lookup.
+    std::set<std::string> left_names;
+    std::set<std::string> right_names;
+
+    const auto left_input = node->left_input();
+    const auto right_input = node->right_input();
+
     for (const auto &expression : node->node_expressions)
     {
         auto mut = expression;
         visit_expression(mut, [&](const auto &sub) {
             const auto lqp_col = std::dynamic_pointer_cast<LQPColumnExpression>(sub);
-            if (lqp_col)
+            if (!lqp_col)
             {
-                names.insert(lqp_col->description(AbstractExpression::DescriptionMode::ColumnName));
+                return ExpressionVisitation::VisitArguments;
+            }
+            const auto name = lqp_col->description(AbstractExpression::DescriptionMode::ColumnName);
+
+            const auto in_left = left_input && left_input->find_column_id(*lqp_col).has_value();
+            const auto in_right = right_input && right_input->find_column_id(*lqp_col).has_value();
+
+            if (in_left)
+            {
+                left_names.insert(name);
+            }
+            if (in_right)
+            {
+                right_names.insert(name);
+            }
+            // If it matched neither (e.g., the column belongs to an ancestor scope for a
+            // correlated subquery), default to left so it's not silently dropped.
+            if (!in_left && !in_right)
+            {
+                left_names.insert(name);
             }
             return ExpressionVisitation::VisitArguments;
         });
     }
-    return nlohmann::json(std::vector<std::string>{names.begin(), names.end()});
+
+    return {std::vector<std::string>{left_names.begin(), left_names.end()},
+            std::vector<std::string>{right_names.begin(), right_names.end()}};
 }
 
 nlohmann::json LQPVisualizer::_build_hierarchical_subtree(
@@ -180,7 +209,13 @@ nlohmann::json LQPVisualizer::_build_hierarchical_subtree(
     out["id"] = assigned_id;
     out["name"] = std::string{magic_enum::enum_name(node->type)};
     out["description"] = node->description();
-    out["columns"] = _collect_columns(node);
+    const auto columns_split = _collect_columns(node);
+    out["columns_left"] = columns_split.from_left;
+    out["columns_right"] = columns_split.from_right;
+    // Kept for backward compat: merged (dedup) list of both sides.
+    std::set<std::string> merged{columns_split.from_left.begin(), columns_split.from_left.end()};
+    merged.insert(columns_split.from_right.begin(), columns_split.from_right.end());
+    out["columns"] = std::vector<std::string>{merged.begin(), merged.end()};
 
     if (node->left_input())
     {

@@ -55,9 +55,10 @@ std::string resolve_column_name(const std::shared_ptr<const Table> &input, const
 
 } // namespace
 
-std::vector<std::string> collect_read_columns(const AbstractOperator &op)
+ReadColumnsSnapshot collect_read_columns(const AbstractOperator &op)
 {
-    std::set<std::string> names;
+    std::set<std::string> left_names;
+    std::set<std::string> right_names;
 
     const auto get_input_table =
         [&](const std::shared_ptr<const AbstractOperator> &input_op) -> std::shared_ptr<const Table> {
@@ -71,14 +72,17 @@ std::vector<std::string> collect_read_columns(const AbstractOperator &op)
     const auto left_input_table = get_input_table(op.left_input());
     const auto right_input_table = get_input_table(op.right_input());
 
+    // Route an expression's column references into `dest`, resolving each PQPColumnExpression
+    // against the given `input` table.
     const auto collect_from_expression =
-        [&](const std::shared_ptr<AbstractExpression> &root, const std::shared_ptr<const Table> &input) {
+        [&](const std::shared_ptr<AbstractExpression> &root, const std::shared_ptr<const Table> &input,
+            std::set<std::string> &dest) {
             auto mut_root = root;
             visit_expression(mut_root, [&](const auto &sub) {
                 const auto col_expr = std::dynamic_pointer_cast<PQPColumnExpression>(sub);
                 if (col_expr && input)
                 {
-                    names.insert(resolve_column_name(input, col_expr->column_id));
+                    dest.insert(resolve_column_name(input, col_expr->column_id));
                 }
                 return ExpressionVisitation::VisitArguments;
             });
@@ -94,7 +98,7 @@ std::vector<std::string> collect_read_columns(const AbstractOperator &op)
     case OperatorType::TableScan:
     {
         const auto &table_scan = static_cast<const TableScan &>(op);
-        collect_from_expression(table_scan.predicate(), left_input_table);
+        collect_from_expression(table_scan.predicate(), left_input_table, left_names);
         break;
     }
     case OperatorType::JoinHash:
@@ -107,21 +111,21 @@ std::vector<std::string> collect_read_columns(const AbstractOperator &op)
         const auto &primary = join.primary_predicate();
         if (left_input_table)
         {
-            names.insert(resolve_column_name(left_input_table, primary.column_ids.first));
+            left_names.insert(resolve_column_name(left_input_table, primary.column_ids.first));
         }
         if (right_input_table)
         {
-            names.insert(resolve_column_name(right_input_table, primary.column_ids.second));
+            right_names.insert(resolve_column_name(right_input_table, primary.column_ids.second));
         }
         for (const auto &secondary : join.secondary_predicates())
         {
             if (left_input_table)
             {
-                names.insert(resolve_column_name(left_input_table, secondary.column_ids.first));
+                left_names.insert(resolve_column_name(left_input_table, secondary.column_ids.first));
             }
             if (right_input_table)
             {
-                names.insert(resolve_column_name(right_input_table, secondary.column_ids.second));
+                right_names.insert(resolve_column_name(right_input_table, secondary.column_ids.second));
             }
         }
         break;
@@ -133,13 +137,13 @@ std::vector<std::string> collect_read_columns(const AbstractOperator &op)
         {
             for (const auto column_id : aggregate.groupby_column_ids())
             {
-                names.insert(resolve_column_name(left_input_table, column_id));
+                left_names.insert(resolve_column_name(left_input_table, column_id));
             }
             for (const auto &agg : aggregate.aggregates())
             {
                 if (agg->argument())
                 {
-                    collect_from_expression(agg->argument(), left_input_table);
+                    collect_from_expression(agg->argument(), left_input_table, left_names);
                 }
             }
         }
@@ -152,7 +156,7 @@ std::vector<std::string> collect_read_columns(const AbstractOperator &op)
         {
             for (const auto &expression : projection.expressions)
             {
-                collect_from_expression(expression, left_input_table);
+                collect_from_expression(expression, left_input_table, left_names);
             }
         }
         break;
@@ -164,7 +168,7 @@ std::vector<std::string> collect_read_columns(const AbstractOperator &op)
         {
             for (const auto &sort_def : sort.sort_definitions())
             {
-                names.insert(resolve_column_name(left_input_table, sort_def.column));
+                left_names.insert(resolve_column_name(left_input_table, sort_def.column));
             }
         }
         break;
@@ -175,7 +179,8 @@ std::vector<std::string> collect_read_columns(const AbstractOperator &op)
         break;
     }
 
-    return {names.begin(), names.end()};
+    return {std::vector<std::string>{left_names.begin(), left_names.end()},
+            std::vector<std::string>{right_names.begin(), right_names.end()}};
 }
 
 } // namespace hyrise

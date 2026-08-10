@@ -279,7 +279,9 @@ void AbstractOperator::execute()
     // and destroy the intermediate tables we need to resolve reference-segment provenance.
     if (track_per_operator_memory)
     {
-        performance_data->read_columns_snapshot = collect_read_columns(*this);
+        auto snap = collect_read_columns(*this);
+        performance_data->left_read_columns = std::move(snap.from_left);
+        performance_data->right_read_columns = std::move(snap.from_right);
     }
 
     _transition_to(OperatorState::ExecutedAndAvailable);

@@ -47,10 +47,12 @@ struct AbstractOperatorPerformanceData : public Noncopyable
     };
     std::unordered_map<size_t, ResourceDelta> per_resource_allocation_delta;
 
-    // Populated only when AbstractOperator::track_per_operator_memory is on. Deduplicated list
-    // of source storage-table column names this operator READ from its inputs, captured during
-    // execute() while input tables are still available.
-    std::vector<std::string> read_columns_snapshot;
+    // Populated only when AbstractOperator::track_per_operator_memory is on. Deduplicated
+    // storage-table column names this operator READ from its left / right inputs respectively,
+    // captured during execute() while input tables are still available. Split by side so
+    // downstream hotness analysis can pair columns with LeftCard / RightCard.
+    std::vector<std::string> left_read_columns;
+    std::vector<std::string> right_read_columns;
 };
 
 /**

@@ -76,7 +76,12 @@ class LQPVisualizer : public AbstractVisualizer<std::vector<std::shared_ptr<Abst
         const CardinalityEstimator &cardinality_estimator,
         std::unordered_set<std::shared_ptr<const AbstractLQPNode>> &visited_nodes);
 
-    nlohmann::json _collect_columns(const std::shared_ptr<const AbstractLQPNode> &node);
+    struct LQPColumnsSplit
+    {
+        std::vector<std::string> from_left;
+        std::vector<std::string> from_right;
+    };
+    LQPColumnsSplit _collect_columns(const std::shared_ptr<const AbstractLQPNode> &node);
 
     // Visit-order node ids assigned during _build_subtree so both the PNG label and the JSON
     // export agree on the same numbering.

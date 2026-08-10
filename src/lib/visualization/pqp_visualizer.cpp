@@ -439,7 +439,12 @@ static std::pair<std::string, std::string> resolve_column(const std::shared_ptr<
 
 nlohmann::json PQPVisualizer::_collect_columns(const std::shared_ptr<const AbstractOperator> &op)
 {
-    return op->performance_data->read_columns_snapshot;
+    // Kept for backward compat: the combined list (left + right, deduped).
+    std::set<std::string> merged{op->performance_data->left_read_columns.begin(),
+                                 op->performance_data->left_read_columns.end()};
+    merged.insert(op->performance_data->right_read_columns.begin(),
+                  op->performance_data->right_read_columns.end());
+    return std::vector<std::string>{merged.begin(), merged.end()};
 }
 
 #if 0  // Retired live-lookup implementation kept for reference.
@@ -599,6 +604,8 @@ nlohmann::json PQPVisualizer::_build_hierarchical_subtree(
     node["name"] = std::string{op->name()};
     node["walltime_ns"] = op->performance_data->walltime.count();
     node["description"] = op->description();
+    node["columns_left"] = op->performance_data->left_read_columns;
+    node["columns_right"] = op->performance_data->right_read_columns;
     node["columns"] = _collect_columns(op);
 
     if (op->left_input())
