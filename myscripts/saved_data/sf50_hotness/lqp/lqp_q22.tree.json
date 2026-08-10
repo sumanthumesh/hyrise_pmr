@@ -1,0 +1,154 @@
+{
+  "LeftCard": "7500000.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "7500000.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "7500000.0 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "7500000.0 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "7500000.0 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "7500000.0 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "7500000.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "7500000.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "7500000.0 row(s) est.",
+                  "Leftchildren": {
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[StoredTable] Name: 'customer' pruned: 0/115 chunk(s), 5/8 column(s)",
+                    "id": 9,
+                    "name": "StoredTable"
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[Validate]",
+                  "id": 8,
+                  "name": "Validate"
+                },
+                "columns": [
+                  "c_acctbal"
+                ],
+                "columns_left": [
+                  "c_acctbal"
+                ],
+                "columns_right": [],
+                "description": "[Predicate] c_acctbal > SUBQUERY (LQP, 0x7aecd894f750)",
+                "id": 7,
+                "name": "Predicate"
+              },
+              "columns": [
+                "c_phone"
+              ],
+              "columns_left": [
+                "c_phone"
+              ],
+              "columns_right": [],
+              "description": "[Predicate] (SUBSTR(c_phone,1,2)) IN ('13', '31', '23', '29', '30', '18', '17')",
+              "id": 6,
+              "name": "Predicate"
+            },
+            "RightCard": "75000000.0 row(s) est.",
+            "Rightchildren": {
+              "LeftCard": "75000000.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 8/9 column(s)",
+                "id": 16,
+                "name": "StoredTable"
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[Validate]",
+              "id": 15,
+              "name": "Validate"
+            },
+            "columns": [
+              "c_custkey",
+              "o_custkey"
+            ],
+            "columns_left": [
+              "c_custkey"
+            ],
+            "columns_right": [
+              "o_custkey"
+            ],
+            "description": "[Join] Mode: AntiNullAsFalse [c_custkey = o_custkey]",
+            "id": 5,
+            "name": "Join"
+          },
+          "columns": [
+            "c_acctbal",
+            "c_phone"
+          ],
+          "columns_left": [
+            "c_acctbal",
+            "c_phone"
+          ],
+          "columns_right": [],
+          "description": "[Projection] SUBSTR(c_phone,1,2), c_acctbal",
+          "id": 4,
+          "name": "Projection"
+        },
+        "columns": [
+          "c_acctbal",
+          "c_phone"
+        ],
+        "columns_left": [
+          "c_acctbal",
+          "c_phone"
+        ],
+        "columns_right": [],
+        "description": "[Alias] SUBSTR(c_phone,1,2) AS cntrycode, c_acctbal",
+        "id": 3,
+        "name": "Alias"
+      },
+      "columns": [
+        "INVALID_COLUMN_ID",
+        "c_acctbal",
+        "c_phone"
+      ],
+      "columns_left": [
+        "INVALID_COLUMN_ID",
+        "c_acctbal",
+        "c_phone"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [SUBSTR(c_phone,1,2)] Aggregates: [COUNT(*), SUM(c_acctbal)]",
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "c_phone"
+    ],
+    "columns_left": [
+      "c_phone"
+    ],
+    "columns_right": [],
+    "description": "[Sort] SUBSTR(c_phone,1,2) (AscendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "INVALID_COLUMN_ID",
+    "c_acctbal",
+    "c_phone"
+  ],
+  "columns_left": [
+    "INVALID_COLUMN_ID",
+    "c_acctbal",
+    "c_phone"
+  ],
+  "columns_right": [],
+  "description": "[Alias] SUBSTR(c_phone,1,2) AS cntrycode, COUNT(*) AS numcust, SUM(c_acctbal) AS totacctbal",
+  "id": 0,
+  "name": "Alias"
+}

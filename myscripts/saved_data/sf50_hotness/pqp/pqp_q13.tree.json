@@ -1,0 +1,127 @@
+{
+  "LeftCard": "46 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "46 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "7,500,000 row(s)/115 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "76,690,585 row(s)/256 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "7,500,000 row(s)/115 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "7,500,000 row(s)/115 chunk(s)",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "GetTable (customer) pruned: 0/115 chunk(s), 7/8 column(s)",
+              "id": 0,
+              "name": "GetTable",
+              "walltime_ns": 184633
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 1,
+            "name": "Validate",
+            "walltime_ns": 633169
+          },
+          "RightCard": "74,190,467 row(s)/1,145 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "74,190,467 row(s)/1,145 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "75,000,000 row(s)/1,145 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (orders) pruned: 0/1145 chunk(s), 6/9 column(s)",
+                "id": 2,
+                "name": "GetTable",
+                "walltime_ns": 67304551
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "o_comment"
+              ],
+              "columns_left": [
+                "o_comment"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnLike o_comment NOT LIKE '%special%requests%'",
+              "id": 3,
+              "name": "TableScan",
+              "walltime_ns": 12038778882
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 4,
+            "name": "Validate",
+            "walltime_ns": 6504817
+          },
+          "columns": [
+            "c_custkey",
+            "o_custkey"
+          ],
+          "columns_left": [
+            "c_custkey"
+          ],
+          "columns_right": [
+            "o_custkey"
+          ],
+          "description": "JoinHash (Left) c_custkey = o_custkey",
+          "id": 5,
+          "name": "JoinHash",
+          "walltime_ns": 19576335148
+        },
+        "columns": [
+          "c_custkey",
+          "o_orderkey"
+        ],
+        "columns_left": [
+          "c_custkey",
+          "o_orderkey"
+        ],
+        "columns_right": [],
+        "description": "AggregateHash GroupBy {c_custkey} COUNT(o_orderkey)",
+        "id": 6,
+        "name": "AggregateHash",
+        "walltime_ns": 11969660238
+      },
+      "columns": [
+        "COUNT(o_orderkey)"
+      ],
+      "columns_left": [
+        "COUNT(o_orderkey)"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {COUNT(o_orderkey)} COUNT(*)",
+      "id": 7,
+      "name": "AggregateHash",
+      "walltime_ns": 194377575
+    },
+    "columns": [
+      "COUNT(*)",
+      "COUNT(o_orderkey)"
+    ],
+    "columns_left": [
+      "COUNT(*)",
+      "COUNT(o_orderkey)"
+    ],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 8,
+    "name": "Sort",
+    "walltime_ns": 84831
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [c_count, custdist]",
+  "id": 9,
+  "name": "Alias",
+  "walltime_ns": 4081
+}

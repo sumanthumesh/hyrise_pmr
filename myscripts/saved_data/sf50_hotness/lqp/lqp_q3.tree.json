@@ -1,0 +1,243 @@
+{
+  "LeftCard": "23467492.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "23467492.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "23467492.0 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "23467492.0 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "23467492.0 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "23467492.0 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "23467492.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "160870965.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "300005811.0 row(s) est.",
+                  "Leftchildren": {
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
+                    "id": 9,
+                    "name": "StoredTable"
+                  },
+                  "columns": [
+                    "l_shipdate"
+                  ],
+                  "columns_left": [
+                    "l_shipdate"
+                  ],
+                  "columns_right": [],
+                  "description": "[Predicate] l_shipdate > '1995-03-15'",
+                  "id": 8,
+                  "name": "Predicate"
+                },
+                "RightCard": "10940830.1 row(s) est.",
+                "Rightchildren": {
+                  "LeftCard": "10940830.1 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "36468026.0 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "75000000.0 row(s) est.",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 5/9 column(s)",
+                        "id": 13,
+                        "name": "StoredTable"
+                      },
+                      "columns": [
+                        "o_orderdate"
+                      ],
+                      "columns_left": [
+                        "o_orderdate"
+                      ],
+                      "columns_right": [],
+                      "description": "[Predicate] o_orderdate < '1995-03-15'",
+                      "id": 12,
+                      "name": "Predicate"
+                    },
+                    "RightCard": "1500036.0 row(s) est.",
+                    "Rightchildren": {
+                      "LeftCard": "1500036.0 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "7500000.0 row(s) est.",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "[StoredTable] Name: 'customer' pruned: 0/115 chunk(s), 6/8 column(s)",
+                          "id": 16,
+                          "name": "StoredTable"
+                        },
+                        "columns": [
+                          "c_mktsegment"
+                        ],
+                        "columns_left": [
+                          "c_mktsegment"
+                        ],
+                        "columns_right": [],
+                        "description": "[Predicate] c_mktsegment = 'BUILDING'",
+                        "id": 15,
+                        "name": "Predicate"
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[Validate]",
+                      "id": 14,
+                      "name": "Validate"
+                    },
+                    "columns": [
+                      "c_custkey",
+                      "o_custkey"
+                    ],
+                    "columns_left": [
+                      "o_custkey"
+                    ],
+                    "columns_right": [
+                      "c_custkey"
+                    ],
+                    "description": "[Join] Mode: Semi [c_custkey = o_custkey]",
+                    "id": 11,
+                    "name": "Join"
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[Validate]",
+                  "id": 10,
+                  "name": "Validate"
+                },
+                "columns": [
+                  "l_orderkey",
+                  "o_orderkey"
+                ],
+                "columns_left": [
+                  "l_orderkey"
+                ],
+                "columns_right": [
+                  "o_orderkey"
+                ],
+                "description": "[Join] Mode: Semi [l_orderkey = o_orderkey]",
+                "id": 7,
+                "name": "Join"
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[Validate]",
+              "id": 6,
+              "name": "Validate"
+            },
+            "RightCard": "10940830.1 row(s) est.",
+            "Rightchildren": {},
+            "columns": [
+              "l_orderkey",
+              "o_orderkey"
+            ],
+            "columns_left": [
+              "l_orderkey"
+            ],
+            "columns_right": [
+              "o_orderkey"
+            ],
+            "description": "[Join] Mode: Inner [l_orderkey = o_orderkey]",
+            "id": 5,
+            "name": "Join"
+          },
+          "columns": [
+            "l_discount",
+            "l_extendedprice",
+            "l_orderkey",
+            "o_orderdate",
+            "o_shippriority"
+          ],
+          "columns_left": [
+            "l_discount",
+            "l_extendedprice",
+            "l_orderkey",
+            "o_orderdate",
+            "o_shippriority"
+          ],
+          "columns_right": [],
+          "description": "[Projection] l_extendedprice * (1 - l_discount), l_orderkey, o_orderdate, o_shippriority",
+          "id": 4,
+          "name": "Projection"
+        },
+        "columns": [
+          "l_discount",
+          "l_extendedprice",
+          "l_orderkey",
+          "o_orderdate",
+          "o_shippriority"
+        ],
+        "columns_left": [
+          "l_discount",
+          "l_extendedprice",
+          "l_orderkey",
+          "o_orderdate",
+          "o_shippriority"
+        ],
+        "columns_right": [],
+        "description": "[Aggregate] GroupBy: [l_orderkey, o_orderdate, o_shippriority] Aggregates: [SUM(l_extendedprice * (1 - l_discount))]",
+        "id": 3,
+        "name": "Aggregate"
+      },
+      "columns": [
+        "l_discount",
+        "l_extendedprice",
+        "o_orderdate"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice",
+        "o_orderdate"
+      ],
+      "columns_right": [],
+      "description": "[Sort] SUM(l_extendedprice * (1 - l_discount)) (DescendingNullsFirst), o_orderdate (AscendingNullsFirst)",
+      "id": 2,
+      "name": "Sort"
+    },
+    "columns": [
+      "l_discount",
+      "l_extendedprice",
+      "l_orderkey",
+      "o_orderdate",
+      "o_shippriority"
+    ],
+    "columns_left": [
+      "l_discount",
+      "l_extendedprice",
+      "l_orderkey",
+      "o_orderdate",
+      "o_shippriority"
+    ],
+    "columns_right": [],
+    "description": "[Projection] l_orderkey, SUM(l_extendedprice * (1 - l_discount)), o_orderdate, o_shippriority",
+    "id": 1,
+    "name": "Projection"
+  },
+  "columns": [
+    "l_discount",
+    "l_extendedprice",
+    "l_orderkey",
+    "o_orderdate",
+    "o_shippriority"
+  ],
+  "columns_left": [
+    "l_discount",
+    "l_extendedprice",
+    "l_orderkey",
+    "o_orderdate",
+    "o_shippriority"
+  ],
+  "columns_right": [],
+  "description": "[Alias] l_orderkey, SUM(l_extendedprice * (1 - l_discount)) AS revenue, o_orderdate, o_shippriority",
+  "id": 0,
+  "name": "Alias"
+}

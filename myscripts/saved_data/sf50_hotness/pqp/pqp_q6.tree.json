@@ -1,0 +1,105 @@
+{
+  "LeftCard": "1 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "3,804,648 row(s)/4,578 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "3,804,648 row(s)/4,578 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "3,804,648 row(s)/4,578 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "8,271,927 row(s)/4,578 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "45,517,940 row(s)/4,578 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "300,005,811 row(s)/4,578 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (lineitem) pruned: 0/4578 chunk(s), 12/16 column(s)",
+                "id": 0,
+                "name": "GetTable",
+                "walltime_ns": 44899691
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "l_shipdate"
+              ],
+              "columns_left": [
+                "l_shipdate"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnBetween l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
+              "id": 1,
+              "name": "TableScan",
+              "walltime_ns": 1765706117
+            },
+            "Ops": "TableScan",
+            "columns": [
+              "l_discount"
+            ],
+            "columns_left": [
+              "l_discount"
+            ],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnBetween l_discount BETWEEN INCLUSIVE 0.05 AND 0.07",
+            "id": 2,
+            "name": "TableScan",
+            "walltime_ns": 506639158
+          },
+          "Ops": "TableScan",
+          "columns": [
+            "l_quantity"
+          ],
+          "columns_left": [
+            "l_quantity"
+          ],
+          "columns_right": [],
+          "description": "TableScan Impl: ColumnVsValue l_quantity < 24",
+          "id": 3,
+          "name": "TableScan",
+          "walltime_ns": 198768789
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "Validate",
+        "id": 4,
+        "name": "Validate",
+        "walltime_ns": 9229406
+      },
+      "Ops": "projection",
+      "columns": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_right": [],
+      "description": "Projection",
+      "id": 5,
+      "name": "Projection",
+      "walltime_ns": 264255108
+    },
+    "columns": [
+      "l_extendedprice * l_discount"
+    ],
+    "columns_left": [
+      "l_extendedprice * l_discount"
+    ],
+    "columns_right": [],
+    "description": "AggregateHash GroupBy {} SUM(l_extendedprice * l_discount)",
+    "id": 6,
+    "name": "AggregateHash",
+    "walltime_ns": 10953371
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [revenue]",
+  "id": 7,
+  "name": "Alias",
+  "walltime_ns": 4648
+}

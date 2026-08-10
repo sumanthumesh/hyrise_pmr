@@ -1,0 +1,140 @@
+{
+  "LeftCard": "4 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "4 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "4 row(s)/1 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "295,783,930 row(s)/4,578 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "295,783,930 row(s)/4,578 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "295,783,930 row(s)/4,578 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "300,005,811 row(s)/4,578 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (lineitem) pruned: 0/4578 chunk(s), 9/16 column(s)",
+                "id": 0,
+                "name": "GetTable",
+                "walltime_ns": 38637025
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "l_shipdate"
+              ],
+              "columns_left": [
+                "l_shipdate"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnVsValue l_shipdate <= '1998-09-02'",
+              "id": 1,
+              "name": "TableScan",
+              "walltime_ns": 2441618914
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 2,
+            "name": "Validate",
+            "walltime_ns": 28665467
+          },
+          "Ops": "projection",
+          "columns": [
+            "l_discount",
+            "l_extendedprice",
+            "l_linestatus",
+            "l_quantity",
+            "l_returnflag",
+            "l_tax"
+          ],
+          "columns_left": [
+            "l_discount",
+            "l_extendedprice",
+            "l_linestatus",
+            "l_quantity",
+            "l_returnflag",
+            "l_tax"
+          ],
+          "columns_right": [],
+          "description": "Projection",
+          "id": 3,
+          "name": "Projection",
+          "walltime_ns": 7697418063
+        },
+        "columns": [
+          "(l_extendedprice * (1 - l_discount)) * (1 + l_tax)",
+          "l_discount",
+          "l_extendedprice",
+          "l_extendedprice * (1 - l_discount)",
+          "l_linestatus",
+          "l_quantity",
+          "l_returnflag"
+        ],
+        "columns_left": [
+          "(l_extendedprice * (1 - l_discount)) * (1 + l_tax)",
+          "l_discount",
+          "l_extendedprice",
+          "l_extendedprice * (1 - l_discount)",
+          "l_linestatus",
+          "l_quantity",
+          "l_returnflag"
+        ],
+        "columns_right": [],
+        "description": "AggregateHash GroupBy {l_returnflag, l_linestatus} SUM(l_quantity),  SUM(l_extendedprice),  SUM(l_extendedprice * (1 - l_discount)),  SUM((l_extendedprice * (1 - l_discount)) * (1 + l_tax)),  AVG(l_discount),  COUNT(*)",
+        "id": 4,
+        "name": "AggregateHash",
+        "walltime_ns": 29601045889
+      },
+      "Ops": "projection",
+      "columns": [
+        "AVG(l_discount)",
+        "COUNT(*)",
+        "SUM((l_extendedprice * (1 - l_discount)) * (1 + l_tax))",
+        "SUM(l_extendedprice * (1 - l_discount))",
+        "SUM(l_extendedprice)",
+        "SUM(l_quantity)",
+        "l_linestatus",
+        "l_returnflag"
+      ],
+      "columns_left": [
+        "AVG(l_discount)",
+        "COUNT(*)",
+        "SUM((l_extendedprice * (1 - l_discount)) * (1 + l_tax))",
+        "SUM(l_extendedprice * (1 - l_discount))",
+        "SUM(l_extendedprice)",
+        "SUM(l_quantity)",
+        "l_linestatus",
+        "l_returnflag"
+      ],
+      "columns_right": [],
+      "description": "Projection",
+      "id": 5,
+      "name": "Projection",
+      "walltime_ns": 200899
+    },
+    "columns": [
+      "l_linestatus",
+      "l_returnflag"
+    ],
+    "columns_left": [
+      "l_linestatus",
+      "l_returnflag"
+    ],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 6,
+    "name": "Sort",
+    "walltime_ns": 640996
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [l_returnflag, l_linestatus, sum_qty, sum_base_price, sum_disc_price, sum_charge, avg_qty, avg_price, avg_disc, count_order]",
+  "id": 7,
+  "name": "Alias",
+  "walltime_ns": 4919
+}

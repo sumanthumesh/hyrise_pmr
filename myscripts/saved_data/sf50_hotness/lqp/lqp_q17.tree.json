@@ -1,0 +1,218 @@
+{
+  "LeftCard": "1.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "1.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "300574.3 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "300574.3 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "300574.3 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "300574.3 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "300005811.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 13/16 column(s)",
+                "id": 7,
+                "name": "StoredTable"
+              },
+              "RightCard": "10019.0 row(s) est.",
+              "Rightchildren": {
+                "LeftCard": "10019.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "250532.0 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "10000000.0 row(s) est.",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[StoredTable] Name: 'part' pruned: 0/153 chunk(s), 6/9 column(s)",
+                      "id": 11,
+                      "name": "StoredTable"
+                    },
+                    "columns": [
+                      "p_container"
+                    ],
+                    "columns_left": [
+                      "p_container"
+                    ],
+                    "columns_right": [],
+                    "description": "[Predicate] p_container = 'MED BOX'",
+                    "id": 10,
+                    "name": "Predicate"
+                  },
+                  "columns": [
+                    "p_brand"
+                  ],
+                  "columns_left": [
+                    "p_brand"
+                  ],
+                  "columns_right": [],
+                  "description": "[Predicate] p_brand = 'Brand#23'",
+                  "id": 9,
+                  "name": "Predicate"
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[Validate]",
+                "id": 8,
+                "name": "Validate"
+              },
+              "columns": [
+                "l_partkey",
+                "p_partkey"
+              ],
+              "columns_left": [
+                "l_partkey"
+              ],
+              "columns_right": [
+                "p_partkey"
+              ],
+              "description": "[Join] Mode: Semi [p_partkey = l_partkey]",
+              "id": 6,
+              "name": "Join"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 5,
+            "name": "Validate"
+          },
+          "RightCard": "10019.0 row(s) est.",
+          "Rightchildren": {},
+          "columns": [
+            "l_partkey",
+            "p_partkey"
+          ],
+          "columns_left": [
+            "l_partkey"
+          ],
+          "columns_right": [
+            "p_partkey"
+          ],
+          "description": "[Join] Mode: Inner [p_partkey = l_partkey]",
+          "id": 4,
+          "name": "Join"
+        },
+        "RightCard": "300574.3 row(s) est.",
+        "Rightchildren": {
+          "LeftCard": "300574.3 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "300574.3 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "300574.3 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "300005811.0 row(s) est.",
+                "Leftchildren": {
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 13/16 column(s)",
+                  "id": 16,
+                  "name": "StoredTable"
+                },
+                "RightCard": "10019.0 row(s) est.",
+                "Rightchildren": {},
+                "columns": [
+                  "l_partkey",
+                  "p_partkey"
+                ],
+                "columns_left": [
+                  "l_partkey"
+                ],
+                "columns_right": [
+                  "p_partkey"
+                ],
+                "description": "[Join] Mode: Semi [p_partkey = l_partkey]",
+                "id": 15,
+                "name": "Join"
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[Validate]",
+              "id": 14,
+              "name": "Validate"
+            },
+            "columns": [
+              "l_partkey",
+              "l_quantity"
+            ],
+            "columns_left": [
+              "l_partkey",
+              "l_quantity"
+            ],
+            "columns_right": [],
+            "description": "[Aggregate] GroupBy: [l_partkey] Aggregates: [AVG(l_quantity)]",
+            "id": 13,
+            "name": "Aggregate"
+          },
+          "columns": [
+            "l_partkey",
+            "l_quantity"
+          ],
+          "columns_left": [
+            "l_partkey",
+            "l_quantity"
+          ],
+          "columns_right": [],
+          "description": "[Projection] 0.2 * AVG(l_quantity), l_partkey",
+          "id": 12,
+          "name": "Projection"
+        },
+        "columns": [
+          "l_partkey",
+          "l_quantity",
+          "p_partkey"
+        ],
+        "columns_left": [
+          "l_quantity",
+          "p_partkey"
+        ],
+        "columns_right": [
+          "l_partkey"
+        ],
+        "description": "[Join] Mode: Semi [p_partkey = l_partkey] [l_quantity < 0.2 * AVG(l_quantity)]",
+        "id": 3,
+        "name": "Join"
+      },
+      "columns": [
+        "l_extendedprice"
+      ],
+      "columns_left": [
+        "l_extendedprice"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [] Aggregates: [SUM(l_extendedprice)]",
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "l_extendedprice"
+    ],
+    "columns_left": [
+      "l_extendedprice"
+    ],
+    "columns_right": [],
+    "description": "[Projection] SUM(l_extendedprice) / 7",
+    "id": 1,
+    "name": "Projection"
+  },
+  "columns": [
+    "l_extendedprice"
+  ],
+  "columns_left": [
+    "l_extendedprice"
+  ],
+  "columns_right": [],
+  "description": "[Alias] SUM(l_extendedprice) / 7 AS avg_yearly",
+  "id": 0,
+  "name": "Alias"
+}

@@ -1,0 +1,101 @@
+{
+  "LeftCard": "1.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "5577133.2 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "5577133.2 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "5577133.2 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "12124006.8 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "44455670.1 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "300005811.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
+                "id": 7,
+                "name": "StoredTable"
+              },
+              "columns": [
+                "l_shipdate"
+              ],
+              "columns_left": [
+                "l_shipdate"
+              ],
+              "columns_right": [],
+              "description": "[Predicate] l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
+              "id": 6,
+              "name": "Predicate"
+            },
+            "columns": [
+              "l_discount"
+            ],
+            "columns_left": [
+              "l_discount"
+            ],
+            "columns_right": [],
+            "description": "[Predicate] l_discount BETWEEN INCLUSIVE 0.05 AND 0.07",
+            "id": 5,
+            "name": "Predicate"
+          },
+          "columns": [
+            "l_quantity"
+          ],
+          "columns_left": [
+            "l_quantity"
+          ],
+          "columns_right": [],
+          "description": "[Predicate] l_quantity < 24",
+          "id": 4,
+          "name": "Predicate"
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "[Validate]",
+        "id": 3,
+        "name": "Validate"
+      },
+      "columns": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_right": [],
+      "description": "[Projection] l_extendedprice * l_discount",
+      "id": 2,
+      "name": "Projection"
+    },
+    "columns": [
+      "l_discount",
+      "l_extendedprice"
+    ],
+    "columns_left": [
+      "l_discount",
+      "l_extendedprice"
+    ],
+    "columns_right": [],
+    "description": "[Aggregate] GroupBy: [] Aggregates: [SUM(l_extendedprice * l_discount)]",
+    "id": 1,
+    "name": "Aggregate"
+  },
+  "columns": [
+    "l_discount",
+    "l_extendedprice"
+  ],
+  "columns_left": [
+    "l_discount",
+    "l_extendedprice"
+  ],
+  "columns_right": [],
+  "description": "[Alias] SUM(l_extendedprice * l_discount) AS revenue",
+  "id": 0,
+  "name": "Alias"
+}

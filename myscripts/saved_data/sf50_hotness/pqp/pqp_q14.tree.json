@@ -1,0 +1,133 @@
+{
+  "LeftCard": "1 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "1 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "3,742,179 row(s)/32 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "3,742,179 row(s)/32 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "3,742,179 row(s)/4,578 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "3,742,179 row(s)/4,578 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "300,005,811 row(s)/4,578 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (lineitem) pruned: 0/4578 chunk(s), 12/16 column(s)",
+                "id": 0,
+                "name": "GetTable",
+                "walltime_ns": 15791144
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "l_shipdate"
+              ],
+              "columns_left": [
+                "l_shipdate"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnBetween l_shipdate BETWEEN UPPER EXCLUSIVE '1995-09-01' AND '1995-10-01'",
+              "id": 1,
+              "name": "TableScan",
+              "walltime_ns": 1490744603
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 2,
+            "name": "Validate",
+            "walltime_ns": 7715607
+          },
+          "RightCard": "10,000,000 row(s)/153 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "10,000,000 row(s)/153 chunk(s)",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "GetTable (part) pruned: 0/153 chunk(s), 7/9 column(s)",
+              "id": 3,
+              "name": "GetTable",
+              "walltime_ns": 591102
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 4,
+            "name": "Validate",
+            "walltime_ns": 1548642510
+          },
+          "columns": [
+            "l_partkey",
+            "p_partkey"
+          ],
+          "columns_left": [
+            "l_partkey"
+          ],
+          "columns_right": [
+            "p_partkey"
+          ],
+          "description": "JoinHash (Inner) l_partkey = p_partkey",
+          "id": 5,
+          "name": "JoinHash",
+          "walltime_ns": 2047969394
+        },
+        "Ops": "projection",
+        "columns": [
+          "l_discount",
+          "l_extendedprice",
+          "p_type"
+        ],
+        "columns_left": [
+          "l_discount",
+          "l_extendedprice",
+          "p_type"
+        ],
+        "columns_right": [],
+        "description": "Projection",
+        "id": 6,
+        "name": "Projection",
+        "walltime_ns": 3036866543
+      },
+      "columns": [
+        "CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END",
+        "l_extendedprice * (1 - l_discount)"
+      ],
+      "columns_left": [
+        "CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END",
+        "l_extendedprice * (1 - l_discount)"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {} SUM(l_extendedprice * (1 - l_discount)),  SUM(CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END)",
+      "id": 7,
+      "name": "AggregateHash",
+      "walltime_ns": 21465441
+    },
+    "Ops": "projection",
+    "columns": [
+      "SUM(CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END)",
+      "SUM(l_extendedprice * (1 - l_discount))"
+    ],
+    "columns_left": [
+      "SUM(CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END)",
+      "SUM(l_extendedprice * (1 - l_discount))"
+    ],
+    "columns_right": [],
+    "description": "Projection",
+    "id": 8,
+    "name": "Projection",
+    "walltime_ns": 100032
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [promo_revenue]",
+  "id": 9,
+  "name": "Alias",
+  "walltime_ns": 2702
+}
