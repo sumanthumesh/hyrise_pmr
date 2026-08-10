@@ -30,6 +30,15 @@ namespace
 // through one ReferenceSegment level if `input` is an intermediate table. This keeps the name
 // matched to the storage column even if an upstream Projection/Alias renamed it in the
 // intermediate schema.
+// COUNT(*) is represented as a PQPColumnExpression carrying INVALID_COLUMN_ID (see
+// LQPTranslator's "Resolve COUNT(*)"): it addresses no column and reads no column data, so it
+// must never reach resolve_column_name() -- Chunk::get_segment()/Table::column_name() would
+// assert on the out-of-range id.
+bool addresses_a_column(const std::shared_ptr<const Table> &input, const ColumnID column_id)
+{
+    return input && column_id != INVALID_COLUMN_ID && column_id < input->column_count();
+}
+
 std::string resolve_column_name(const std::shared_ptr<const Table> &input, const ColumnID column_id)
 {
     if (input->type() == TableType::References)
@@ -72,6 +81,17 @@ ReadColumnsSnapshot collect_read_columns(const AbstractOperator &op)
     const auto left_input_table = get_input_table(op.left_input());
     const auto right_input_table = get_input_table(op.right_input());
 
+    // Single entry point for name resolution so the INVALID_COLUMN_ID / out-of-range guard
+    // cannot be bypassed by a new call site.
+    const auto insert_column = [&](const std::shared_ptr<const Table> &input, const ColumnID column_id,
+                                   std::set<std::string> &dest) {
+        if (!addresses_a_column(input, column_id))
+        {
+            return;
+        }
+        dest.insert(resolve_column_name(input, column_id));
+    };
+
     // Route an expression's column references into `dest`, resolving each PQPColumnExpression
     // against the given `input` table.
     const auto collect_from_expression =
@@ -80,9 +100,9 @@ ReadColumnsSnapshot collect_read_columns(const AbstractOperator &op)
             auto mut_root = root;
             visit_expression(mut_root, [&](const auto &sub) {
                 const auto col_expr = std::dynamic_pointer_cast<PQPColumnExpression>(sub);
-                if (col_expr && input)
+                if (col_expr)
                 {
-                    dest.insert(resolve_column_name(input, col_expr->column_id));
+                    insert_column(input, col_expr->column_id, dest);
                 }
                 return ExpressionVisitation::VisitArguments;
             });
@@ -109,42 +129,29 @@ ReadColumnsSnapshot collect_read_columns(const AbstractOperator &op)
     {
         const auto &join = static_cast<const AbstractJoinOperator &>(op);
         const auto &primary = join.primary_predicate();
-        if (left_input_table)
-        {
-            left_names.insert(resolve_column_name(left_input_table, primary.column_ids.first));
-        }
-        if (right_input_table)
-        {
-            right_names.insert(resolve_column_name(right_input_table, primary.column_ids.second));
-        }
+        insert_column(left_input_table, primary.column_ids.first, left_names);
+        insert_column(right_input_table, primary.column_ids.second, right_names);
         for (const auto &secondary : join.secondary_predicates())
         {
-            if (left_input_table)
-            {
-                left_names.insert(resolve_column_name(left_input_table, secondary.column_ids.first));
-            }
-            if (right_input_table)
-            {
-                right_names.insert(resolve_column_name(right_input_table, secondary.column_ids.second));
-            }
+            insert_column(left_input_table, secondary.column_ids.first, left_names);
+            insert_column(right_input_table, secondary.column_ids.second, right_names);
         }
         break;
     }
     case OperatorType::Aggregate:
     {
         const auto &aggregate = static_cast<const AbstractAggregateOperator &>(op);
-        if (left_input_table)
+        for (const auto column_id : aggregate.groupby_column_ids())
         {
-            for (const auto column_id : aggregate.groupby_column_ids())
+            insert_column(left_input_table, column_id, left_names);
+        }
+        for (const auto &agg : aggregate.aggregates())
+        {
+            // COUNT(*)'s argument is the INVALID_COLUMN_ID star expression; insert_column
+            // filters it out, so the aggregate contributes no column read.
+            if (agg->argument())
             {
-                left_names.insert(resolve_column_name(left_input_table, column_id));
-            }
-            for (const auto &agg : aggregate.aggregates())
-            {
-                if (agg->argument())
-                {
-                    collect_from_expression(agg->argument(), left_input_table, left_names);
-                }
+                collect_from_expression(agg->argument(), left_input_table, left_names);
             }
         }
         break;
@@ -152,24 +159,18 @@ ReadColumnsSnapshot collect_read_columns(const AbstractOperator &op)
     case OperatorType::Projection:
     {
         const auto &projection = static_cast<const Projection &>(op);
-        if (left_input_table)
+        for (const auto &expression : projection.expressions)
         {
-            for (const auto &expression : projection.expressions)
-            {
-                collect_from_expression(expression, left_input_table, left_names);
-            }
+            collect_from_expression(expression, left_input_table, left_names);
         }
         break;
     }
     case OperatorType::Sort:
     {
         const auto &sort = static_cast<const Sort &>(op);
-        if (left_input_table)
+        for (const auto &sort_def : sort.sort_definitions())
         {
-            for (const auto &sort_def : sort.sort_definitions())
-            {
-                left_names.insert(resolve_column_name(left_input_table, sort_def.column));
-            }
+            insert_column(left_input_table, sort_def.column, left_names);
         }
         break;
     }
