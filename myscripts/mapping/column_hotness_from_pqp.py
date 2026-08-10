@@ -186,6 +186,7 @@ def main():
 
     if args.output:
         with open(args.output, "w") as f:
+            columns_with_non_zero_accesses = [col for col, rows in ranked]
             output_dict = {}
             output_dict["column_access_deltas"] = []
             for col,rows in ranked:
@@ -194,6 +195,13 @@ def main():
                     "column_name": f"{col}",
                     "table_name": f"{table_from_column[col]}"
                 })
+            for col in table_from_column.keys():
+                if col not in columns_with_non_zero_accesses:
+                    output_dict["column_access_deltas"].append({
+                        "access_delta": 0,
+                        "column_name": f"{col}",
+                        "table_name": f"{table_from_column[col]}"
+                    })
             json.dump(output_dict, f, indent=2)
     else:
         for col, rows in ranked:
