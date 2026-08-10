@@ -20,6 +20,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #pragma GCC diagnostic pop
 
+#include "nlohmann/json.hpp"
+
 #include "expression/abstract_expression.hpp"
 #include "expression/expression_utils.hpp"
 #include "expression/pqp_subquery_expression.hpp"
@@ -52,6 +54,24 @@ void PQPVisualizer::visualize(const std::vector<std::shared_ptr<AbstractOperator
     }
     txt_filename += ".graph";
     export_as_graph_text(plans, txt_filename);
+
+    auto json_filename = img_filename;
+    const auto last_dot_json = json_filename.find_last_of('.');
+    if (last_dot_json != std::string::npos)
+    {
+        json_filename = json_filename.substr(0, last_dot_json);
+    }
+    json_filename += ".graph.json";
+    export_as_graph_json(plans, json_filename);
+
+    auto tree_filename = img_filename;
+    const auto last_dot_tree = tree_filename.find_last_of('.');
+    if (last_dot_tree != std::string::npos)
+    {
+        tree_filename = tree_filename.substr(0, last_dot_tree);
+    }
+    tree_filename += ".tree.json";
+    export_as_hierarchical_json(plans, tree_filename);
 }
 
 void PQPVisualizer::_build_graph(const std::vector<std::shared_ptr<AbstractOperator>> &plans)
@@ -254,7 +274,7 @@ void PQPVisualizer::export_as_graph_text(const std::vector<std::shared_ptr<Abstr
                                          const std::string &text_filename)
 {
     std::unordered_map<size_t, std::pair<std::string, std::chrono::nanoseconds>> nodes_map;
-    std::vector<std::pair<size_t, size_t>> edges_list;
+    std::vector<PQPEdge> edges_list;
 
     _collect_graph_info(plans, nodes_map, edges_list);
 
@@ -269,17 +289,140 @@ void PQPVisualizer::export_as_graph_text(const std::vector<std::shared_ptr<Abstr
     }
 
     // Write edges section
-    for (const auto &[src_id, dest_id] : edges_list)
+    for (const auto &edge : edges_list)
     {
-        file << "E," << src_id << "," << dest_id << "\n";
+        file << "E," << edge.src_operator_id << "," << edge.dst_operator_id << "," << edge.row_count << "\n";
     }
 
     file.close();
 }
 
+void PQPVisualizer::export_as_graph_json(const std::vector<std::shared_ptr<AbstractOperator>> &plans,
+                                         const std::string &json_filename)
+{
+    std::unordered_map<size_t, std::pair<std::string, std::chrono::nanoseconds>> nodes_map;
+    std::vector<PQPEdge> edges_list;
+
+    _collect_graph_info(plans, nodes_map, edges_list);
+
+    auto nodes_json = nlohmann::json::array();
+    for (const auto &[op_id, node_info] : nodes_map)
+    {
+        const auto &[operator_type, walltime] = node_info;
+        nodes_json.push_back({
+            {"id", op_id},
+            {"name", operator_type},
+            {"walltime_ns", walltime.count()},
+        });
+    }
+
+    auto edges_json = nlohmann::json::array();
+    for (const auto &edge : edges_list)
+    {
+        edges_json.push_back({
+            {"src", edge.src_operator_id},
+            {"dst", edge.dst_operator_id},
+            {"rows", edge.row_count},
+        });
+    }
+
+    auto graph_json = nlohmann::json{
+        {"nodes", nodes_json},
+        {"edges", edges_json},
+    };
+
+    auto file = std::ofstream(json_filename);
+    Assert(file.is_open(), "Failed to open file for writing: " + json_filename);
+    file << graph_json.dump(2) << "\n";
+}
+
+void PQPVisualizer::export_as_hierarchical_json(const std::vector<std::shared_ptr<AbstractOperator>> &plans,
+                                                const std::string &json_filename)
+{
+    std::unordered_set<std::shared_ptr<const AbstractOperator>> visited_ops;
+    auto trees_json = nlohmann::json::array();
+    for (const auto &plan : plans)
+    {
+        trees_json.push_back(_build_hierarchical_subtree(plan, visited_ops));
+    }
+
+    // If a single plan, emit its root object at the top level; otherwise emit the array.
+    auto out_json = (plans.size() == 1) ? trees_json.front() : nlohmann::json{trees_json};
+
+    auto file = std::ofstream(json_filename);
+    Assert(file.is_open(), "Failed to open file for writing: " + json_filename);
+    file << out_json.dump(2) << "\n";
+}
+
+// Returns the "N row(s)/M chunk(s)" label used on dataflow edges, or "" if the source op
+// hasn't run yet.
+static std::string dataflow_label(const std::shared_ptr<const AbstractOperator> &source_node)
+{
+    const auto &performance_data = *source_node->performance_data;
+    if (!source_node->executed() || !performance_data.has_output)
+    {
+        return {};
+    }
+    auto stream = std::stringstream{};
+    const auto &separate_thousands_locale = std::locale(stream.getloc(), new SeparateThousandsFacet);
+    stream.imbue(separate_thousands_locale);
+    stream << performance_data.output_row_count << " row(s)/"
+           << performance_data.output_chunk_count << " chunk(s)";
+    return stream.str();
+}
+
+nlohmann::json PQPVisualizer::_build_hierarchical_subtree(
+    const std::shared_ptr<const AbstractOperator> &op,
+    std::unordered_set<std::shared_ptr<const AbstractOperator>> &visited_ops)
+{
+    // Diamond-shaped PQPs: shared subtrees are emitted only once.
+    if (visited_ops.contains(op))
+    {
+        return nlohmann::json::object();
+    }
+    visited_ops.insert(op);
+
+    auto node = nlohmann::json::object();
+    node["id"] = op->operator_id;
+    node["name"] = std::string{op->name()};
+    node["walltime_ns"] = op->performance_data->walltime.count();
+    node["description"] = op->description();
+
+    if (op->left_input())
+    {
+        const auto left = op->left_input();
+        node["Leftchildren"] = _build_hierarchical_subtree(left, visited_ops);
+        node["LeftCard"] = dataflow_label(left);
+    }
+
+    if (op->right_input())
+    {
+        const auto right = op->right_input();
+        node["Rightchildren"] = _build_hierarchical_subtree(right, visited_ops);
+        node["RightCard"] = dataflow_label(right);
+    }
+
+    switch (op->type())
+    {
+    case OperatorType::Projection:
+        node["Ops"] = "projection";
+        break;
+    case OperatorType::TableScan:
+        node["Ops"] = "TableScan";
+        break;
+    case OperatorType::Limit:
+        node["Ops"] = "Limit";
+        break;
+    default:
+        break;
+    }
+
+    return node;
+}
+
 void PQPVisualizer::_collect_graph_info(const std::vector<std::shared_ptr<AbstractOperator>> &plans,
                                         std::unordered_map<size_t, std::pair<std::string, std::chrono::nanoseconds>> &nodes_map,
-                                        std::vector<std::pair<size_t, size_t>> &edges_list)
+                                        std::vector<PQPEdge> &edges_list)
 {
     std::unordered_set<std::shared_ptr<const AbstractOperator>> visited_ops;
 
@@ -292,7 +435,7 @@ void PQPVisualizer::_collect_graph_info(const std::vector<std::shared_ptr<Abstra
 void PQPVisualizer::_collect_subtree_info(const std::shared_ptr<const AbstractOperator> &op,
                                           std::unordered_set<std::shared_ptr<const AbstractOperator>> &visited_ops,
                                           std::unordered_map<size_t, std::pair<std::string, std::chrono::nanoseconds>> &nodes_map,
-                                          std::vector<std::pair<size_t, size_t>> &edges_list)
+                                          std::vector<PQPEdge> &edges_list)
 {
     // Avoid processing operators redundantly in diamond shaped PQPs
     if (visited_ops.contains(op))
@@ -309,7 +452,10 @@ void PQPVisualizer::_collect_subtree_info(const std::shared_ptr<const AbstractOp
     {
         auto left = op->left_input();
         _collect_subtree_info(left, visited_ops, nodes_map, edges_list);
-        edges_list.emplace_back(left->operator_id, op->operator_id);
+        const auto &left_perf = *left->performance_data;
+        const auto rows =
+            (left->executed() && left_perf.has_output) ? left_perf.output_row_count : size_t{0};
+        edges_list.push_back({left->operator_id, op->operator_id, rows});
     }
 
     // Process right input and add edge
@@ -317,7 +463,10 @@ void PQPVisualizer::_collect_subtree_info(const std::shared_ptr<const AbstractOp
     {
         auto right = op->right_input();
         _collect_subtree_info(right, visited_ops, nodes_map, edges_list);
-        edges_list.emplace_back(right->operator_id, op->operator_id);
+        const auto &right_perf = *right->performance_data;
+        const auto rows =
+            (right->executed() && right_perf.has_output) ? right_perf.output_row_count : size_t{0};
+        edges_list.push_back({right->operator_id, op->operator_id, rows});
     }
 
     // Handle subqueries
@@ -337,7 +486,7 @@ void PQPVisualizer::_collect_subtree_info(const std::shared_ptr<const AbstractOp
                   return ExpressionVisitation::VisitArguments;
                 }
                 _collect_subtree_info(pqp_subquery_expression->pqp, visited_ops, nodes_map, edges_list);
-                edges_list.emplace_back(pqp_subquery_expression->pqp->operator_id, op->operator_id);
+                { const auto &perf = *pqp_subquery_expression->pqp->performance_data; const auto rows = (pqp_subquery_expression->pqp->executed() && perf.has_output) ? perf.output_row_count : size_t{0}; edges_list.push_back({pqp_subquery_expression->pqp->operator_id, op->operator_id, rows}); }
                 return ExpressionVisitation::VisitArguments; });
         }
     }
@@ -355,7 +504,7 @@ void PQPVisualizer::_collect_subtree_info(const std::shared_ptr<const AbstractOp
               return ExpressionVisitation::VisitArguments;
             }
             _collect_subtree_info(pqp_subquery_expression->pqp, visited_ops, nodes_map, edges_list);
-            edges_list.emplace_back(pqp_subquery_expression->pqp->operator_id, op->operator_id);
+            { const auto &perf = *pqp_subquery_expression->pqp->performance_data; const auto rows = (pqp_subquery_expression->pqp->executed() && perf.has_output) ? perf.output_row_count : size_t{0}; edges_list.push_back({pqp_subquery_expression->pqp->operator_id, op->operator_id, rows}); }
             return ExpressionVisitation::VisitArguments; });
     }
     break;
@@ -372,7 +521,7 @@ void PQPVisualizer::_collect_subtree_info(const std::shared_ptr<const AbstractOp
               return ExpressionVisitation::VisitArguments;
             }
             _collect_subtree_info(pqp_subquery_expression->pqp, visited_ops, nodes_map, edges_list);
-            edges_list.emplace_back(pqp_subquery_expression->pqp->operator_id, op->operator_id);
+            { const auto &perf = *pqp_subquery_expression->pqp->performance_data; const auto rows = (pqp_subquery_expression->pqp->executed() && perf.has_output) ? perf.output_row_count : size_t{0}; edges_list.push_back({pqp_subquery_expression->pqp->operator_id, op->operator_id, rows}); }
             return ExpressionVisitation::VisitArguments; });
     }
     break;

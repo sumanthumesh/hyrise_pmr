@@ -1,6 +1,7 @@
 #include "lqp_visualizer.hpp"
 
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <locale>
@@ -8,9 +9,12 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "nlohmann/json.hpp"
 
 #include "expression/abstract_expression.hpp"
 #include "expression/expression_utils.hpp"
@@ -38,8 +42,122 @@ LQPVisualizer::LQPVisualizer(GraphvizConfig graphviz_config, VizGraphInfo graph_
     : AbstractVisualizer(std::move(graphviz_config), std::move(graph_info), std::move(vertex_info),
                          std::move(edge_info)) {}
 
+void LQPVisualizer::visualize(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots,
+                              const std::string &img_filename)
+{
+    AbstractVisualizer::visualize(lqp_roots, img_filename);
+
+    auto json_filename = img_filename;
+    const auto last_dot = json_filename.find_last_of('.');
+    if (last_dot != std::string::npos)
+    {
+        json_filename = json_filename.substr(0, last_dot);
+    }
+    json_filename += ".graph.json";
+    export_as_graph_json(lqp_roots, json_filename);
+}
+
+void LQPVisualizer::export_as_graph_json(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots,
+                                         const std::string &json_filename)
+{
+    // PNG labels and JSON ids stay in sync because _build_subtree (PNG pass, ran first inside
+    // visualize()) and _collect_subtree_info (below) walk the tree in the same order
+    // (dedupe -> left -> right -> subquery), producing identical id sequences.
+    std::unordered_map<std::shared_ptr<const AbstractLQPNode>, size_t> node_id_map;
+    std::vector<std::pair<std::shared_ptr<const AbstractLQPNode>, std::string>> nodes_list;
+    std::vector<LQPEdge> edges_list;
+
+    for (const auto &root : lqp_roots)
+    {
+        const auto cardinality_estimator = CardinalityEstimator{};
+        cardinality_estimator.guarantee_bottom_up_construction(root);
+        _collect_subtree_info(root, cardinality_estimator, node_id_map, nodes_list, edges_list);
+    }
+
+    auto nodes_json = nlohmann::json::array();
+    for (const auto &[node, description] : nodes_list)
+    {
+        nodes_json.push_back({
+            {"id", node_id_map[node]},
+            {"name", description},
+        });
+    }
+
+    auto edges_json = nlohmann::json::array();
+    for (const auto &edge : edges_list)
+    {
+        // Emit NaN as null so the JSON stays valid.
+        auto rows_field = std::isnan(edge.estimated_row_count)
+                              ? nlohmann::json{nullptr}
+                              : nlohmann::json{edge.estimated_row_count};
+        edges_json.push_back({
+            {"src", edge.src_id},
+            {"dst", edge.dst_id},
+            {"estimated_rows", rows_field},
+        });
+    }
+
+    auto graph_json = nlohmann::json{
+        {"nodes", nodes_json},
+        {"edges", edges_json},
+    };
+
+    auto file = std::ofstream(json_filename);
+    Assert(file.is_open(), "Failed to open file for writing: " + json_filename);
+    file << graph_json.dump(2) << "\n";
+}
+
+void LQPVisualizer::_collect_subtree_info(
+    const std::shared_ptr<const AbstractLQPNode> &node,
+    const CardinalityEstimator &cardinality_estimator,
+    std::unordered_map<std::shared_ptr<const AbstractLQPNode>, size_t> &node_id_map,
+    std::vector<std::pair<std::shared_ptr<const AbstractLQPNode>, std::string>> &nodes_list,
+    std::vector<LQPEdge> &edges_list)
+{
+    // Avoid processing nodes redundantly in diamond-shaped plans.
+    if (node_id_map.contains(node))
+    {
+        return;
+    }
+    const auto this_id = nodes_list.size();
+    node_id_map[node] = this_id;
+    nodes_list.emplace_back(node, node->description());
+
+    if (node->left_input())
+    {
+        const auto left = node->left_input();
+        _collect_subtree_info(left, cardinality_estimator, node_id_map, nodes_list, edges_list);
+        edges_list.push_back({node_id_map[left], this_id, cardinality_estimator.estimate_cardinality(left)});
+    }
+
+    if (node->right_input())
+    {
+        const auto right = node->right_input();
+        _collect_subtree_info(right, cardinality_estimator, node_id_map, nodes_list, edges_list);
+        edges_list.push_back({node_id_map[right], this_id, cardinality_estimator.estimate_cardinality(right)});
+    }
+
+    // Subquery edges (dashed in the graphviz version).
+    for (const auto &expression : node->node_expressions)
+    {
+        visit_expression(expression, [&](const auto &sub_expression) {
+            const auto subquery_expression = std::dynamic_pointer_cast<LQPSubqueryExpression>(sub_expression);
+            if (!subquery_expression)
+            {
+                return ExpressionVisitation::VisitArguments;
+            }
+            _collect_subtree_info(subquery_expression->lqp, cardinality_estimator, node_id_map, nodes_list, edges_list);
+            edges_list.push_back({node_id_map[subquery_expression->lqp], this_id,
+                                  cardinality_estimator.estimate_cardinality(subquery_expression->lqp)});
+            return ExpressionVisitation::VisitArguments;
+        });
+    }
+}
+
 void LQPVisualizer::_build_graph(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots)
 {
+    _node_ids.clear();
+
     std::unordered_set<std::shared_ptr<const AbstractLQPNode>> visualized_nodes;
     ExpressionUnorderedSet visualized_sub_queries;
 
@@ -63,7 +181,10 @@ void LQPVisualizer::_build_subtree(const std::shared_ptr<AbstractLQPNode> &node,
     }
     visualized_nodes.insert(node);
 
-    auto node_label = node->description();
+    const auto node_id = _node_ids.size();
+    _node_ids[node] = node_id;
+
+    auto node_label = std::to_string(node_id) + "\n" + node->description();
     if (!node->comment.empty())
     {
         node_label += "\n(" + node->comment + ")";
