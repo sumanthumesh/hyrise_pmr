@@ -1,0 +1,124 @@
+{
+  "LeftCard": "1350000.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "1350000.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "1350000.0 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "1350000.0 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "150000.0 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "150000.0 row(s) est.",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[StoredTable] Name: 'customer' pruned: 0/3 chunk(s), 7/8 column(s)",
+              "id": 6,
+              "name": "StoredTable"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 5,
+            "name": "Validate"
+          },
+          "RightCard": "1350000.0 row(s) est.",
+          "Rightchildren": {
+            "LeftCard": "1350000.0 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "1500000.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'orders' pruned: 0/23 chunk(s), 6/9 column(s)",
+                "id": 9,
+                "name": "StoredTable"
+              },
+              "columns": [
+                "o_comment"
+              ],
+              "columns_left": [
+                "o_comment"
+              ],
+              "columns_right": [],
+              "description": "[Predicate] o_comment NOT LIKE '%special%requests%'",
+              "id": 8,
+              "name": "Predicate"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 7,
+            "name": "Validate"
+          },
+          "columns": [
+            "c_custkey",
+            "o_custkey"
+          ],
+          "columns_left": [
+            "c_custkey"
+          ],
+          "columns_right": [
+            "o_custkey"
+          ],
+          "description": "[Join] Mode: Left [c_custkey = o_custkey]",
+          "id": 4,
+          "name": "Join"
+        },
+        "columns": [
+          "c_custkey",
+          "o_orderkey"
+        ],
+        "columns_left": [
+          "c_custkey",
+          "o_orderkey"
+        ],
+        "columns_right": [],
+        "description": "[Aggregate] GroupBy: [c_custkey] Aggregates: [COUNT(o_orderkey)]",
+        "id": 3,
+        "name": "Aggregate"
+      },
+      "columns": [
+        "INVALID_COLUMN_ID",
+        "o_orderkey"
+      ],
+      "columns_left": [
+        "INVALID_COLUMN_ID",
+        "o_orderkey"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [COUNT(o_orderkey)] Aggregates: [COUNT(*)]",
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "INVALID_COLUMN_ID",
+      "o_orderkey"
+    ],
+    "columns_left": [
+      "INVALID_COLUMN_ID",
+      "o_orderkey"
+    ],
+    "columns_right": [],
+    "description": "[Sort] COUNT(*) (DescendingNullsFirst), COUNT(o_orderkey) (DescendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "INVALID_COLUMN_ID",
+    "o_orderkey"
+  ],
+  "columns_left": [
+    "INVALID_COLUMN_ID",
+    "o_orderkey"
+  ],
+  "columns_right": [],
+  "description": "[Alias] COUNT(o_orderkey) AS c_count, COUNT(*) AS custdist",
+  "id": 0,
+  "name": "Alias"
+}

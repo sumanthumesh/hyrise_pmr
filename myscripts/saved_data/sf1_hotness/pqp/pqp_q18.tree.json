@@ -1,0 +1,223 @@
+{
+  "LeftCard": "57 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "57 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "399 row(s)/1 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+          "Leftchildren": {
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "GetTable (lineitem) pruned: 0/92 chunk(s), 14/16 column(s)",
+            "id": 0,
+            "name": "GetTable",
+            "walltime_ns": 256317
+          },
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "Validate",
+          "id": 1,
+          "name": "Validate",
+          "walltime_ns": 911456
+        },
+        "RightCard": "57 row(s)/1 chunk(s)",
+        "Rightchildren": {
+          "LeftCard": "57 row(s)/1 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "1,500,000 row(s)/23 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "1,500,000 row(s)/23 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (orders) pruned: 0/23 chunk(s), 5/9 column(s)",
+                "id": 2,
+                "name": "GetTable",
+                "walltime_ns": 72201
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "Validate",
+              "id": 3,
+              "name": "Validate",
+              "walltime_ns": 204069
+            },
+            "RightCard": "57 row(s)/48 chunk(s)",
+            "Rightchildren": {
+              "LeftCard": "57 row(s)/48 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "1,500,000 row(s)/92 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+                  "Leftchildren": {},
+                  "columns": [
+                    "l_orderkey",
+                    "l_quantity"
+                  ],
+                  "columns_left": [
+                    "l_orderkey",
+                    "l_quantity"
+                  ],
+                  "columns_right": [],
+                  "description": "AggregateHash GroupBy {l_orderkey} SUM(l_quantity)",
+                  "id": 4,
+                  "name": "AggregateHash",
+                  "walltime_ns": 295604726
+                },
+                "Ops": "TableScan",
+                "columns": [
+                  "SUM(l_quantity)"
+                ],
+                "columns_left": [
+                  "SUM(l_quantity)"
+                ],
+                "columns_right": [],
+                "description": "TableScan Impl: ColumnVsValue SUM(l_quantity) > 300",
+                "id": 5,
+                "name": "TableScan",
+                "walltime_ns": 2800856
+              },
+              "Ops": "projection",
+              "columns": [
+                "l_orderkey"
+              ],
+              "columns_left": [
+                "l_orderkey"
+              ],
+              "columns_right": [],
+              "description": "Projection",
+              "id": 6,
+              "name": "Projection",
+              "walltime_ns": 38876
+            },
+            "columns": [
+              "l_orderkey",
+              "o_orderkey"
+            ],
+            "columns_left": [
+              "o_orderkey"
+            ],
+            "columns_right": [
+              "l_orderkey"
+            ],
+            "description": "JoinHash (Semi) o_orderkey = l_orderkey",
+            "id": 7,
+            "name": "JoinHash",
+            "walltime_ns": 4433429
+          },
+          "RightCard": "150,000 row(s)/3 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "150,000 row(s)/3 chunk(s)",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "GetTable (customer) pruned: 0/3 chunk(s), 6/8 column(s)",
+              "id": 8,
+              "name": "GetTable",
+              "walltime_ns": 40088
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 9,
+            "name": "Validate",
+            "walltime_ns": 38816
+          },
+          "columns": [
+            "c_custkey",
+            "o_custkey"
+          ],
+          "columns_left": [
+            "o_custkey"
+          ],
+          "columns_right": [
+            "c_custkey"
+          ],
+          "description": "JoinHash (Inner) o_custkey = c_custkey",
+          "id": 10,
+          "name": "JoinHash",
+          "walltime_ns": 387447
+        },
+        "columns": [
+          "l_orderkey",
+          "o_orderkey"
+        ],
+        "columns_left": [
+          "l_orderkey"
+        ],
+        "columns_right": [
+          "o_orderkey"
+        ],
+        "description": "JoinHash (Inner) l_orderkey = o_orderkey",
+        "id": 11,
+        "name": "JoinHash",
+        "walltime_ns": 21116172
+      },
+      "columns": [
+        "c_custkey",
+        "c_name",
+        "l_quantity",
+        "o_orderdate",
+        "o_orderkey",
+        "o_totalprice"
+      ],
+      "columns_left": [
+        "c_custkey",
+        "c_name",
+        "l_quantity",
+        "o_orderdate",
+        "o_orderkey",
+        "o_totalprice"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {c_custkey, o_orderkey} SUM(l_quantity),  ANY(c_name),  ANY(o_orderdate),  ANY(o_totalprice)",
+      "id": 12,
+      "name": "AggregateHash",
+      "walltime_ns": 224194
+    },
+    "columns": [
+      "o_orderdate",
+      "o_totalprice"
+    ],
+    "columns_left": [
+      "o_orderdate",
+      "o_totalprice"
+    ],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 13,
+    "name": "Sort",
+    "walltime_ns": 155077
+  },
+  "Ops": "projection",
+  "columns": [
+    "SUM(l_quantity)",
+    "c_custkey",
+    "c_name",
+    "o_orderdate",
+    "o_orderkey",
+    "o_totalprice"
+  ],
+  "columns_left": [
+    "SUM(l_quantity)",
+    "c_custkey",
+    "c_name",
+    "o_orderdate",
+    "o_orderkey",
+    "o_totalprice"
+  ],
+  "columns_right": [],
+  "description": "Projection",
+  "id": 14,
+  "name": "Projection",
+  "walltime_ns": 12867
+}

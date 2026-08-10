@@ -1,0 +1,500 @@
+{
+  "LeftCard": "18134.8 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "18134.8 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "18134.8 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "18134.8 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "18134.8 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "18134.8 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "36269.6 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "72539.2 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "72539.2 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "72539.2 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "72539.2 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "1813479.0 row(s) est.",
+                        "Leftchildren": {
+                          "LeftCard": "6001215.0 row(s) est.",
+                          "Leftchildren": {
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 11/16 column(s)",
+                            "id": 13,
+                            "name": "StoredTable"
+                          },
+                          "columns": [
+                            "l_shipdate"
+                          ],
+                          "columns_left": [
+                            "l_shipdate"
+                          ],
+                          "columns_right": [],
+                          "description": "[Predicate] l_shipdate BETWEEN INCLUSIVE '1995-01-01' AND '1996-12-31'",
+                          "id": 12,
+                          "name": "Predicate"
+                        },
+                        "RightCard": "400.0 row(s) est.",
+                        "Rightchildren": {
+                          "LeftCard": "400.0 row(s) est.",
+                          "Leftchildren": {
+                            "LeftCard": "400.0 row(s) est.",
+                            "Leftchildren": {
+                              "LeftCard": "10000.0 row(s) est.",
+                              "Leftchildren": {
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "[StoredTable] Name: 'supplier' pruned: 0/1 chunk(s), 5/7 column(s)",
+                                "id": 17,
+                                "name": "StoredTable"
+                              },
+                              "RightCard": "2.0 row(s) est.",
+                              "Rightchildren": {
+                                "LeftCard": "1.0 row(s) est.",
+                                "Leftchildren": {
+                                  "LeftCard": "25.0 row(s) est.",
+                                  "Leftchildren": {
+                                    "LeftCard": "25.0 row(s) est.",
+                                    "Leftchildren": {
+                                      "columns": [],
+                                      "columns_left": [],
+                                      "columns_right": [],
+                                      "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
+                                      "id": 21,
+                                      "name": "StoredTable"
+                                    },
+                                    "columns": [],
+                                    "columns_left": [],
+                                    "columns_right": [],
+                                    "description": "[Validate]",
+                                    "id": 20,
+                                    "name": "Validate"
+                                  },
+                                  "columns": [
+                                    "n_name"
+                                  ],
+                                  "columns_left": [
+                                    "n_name"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "[Predicate] n_name = 'FRANCE'",
+                                  "id": 19,
+                                  "name": "Predicate"
+                                },
+                                "RightCard": "1.0 row(s) est.",
+                                "Rightchildren": {
+                                  "LeftCard": "25.0 row(s) est.",
+                                  "Leftchildren": {},
+                                  "columns": [
+                                    "n_name"
+                                  ],
+                                  "columns_left": [
+                                    "n_name"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "[Predicate] n_name = 'GERMANY'",
+                                  "id": 22,
+                                  "name": "Predicate"
+                                },
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "[UnionNode] Mode: Positions",
+                                "id": 18,
+                                "name": "Union"
+                              },
+                              "columns": [
+                                "n_nationkey",
+                                "s_nationkey"
+                              ],
+                              "columns_left": [
+                                "s_nationkey"
+                              ],
+                              "columns_right": [
+                                "n_nationkey"
+                              ],
+                              "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
+                              "id": 16,
+                              "name": "Join"
+                            },
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[Validate]",
+                            "id": 15,
+                            "name": "Validate"
+                          },
+                          "RightCard": "2.0 row(s) est.",
+                          "Rightchildren": {},
+                          "columns": [
+                            "n_nationkey",
+                            "s_nationkey"
+                          ],
+                          "columns_left": [
+                            "s_nationkey"
+                          ],
+                          "columns_right": [
+                            "n_nationkey"
+                          ],
+                          "description": "[Join] Mode: Inner [s_nationkey = n_nationkey]",
+                          "id": 14,
+                          "name": "Join"
+                        },
+                        "columns": [
+                          "l_suppkey",
+                          "s_suppkey"
+                        ],
+                        "columns_left": [
+                          "l_suppkey"
+                        ],
+                        "columns_right": [
+                          "s_suppkey"
+                        ],
+                        "description": "[Join] Mode: Semi [s_suppkey = l_suppkey]",
+                        "id": 11,
+                        "name": "Join"
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[Validate]",
+                      "id": 10,
+                      "name": "Validate"
+                    },
+                    "RightCard": "400.0 row(s) est.",
+                    "Rightchildren": {},
+                    "columns": [
+                      "l_suppkey",
+                      "s_suppkey"
+                    ],
+                    "columns_left": [
+                      "l_suppkey"
+                    ],
+                    "columns_right": [
+                      "s_suppkey"
+                    ],
+                    "description": "[Join] Mode: Inner [s_suppkey = l_suppkey]",
+                    "id": 9,
+                    "name": "Join"
+                  },
+                  "RightCard": "89958.0 row(s) est.",
+                  "Rightchildren": {
+                    "LeftCard": "89958.0 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "89958.0 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "1500000.0 row(s) est.",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "[StoredTable] Name: 'orders' pruned: 0/23 chunk(s), 7/9 column(s)",
+                          "id": 26,
+                          "name": "StoredTable"
+                        },
+                        "RightCard": "6000.0 row(s) est.",
+                        "Rightchildren": {
+                          "LeftCard": "6000.0 row(s) est.",
+                          "Leftchildren": {
+                            "LeftCard": "6000.0 row(s) est.",
+                            "Leftchildren": {
+                              "LeftCard": "150000.0 row(s) est.",
+                              "Leftchildren": {
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "[StoredTable] Name: 'customer' pruned: 0/3 chunk(s), 6/8 column(s)",
+                                "id": 30,
+                                "name": "StoredTable"
+                              },
+                              "RightCard": "2.0 row(s) est.",
+                              "Rightchildren": {
+                                "LeftCard": "1.0 row(s) est.",
+                                "Leftchildren": {
+                                  "LeftCard": "25.0 row(s) est.",
+                                  "Leftchildren": {
+                                    "LeftCard": "25.0 row(s) est.",
+                                    "Leftchildren": {
+                                      "columns": [],
+                                      "columns_left": [],
+                                      "columns_right": [],
+                                      "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
+                                      "id": 34,
+                                      "name": "StoredTable"
+                                    },
+                                    "columns": [],
+                                    "columns_left": [],
+                                    "columns_right": [],
+                                    "description": "[Validate]",
+                                    "id": 33,
+                                    "name": "Validate"
+                                  },
+                                  "columns": [
+                                    "n_name"
+                                  ],
+                                  "columns_left": [
+                                    "n_name"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "[Predicate] n_name = 'GERMANY'",
+                                  "id": 32,
+                                  "name": "Predicate"
+                                },
+                                "RightCard": "1.0 row(s) est.",
+                                "Rightchildren": {
+                                  "LeftCard": "25.0 row(s) est.",
+                                  "Leftchildren": {},
+                                  "columns": [
+                                    "n_name"
+                                  ],
+                                  "columns_left": [
+                                    "n_name"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "[Predicate] n_name = 'FRANCE'",
+                                  "id": 35,
+                                  "name": "Predicate"
+                                },
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "[UnionNode] Mode: Positions",
+                                "id": 31,
+                                "name": "Union"
+                              },
+                              "columns": [
+                                "c_nationkey",
+                                "n_nationkey"
+                              ],
+                              "columns_left": [
+                                "c_nationkey"
+                              ],
+                              "columns_right": [
+                                "n_nationkey"
+                              ],
+                              "description": "[Join] Mode: Semi [c_nationkey = n_nationkey]",
+                              "id": 29,
+                              "name": "Join"
+                            },
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[Validate]",
+                            "id": 28,
+                            "name": "Validate"
+                          },
+                          "RightCard": "2.0 row(s) est.",
+                          "Rightchildren": {},
+                          "columns": [
+                            "c_nationkey",
+                            "n_nationkey"
+                          ],
+                          "columns_left": [
+                            "c_nationkey"
+                          ],
+                          "columns_right": [
+                            "n_nationkey"
+                          ],
+                          "description": "[Join] Mode: Inner [c_nationkey = n_nationkey]",
+                          "id": 27,
+                          "name": "Join"
+                        },
+                        "columns": [
+                          "c_custkey",
+                          "o_custkey"
+                        ],
+                        "columns_left": [
+                          "o_custkey"
+                        ],
+                        "columns_right": [
+                          "c_custkey"
+                        ],
+                        "description": "[Join] Mode: Semi [c_custkey = o_custkey]",
+                        "id": 25,
+                        "name": "Join"
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[Validate]",
+                      "id": 24,
+                      "name": "Validate"
+                    },
+                    "RightCard": "6000.0 row(s) est.",
+                    "Rightchildren": {},
+                    "columns": [
+                      "c_custkey",
+                      "o_custkey"
+                    ],
+                    "columns_left": [
+                      "o_custkey"
+                    ],
+                    "columns_right": [
+                      "c_custkey"
+                    ],
+                    "description": "[Join] Mode: Inner [c_custkey = o_custkey]",
+                    "id": 23,
+                    "name": "Join"
+                  },
+                  "columns": [
+                    "l_orderkey",
+                    "o_orderkey"
+                  ],
+                  "columns_left": [
+                    "l_orderkey"
+                  ],
+                  "columns_right": [
+                    "o_orderkey"
+                  ],
+                  "description": "[Join] Mode: Inner [o_orderkey = l_orderkey]",
+                  "id": 8,
+                  "name": "Join"
+                },
+                "columns": [
+                  "n_name"
+                ],
+                "columns_left": [
+                  "n_name"
+                ],
+                "columns_right": [],
+                "description": "[Predicate] n_name = 'FRANCE'",
+                "id": 7,
+                "name": "Predicate"
+              },
+              "columns": [
+                "n_name"
+              ],
+              "columns_left": [
+                "n_name"
+              ],
+              "columns_right": [],
+              "description": "[Predicate] n_name = 'GERMANY'",
+              "id": 6,
+              "name": "Predicate"
+            },
+            "RightCard": "0.0 row(s) est.",
+            "Rightchildren": {
+              "LeftCard": "0.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "72539.2 row(s) est.",
+                "Leftchildren": {},
+                "columns": [
+                  "n_name"
+                ],
+                "columns_left": [
+                  "n_name"
+                ],
+                "columns_right": [],
+                "description": "[Predicate] n_name = 'GERMANY'",
+                "id": 37,
+                "name": "Predicate"
+              },
+              "columns": [
+                "n_name"
+              ],
+              "columns_left": [
+                "n_name"
+              ],
+              "columns_right": [],
+              "description": "[Predicate] n_name = 'FRANCE'",
+              "id": 36,
+              "name": "Predicate"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[UnionNode] Mode: Positions",
+            "id": 5,
+            "name": "Union"
+          },
+          "columns": [
+            "l_discount",
+            "l_extendedprice",
+            "l_shipdate",
+            "n_name"
+          ],
+          "columns_left": [
+            "l_discount",
+            "l_extendedprice",
+            "l_shipdate",
+            "n_name"
+          ],
+          "columns_right": [],
+          "description": "[Projection] n_name, n_name, EXTRACT(YEAR FROM l_shipdate), l_extendedprice * (1 - l_discount)",
+          "id": 4,
+          "name": "Projection"
+        },
+        "columns": [
+          "l_discount",
+          "l_extendedprice",
+          "l_shipdate",
+          "n_name"
+        ],
+        "columns_left": [
+          "l_discount",
+          "l_extendedprice",
+          "l_shipdate",
+          "n_name"
+        ],
+        "columns_right": [],
+        "description": "[Alias] n_name AS supp_nation, n_name AS cust_nation, EXTRACT(YEAR FROM l_shipdate) AS l_year, l_extendedprice * (1 - l_discount) AS volume",
+        "id": 3,
+        "name": "Alias"
+      },
+      "columns": [
+        "l_discount",
+        "l_extendedprice",
+        "l_shipdate",
+        "n_name"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice",
+        "l_shipdate",
+        "n_name"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [n_name, n_name, EXTRACT(YEAR FROM l_shipdate)] Aggregates: [SUM(l_extendedprice * (1 - l_discount))]",
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "l_shipdate",
+      "n_name"
+    ],
+    "columns_left": [
+      "l_shipdate",
+      "n_name"
+    ],
+    "columns_right": [],
+    "description": "[Sort] n_name (AscendingNullsFirst), n_name (AscendingNullsFirst), EXTRACT(YEAR FROM l_shipdate) (AscendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "l_discount",
+    "l_extendedprice",
+    "l_shipdate",
+    "n_name"
+  ],
+  "columns_left": [
+    "l_discount",
+    "l_extendedprice",
+    "l_shipdate",
+    "n_name"
+  ],
+  "columns_right": [],
+  "description": "[Alias] n_name AS supp_nation, n_name AS cust_nation, EXTRACT(YEAR FROM l_shipdate) AS l_year, SUM(l_extendedprice * (1 - l_discount)) AS revenue",
+  "id": 0,
+  "name": "Alias"
+}

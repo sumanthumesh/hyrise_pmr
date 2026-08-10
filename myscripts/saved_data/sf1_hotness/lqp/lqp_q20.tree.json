@@ -1,0 +1,342 @@
+{
+  "LeftCard": "0.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "0.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "0.0 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "0.0 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "10000.0 row(s) est.",
+          "Leftchildren": {
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[StoredTable] Name: 'supplier' pruned: 0/1 chunk(s), 3/7 column(s)",
+            "id": 5,
+            "name": "StoredTable"
+          },
+          "RightCard": "0.0 row(s) est.",
+          "Rightchildren": {
+            "LeftCard": "0.0 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "0.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "0.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "800000.0 row(s) est.",
+                  "Leftchildren": {
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[StoredTable] Name: 'partsupp' pruned: 0/13 chunk(s), 2/5 column(s)",
+                    "id": 10,
+                    "name": "StoredTable"
+                  },
+                  "RightCard": "0.0 row(s) est.",
+                  "Rightchildren": {
+                    "LeftCard": "0.0 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "0.0 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "200000.0 row(s) est.",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "[StoredTable] Name: 'part' pruned: 0/4 chunk(s), 7/9 column(s)",
+                          "id": 14,
+                          "name": "StoredTable"
+                        },
+                        "columns": [
+                          "p_name"
+                        ],
+                        "columns_left": [
+                          "p_name"
+                        ],
+                        "columns_right": [],
+                        "description": "[Predicate] p_name BETWEEN UPPER EXCLUSIVE 'forest' AND 'foresu'",
+                        "id": 13,
+                        "name": "Predicate"
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[Validate]",
+                      "id": 12,
+                      "name": "Validate"
+                    },
+                    "columns": [
+                      "p_partkey"
+                    ],
+                    "columns_left": [
+                      "p_partkey"
+                    ],
+                    "columns_right": [],
+                    "description": "[Projection] p_partkey",
+                    "id": 11,
+                    "name": "Projection"
+                  },
+                  "columns": [
+                    "p_partkey",
+                    "ps_partkey"
+                  ],
+                  "columns_left": [
+                    "ps_partkey"
+                  ],
+                  "columns_right": [
+                    "p_partkey"
+                  ],
+                  "description": "[Join] Mode: Semi [ps_partkey = p_partkey]",
+                  "id": 9,
+                  "name": "Join"
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[Validate]",
+                "id": 8,
+                "name": "Validate"
+              },
+              "RightCard": "0.0 row(s) est.",
+              "Rightchildren": {
+                "LeftCard": "0.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "0.0 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "0.0 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "0.0 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "888683.2 row(s) est.",
+                        "Leftchildren": {
+                          "LeftCard": "6001215.0 row(s) est.",
+                          "Leftchildren": {
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 12/16 column(s)",
+                            "id": 21,
+                            "name": "StoredTable"
+                          },
+                          "columns": [
+                            "l_shipdate"
+                          ],
+                          "columns_left": [
+                            "l_shipdate"
+                          ],
+                          "columns_right": [],
+                          "description": "[Predicate] l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
+                          "id": 20,
+                          "name": "Predicate"
+                        },
+                        "RightCard": "0.0 row(s) est.",
+                        "Rightchildren": {},
+                        "columns": [
+                          "l_partkey",
+                          "ps_partkey"
+                        ],
+                        "columns_left": [
+                          "l_partkey"
+                        ],
+                        "columns_right": [
+                          "ps_partkey"
+                        ],
+                        "description": "[Join] Mode: Semi [ps_partkey = l_partkey]",
+                        "id": 19,
+                        "name": "Join"
+                      },
+                      "RightCard": "0.0 row(s) est.",
+                      "Rightchildren": {},
+                      "columns": [
+                        "l_suppkey",
+                        "ps_suppkey"
+                      ],
+                      "columns_left": [
+                        "l_suppkey"
+                      ],
+                      "columns_right": [
+                        "ps_suppkey"
+                      ],
+                      "description": "[Join] Mode: Semi [ps_suppkey = l_suppkey]",
+                      "id": 18,
+                      "name": "Join"
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 17,
+                    "name": "Validate"
+                  },
+                  "columns": [
+                    "l_partkey",
+                    "l_quantity",
+                    "l_suppkey"
+                  ],
+                  "columns_left": [
+                    "l_partkey",
+                    "l_quantity",
+                    "l_suppkey"
+                  ],
+                  "columns_right": [],
+                  "description": "[Aggregate] GroupBy: [l_suppkey, l_partkey] Aggregates: [SUM(l_quantity)]",
+                  "id": 16,
+                  "name": "Aggregate"
+                },
+                "columns": [
+                  "l_partkey",
+                  "l_quantity",
+                  "l_suppkey"
+                ],
+                "columns_left": [
+                  "l_partkey",
+                  "l_quantity",
+                  "l_suppkey"
+                ],
+                "columns_right": [],
+                "description": "[Projection] 0.5 * SUM(l_quantity), l_suppkey, l_partkey",
+                "id": 15,
+                "name": "Projection"
+              },
+              "columns": [
+                "l_partkey",
+                "l_quantity",
+                "l_suppkey",
+                "ps_availqty",
+                "ps_partkey",
+                "ps_suppkey"
+              ],
+              "columns_left": [
+                "l_quantity",
+                "ps_availqty",
+                "ps_partkey",
+                "ps_suppkey"
+              ],
+              "columns_right": [
+                "l_partkey",
+                "l_suppkey"
+              ],
+              "description": "[Join] Mode: Semi [ps_suppkey = l_suppkey] [ps_availqty > 0.5 * SUM(l_quantity)] [ps_partkey = l_partkey]",
+              "id": 7,
+              "name": "Join"
+            },
+            "columns": [
+              "ps_suppkey"
+            ],
+            "columns_left": [
+              "ps_suppkey"
+            ],
+            "columns_right": [],
+            "description": "[Projection] ps_suppkey",
+            "id": 6,
+            "name": "Projection"
+          },
+          "columns": [
+            "ps_suppkey",
+            "s_suppkey"
+          ],
+          "columns_left": [
+            "s_suppkey"
+          ],
+          "columns_right": [
+            "ps_suppkey"
+          ],
+          "description": "[Join] Mode: Semi [s_suppkey = ps_suppkey]",
+          "id": 4,
+          "name": "Join"
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "[Validate]",
+        "id": 3,
+        "name": "Validate"
+      },
+      "RightCard": "0.0 row(s) est.",
+      "Rightchildren": {
+        "LeftCard": "0.0 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "1.0 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "25.0 row(s) est.",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
+              "id": 25,
+              "name": "StoredTable"
+            },
+            "columns": [
+              "n_name"
+            ],
+            "columns_left": [
+              "n_name"
+            ],
+            "columns_right": [],
+            "description": "[Predicate] n_name = 'CANADA'",
+            "id": 24,
+            "name": "Predicate"
+          },
+          "RightCard": "0.0 row(s) est.",
+          "Rightchildren": {},
+          "columns": [
+            "n_nationkey",
+            "s_nationkey"
+          ],
+          "columns_left": [
+            "n_nationkey"
+          ],
+          "columns_right": [
+            "s_nationkey"
+          ],
+          "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
+          "id": 23,
+          "name": "Join"
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "[Validate]",
+        "id": 22,
+        "name": "Validate"
+      },
+      "columns": [
+        "n_nationkey",
+        "s_nationkey"
+      ],
+      "columns_left": [
+        "s_nationkey"
+      ],
+      "columns_right": [
+        "n_nationkey"
+      ],
+      "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
+      "id": 2,
+      "name": "Join"
+    },
+    "columns": [
+      "s_name"
+    ],
+    "columns_left": [
+      "s_name"
+    ],
+    "columns_right": [],
+    "description": "[Sort] s_name (AscendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "s_address",
+    "s_name"
+  ],
+  "columns_left": [
+    "s_address",
+    "s_name"
+  ],
+  "columns_right": [],
+  "description": "[Projection] s_name, s_address",
+  "id": 0,
+  "name": "Projection"
+}

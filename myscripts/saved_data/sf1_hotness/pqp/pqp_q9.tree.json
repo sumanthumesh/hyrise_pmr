@@ -1,0 +1,334 @@
+{
+  "LeftCard": "175 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "175 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "319,404 row(s)/4 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "319,404 row(s)/4 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "319,404 row(s)/4 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "1,277,616 row(s)/4 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "42,656 row(s)/4 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "800,000 row(s)/13 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "800,000 row(s)/13 chunk(s)",
+                  "Leftchildren": {
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "GetTable (partsupp) pruned: 0/13 chunk(s), 2/5 column(s)",
+                    "id": 0,
+                    "name": "GetTable",
+                    "walltime_ns": 66835
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "Validate",
+                  "id": 1,
+                  "name": "Validate",
+                  "walltime_ns": 58836451
+                },
+                "RightCard": "319,404 row(s)/92 chunk(s)",
+                "Rightchildren": {
+                  "LeftCard": "319,404 row(s)/92 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (lineitem) pruned: 0/92 chunk(s), 10/16 column(s)",
+                      "id": 2,
+                      "name": "GetTable",
+                      "walltime_ns": 323530
+                    },
+                    "RightCard": "10,664 row(s)/4 chunk(s)",
+                    "Rightchildren": {
+                      "LeftCard": "10,664 row(s)/4 chunk(s)",
+                      "Leftchildren": {
+                        "LeftCard": "200,000 row(s)/4 chunk(s)",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "GetTable (part) pruned: 0/4 chunk(s), 7/9 column(s)",
+                          "id": 3,
+                          "name": "GetTable",
+                          "walltime_ns": 15653
+                        },
+                        "Ops": "TableScan",
+                        "columns": [
+                          "p_name"
+                        ],
+                        "columns_left": [
+                          "p_name"
+                        ],
+                        "columns_right": [],
+                        "description": "TableScan Impl: ColumnLike p_name LIKE '%green%'",
+                        "id": 4,
+                        "name": "TableScan",
+                        "walltime_ns": 33044380
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "Validate",
+                      "id": 5,
+                      "name": "Validate",
+                      "walltime_ns": 16689
+                    },
+                    "columns": [
+                      "l_partkey",
+                      "p_partkey"
+                    ],
+                    "columns_left": [
+                      "l_partkey"
+                    ],
+                    "columns_right": [
+                      "p_partkey"
+                    ],
+                    "description": "JoinHash (Semi) l_partkey = p_partkey",
+                    "id": 6,
+                    "name": "JoinHash",
+                    "walltime_ns": 50947891
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "Validate",
+                  "id": 7,
+                  "name": "Validate",
+                  "walltime_ns": 240673
+                },
+                "columns": [
+                  "l_partkey",
+                  "ps_partkey"
+                ],
+                "columns_left": [
+                  "ps_partkey"
+                ],
+                "columns_right": [
+                  "l_partkey"
+                ],
+                "description": "JoinHash (Semi Reduction) ps_partkey = l_partkey",
+                "id": 8,
+                "name": "JoinHash",
+                "walltime_ns": 31172548
+              },
+              "RightCard": "319,404 row(s)/4 chunk(s)",
+              "Rightchildren": {
+                "LeftCard": "319,404 row(s)/4 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "1,500,000 row(s)/23 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "1,500,000 row(s)/23 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (orders) pruned: 0/23 chunk(s), 7/9 column(s)",
+                      "id": 9,
+                      "name": "GetTable",
+                      "walltime_ns": 80669
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 10,
+                    "name": "Validate",
+                    "walltime_ns": 33259031
+                  },
+                  "RightCard": "319,404 row(s)/92 chunk(s)",
+                  "Rightchildren": {},
+                  "columns": [
+                    "l_orderkey",
+                    "o_orderkey"
+                  ],
+                  "columns_left": [
+                    "o_orderkey"
+                  ],
+                  "columns_right": [
+                    "l_orderkey"
+                  ],
+                  "description": "JoinHash (Inner) o_orderkey = l_orderkey",
+                  "id": 11,
+                  "name": "JoinHash",
+                  "walltime_ns": 72912758
+                },
+                "RightCard": "10,000 row(s)/1 chunk(s)",
+                "Rightchildren": {
+                  "LeftCard": "10,000 row(s)/1 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "10,000 row(s)/1 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (supplier) pruned: 0/1 chunk(s), 5/7 column(s)",
+                      "id": 12,
+                      "name": "GetTable",
+                      "walltime_ns": 8640
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 13,
+                    "name": "Validate",
+                    "walltime_ns": 5890
+                  },
+                  "RightCard": "25 row(s)/1 chunk(s)",
+                  "Rightchildren": {
+                    "LeftCard": "25 row(s)/1 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (nation) pruned: 0/1 chunk(s), 2/4 column(s)",
+                      "id": 14,
+                      "name": "GetTable",
+                      "walltime_ns": 32555
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 15,
+                    "name": "Validate",
+                    "walltime_ns": 15666
+                  },
+                  "columns": [
+                    "n_nationkey",
+                    "s_nationkey"
+                  ],
+                  "columns_left": [
+                    "s_nationkey"
+                  ],
+                  "columns_right": [
+                    "n_nationkey"
+                  ],
+                  "description": "JoinHash (Inner) s_nationkey = n_nationkey",
+                  "id": 16,
+                  "name": "JoinHash",
+                  "walltime_ns": 7489378
+                },
+                "columns": [
+                  "l_suppkey",
+                  "s_suppkey"
+                ],
+                "columns_left": [
+                  "l_suppkey"
+                ],
+                "columns_right": [
+                  "s_suppkey"
+                ],
+                "description": "JoinHash (Inner) l_suppkey = s_suppkey",
+                "id": 17,
+                "name": "JoinHash",
+                "walltime_ns": 32015726
+              },
+              "columns": [
+                "l_partkey",
+                "ps_partkey"
+              ],
+              "columns_left": [
+                "ps_partkey"
+              ],
+              "columns_right": [
+                "l_partkey"
+              ],
+              "description": "JoinHash (Inner) ps_partkey = l_partkey",
+              "id": 18,
+              "name": "JoinHash",
+              "walltime_ns": 119160431
+            },
+            "Ops": "TableScan",
+            "columns": [
+              "l_suppkey",
+              "ps_suppkey"
+            ],
+            "columns_left": [
+              "l_suppkey",
+              "ps_suppkey"
+            ],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnVsColumn ps_suppkey = l_suppkey",
+            "id": 19,
+            "name": "TableScan",
+            "walltime_ns": 88267209
+          },
+          "Ops": "projection",
+          "columns": [
+            "l_discount",
+            "l_extendedprice",
+            "l_quantity",
+            "n_name",
+            "o_orderdate",
+            "ps_supplycost"
+          ],
+          "columns_left": [
+            "l_discount",
+            "l_extendedprice",
+            "l_quantity",
+            "n_name",
+            "o_orderdate",
+            "ps_supplycost"
+          ],
+          "columns_right": [],
+          "description": "Projection",
+          "id": 20,
+          "name": "Projection",
+          "walltime_ns": 211593673
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "Alias [nation, o_year, amount]",
+        "id": 21,
+        "name": "Alias",
+        "walltime_ns": 6778
+      },
+      "columns": [
+        "EXTRACT(YEAR FROM o_orderdate)",
+        "l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity",
+        "n_name"
+      ],
+      "columns_left": [
+        "EXTRACT(YEAR FROM o_orderdate)",
+        "l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity",
+        "n_name"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {n_name, EXTRACT(YEAR FROM o_orderdate)} SUM(l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity)",
+      "id": 22,
+      "name": "AggregateHash",
+      "walltime_ns": 20567344
+    },
+    "columns": [
+      "EXTRACT(YEAR FROM o_orderdate)",
+      "n_name"
+    ],
+    "columns_left": [
+      "EXTRACT(YEAR FROM o_orderdate)",
+      "n_name"
+    ],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 23,
+    "name": "Sort",
+    "walltime_ns": 99289
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [nation, o_year, sum_profit]",
+  "id": 24,
+  "name": "Alias",
+  "walltime_ns": 2637
+}

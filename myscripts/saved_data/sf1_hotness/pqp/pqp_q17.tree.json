@@ -1,0 +1,200 @@
+{
+  "LeftCard": "1 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "1 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "587 row(s)/2 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "6,088 row(s)/12 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "6,088 row(s)/12 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "6,088 row(s)/12 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (lineitem) pruned: 0/92 chunk(s), 13/16 column(s)",
+                "id": 0,
+                "name": "GetTable",
+                "walltime_ns": 4372996
+              },
+              "RightCard": "204 row(s)/4 chunk(s)",
+              "Rightchildren": {
+                "LeftCard": "204 row(s)/4 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "5,043 row(s)/4 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "200,000 row(s)/4 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (part) pruned: 0/4 chunk(s), 6/9 column(s)",
+                      "id": 1,
+                      "name": "GetTable",
+                      "walltime_ns": 45041
+                    },
+                    "Ops": "TableScan",
+                    "columns": [
+                      "p_container"
+                    ],
+                    "columns_left": [
+                      "p_container"
+                    ],
+                    "columns_right": [],
+                    "description": "TableScan Impl: ColumnVsValue p_container = 'MED BOX'",
+                    "id": 2,
+                    "name": "TableScan",
+                    "walltime_ns": 4983197
+                  },
+                  "Ops": "TableScan",
+                  "columns": [
+                    "p_brand"
+                  ],
+                  "columns_left": [
+                    "p_brand"
+                  ],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ColumnVsValue p_brand = 'Brand#23'",
+                  "id": 3,
+                  "name": "TableScan",
+                  "walltime_ns": 111458
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "Validate",
+                "id": 4,
+                "name": "Validate",
+                "walltime_ns": 38178
+              },
+              "columns": [
+                "l_partkey",
+                "p_partkey"
+              ],
+              "columns_left": [
+                "l_partkey"
+              ],
+              "columns_right": [
+                "p_partkey"
+              ],
+              "description": "JoinHash (Semi Reduction) l_partkey = p_partkey",
+              "id": 5,
+              "name": "JoinHash",
+              "walltime_ns": 43428488
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 6,
+            "name": "Validate",
+            "walltime_ns": 111001
+          },
+          "RightCard": "204 row(s)/4 chunk(s)",
+          "Rightchildren": {},
+          "columns": [
+            "l_partkey",
+            "p_partkey"
+          ],
+          "columns_left": [
+            "l_partkey"
+          ],
+          "columns_right": [
+            "p_partkey"
+          ],
+          "description": "JoinHash (Inner) l_partkey = p_partkey",
+          "id": 7,
+          "name": "JoinHash",
+          "walltime_ns": 2216935
+        },
+        "RightCard": "204 row(s)/1 chunk(s)",
+        "Rightchildren": {
+          "LeftCard": "204 row(s)/1 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "6,088 row(s)/12 chunk(s)",
+            "Leftchildren": {},
+            "columns": [
+              "l_partkey",
+              "l_quantity"
+            ],
+            "columns_left": [
+              "l_partkey",
+              "l_quantity"
+            ],
+            "columns_right": [],
+            "description": "AggregateHash GroupBy {l_partkey} AVG(l_quantity)",
+            "id": 8,
+            "name": "AggregateHash",
+            "walltime_ns": 1185242
+          },
+          "Ops": "projection",
+          "columns": [
+            "AVG(l_quantity)",
+            "l_partkey"
+          ],
+          "columns_left": [
+            "AVG(l_quantity)",
+            "l_partkey"
+          ],
+          "columns_right": [],
+          "description": "Projection",
+          "id": 9,
+          "name": "Projection",
+          "walltime_ns": 87378
+        },
+        "columns": [
+          "0.2 * AVG(l_quantity)",
+          "l_partkey",
+          "l_quantity",
+          "p_partkey"
+        ],
+        "columns_left": [
+          "l_quantity",
+          "p_partkey"
+        ],
+        "columns_right": [
+          "0.2 * AVG(l_quantity)",
+          "l_partkey"
+        ],
+        "description": "JoinHash (Semi) p_partkey = l_partkey AND l_quantity < 0.2 * AVG(l_quantity)",
+        "id": 10,
+        "name": "JoinHash",
+        "walltime_ns": 1700366
+      },
+      "columns": [
+        "l_extendedprice"
+      ],
+      "columns_left": [
+        "l_extendedprice"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {} SUM(l_extendedprice)",
+      "id": 11,
+      "name": "AggregateHash",
+      "walltime_ns": 261441
+    },
+    "Ops": "projection",
+    "columns": [
+      "SUM(l_extendedprice)"
+    ],
+    "columns_left": [
+      "SUM(l_extendedprice)"
+    ],
+    "columns_right": [],
+    "description": "Projection",
+    "id": 12,
+    "name": "Projection",
+    "walltime_ns": 31994
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [avg_yearly]",
+  "id": 13,
+  "name": "Alias",
+  "walltime_ns": 4113
+}

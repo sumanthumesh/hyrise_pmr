@@ -1,0 +1,140 @@
+{
+  "LeftCard": "59720.7 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "59720.7 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "59720.7 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "59720.7 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "59720.7 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "1500000.0 row(s) est.",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[StoredTable] Name: 'orders' pruned: 0/23 chunk(s), 6/9 column(s)",
+              "id": 6,
+              "name": "StoredTable"
+            },
+            "columns": [
+              "o_orderdate"
+            ],
+            "columns_left": [
+              "o_orderdate"
+            ],
+            "columns_right": [],
+            "description": "[Predicate] o_orderdate BETWEEN UPPER EXCLUSIVE '1993-07-01' AND '1993-10-01'",
+            "id": 5,
+            "name": "Predicate"
+          },
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "[Validate]",
+          "id": 4,
+          "name": "Validate"
+        },
+        "RightCard": "238931.1 row(s) est.",
+        "Rightchildren": {
+          "LeftCard": "238931.1 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "238931.1 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "6001215.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 13/16 column(s)",
+                "id": 10,
+                "name": "StoredTable"
+              },
+              "RightCard": "59720.7 row(s) est.",
+              "Rightchildren": {},
+              "columns": [
+                "l_orderkey",
+                "o_orderkey"
+              ],
+              "columns_left": [
+                "l_orderkey"
+              ],
+              "columns_right": [
+                "o_orderkey"
+              ],
+              "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
+              "id": 9,
+              "name": "Join"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 8,
+            "name": "Validate"
+          },
+          "columns": [
+            "l_commitdate",
+            "l_receiptdate"
+          ],
+          "columns_left": [
+            "l_commitdate",
+            "l_receiptdate"
+          ],
+          "columns_right": [],
+          "description": "[Predicate] l_commitdate < l_receiptdate",
+          "id": 7,
+          "name": "Predicate"
+        },
+        "columns": [
+          "l_orderkey",
+          "o_orderkey"
+        ],
+        "columns_left": [
+          "o_orderkey"
+        ],
+        "columns_right": [
+          "l_orderkey"
+        ],
+        "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
+        "id": 3,
+        "name": "Join"
+      },
+      "columns": [
+        "INVALID_COLUMN_ID",
+        "o_orderpriority"
+      ],
+      "columns_left": [
+        "INVALID_COLUMN_ID",
+        "o_orderpriority"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [o_orderpriority] Aggregates: [COUNT(*)]",
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "o_orderpriority"
+    ],
+    "columns_left": [
+      "o_orderpriority"
+    ],
+    "columns_right": [],
+    "description": "[Sort] o_orderpriority (AscendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "INVALID_COLUMN_ID",
+    "o_orderpriority"
+  ],
+  "columns_left": [
+    "INVALID_COLUMN_ID",
+    "o_orderpriority"
+  ],
+  "columns_right": [],
+  "description": "[Alias] o_orderpriority, COUNT(*) AS order_count",
+  "id": 0,
+  "name": "Alias"
+}

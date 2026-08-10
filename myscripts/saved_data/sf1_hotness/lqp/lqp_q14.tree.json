@@ -1,0 +1,132 @@
+{
+  "LeftCard": "1.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "1.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "63309.3 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "63309.3 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "63309.3 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "63309.3 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "6001215.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 12/16 column(s)",
+                "id": 7,
+                "name": "StoredTable"
+              },
+              "columns": [
+                "l_shipdate"
+              ],
+              "columns_left": [
+                "l_shipdate"
+              ],
+              "columns_right": [],
+              "description": "[Predicate] l_shipdate BETWEEN UPPER EXCLUSIVE '1995-09-01' AND '1995-10-01'",
+              "id": 6,
+              "name": "Predicate"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 5,
+            "name": "Validate"
+          },
+          "RightCard": "200000.0 row(s) est.",
+          "Rightchildren": {
+            "LeftCard": "200000.0 row(s) est.",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[StoredTable] Name: 'part' pruned: 0/4 chunk(s), 7/9 column(s)",
+              "id": 9,
+              "name": "StoredTable"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 8,
+            "name": "Validate"
+          },
+          "columns": [
+            "l_partkey",
+            "p_partkey"
+          ],
+          "columns_left": [
+            "l_partkey"
+          ],
+          "columns_right": [
+            "p_partkey"
+          ],
+          "description": "[Join] Mode: Inner [l_partkey = p_partkey]",
+          "id": 4,
+          "name": "Join"
+        },
+        "columns": [
+          "l_discount",
+          "l_extendedprice",
+          "p_type"
+        ],
+        "columns_left": [
+          "l_discount",
+          "l_extendedprice",
+          "p_type"
+        ],
+        "columns_right": [],
+        "description": "[Projection] l_extendedprice * (1 - l_discount), CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END",
+        "id": 3,
+        "name": "Projection"
+      },
+      "columns": [
+        "l_discount",
+        "l_extendedprice",
+        "p_type"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice",
+        "p_type"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [] Aggregates: [SUM(l_extendedprice * (1 - l_discount)), SUM(CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END)]",
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "l_discount",
+      "l_extendedprice",
+      "p_type"
+    ],
+    "columns_left": [
+      "l_discount",
+      "l_extendedprice",
+      "p_type"
+    ],
+    "columns_right": [],
+    "description": "[Projection] (100 * SUM(CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END)) / SUM(l_extendedprice * (1 - l_discount))",
+    "id": 1,
+    "name": "Projection"
+  },
+  "columns": [
+    "l_discount",
+    "l_extendedprice",
+    "p_type"
+  ],
+  "columns_left": [
+    "l_discount",
+    "l_extendedprice",
+    "p_type"
+  ],
+  "columns_right": [],
+  "description": "[Alias] (100 * SUM(CASE WHEN p_type BETWEEN UPPER EXCLUSIVE 'PROMO' AND 'PROMP' THEN l_extendedprice * (1 - l_discount) ELSE 0 END)) / SUM(l_extendedprice * (1 - l_discount)) AS promo_revenue",
+  "id": 0,
+  "name": "Alias"
+}

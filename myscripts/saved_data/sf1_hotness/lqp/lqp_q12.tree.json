@@ -1,0 +1,207 @@
+{
+  "LeftCard": "138952.5 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "138952.5 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "138952.5 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "138952.5 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "277802.2 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "277802.2 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "277802.2 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "277802.2 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "138952.5 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "971852.0 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "6001215.0 row(s) est.",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 11/16 column(s)",
+                        "id": 11,
+                        "name": "StoredTable"
+                      },
+                      "columns": [
+                        "l_receiptdate"
+                      ],
+                      "columns_left": [
+                        "l_receiptdate"
+                      ],
+                      "columns_right": [],
+                      "description": "[Predicate] l_receiptdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
+                      "id": 10,
+                      "name": "Predicate"
+                    },
+                    "columns": [
+                      "l_shipmode"
+                    ],
+                    "columns_left": [
+                      "l_shipmode"
+                    ],
+                    "columns_right": [],
+                    "description": "[Predicate] l_shipmode = 'SHIP'",
+                    "id": 9,
+                    "name": "Predicate"
+                  },
+                  "RightCard": "138849.7 row(s) est.",
+                  "Rightchildren": {
+                    "LeftCard": "971852.0 row(s) est.",
+                    "Leftchildren": {},
+                    "columns": [
+                      "l_shipmode"
+                    ],
+                    "columns_left": [
+                      "l_shipmode"
+                    ],
+                    "columns_right": [],
+                    "description": "[Predicate] l_shipmode = 'MAIL'",
+                    "id": 12,
+                    "name": "Predicate"
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[UnionNode] Mode: All",
+                  "id": 8,
+                  "name": "Union"
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[Validate]",
+                "id": 7,
+                "name": "Validate"
+              },
+              "columns": [
+                "l_commitdate",
+                "l_receiptdate"
+              ],
+              "columns_left": [
+                "l_commitdate",
+                "l_receiptdate"
+              ],
+              "columns_right": [],
+              "description": "[Predicate] l_receiptdate > l_commitdate",
+              "id": 6,
+              "name": "Predicate"
+            },
+            "columns": [
+              "l_commitdate",
+              "l_shipdate"
+            ],
+            "columns_left": [
+              "l_commitdate",
+              "l_shipdate"
+            ],
+            "columns_right": [],
+            "description": "[Predicate] l_commitdate > l_shipdate",
+            "id": 5,
+            "name": "Predicate"
+          },
+          "RightCard": "138952.5 row(s) est.",
+          "Rightchildren": {
+            "LeftCard": "138952.5 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "1500000.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'orders' pruned: 0/23 chunk(s), 7/9 column(s)",
+                "id": 15,
+                "name": "StoredTable"
+              },
+              "RightCard": "277802.2 row(s) est.",
+              "Rightchildren": {},
+              "columns": [
+                "l_orderkey",
+                "o_orderkey"
+              ],
+              "columns_left": [
+                "o_orderkey"
+              ],
+              "columns_right": [
+                "l_orderkey"
+              ],
+              "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
+              "id": 14,
+              "name": "Join"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 13,
+            "name": "Validate"
+          },
+          "columns": [
+            "l_orderkey",
+            "o_orderkey"
+          ],
+          "columns_left": [
+            "l_orderkey"
+          ],
+          "columns_right": [
+            "o_orderkey"
+          ],
+          "description": "[Join] Mode: Inner [o_orderkey = l_orderkey]",
+          "id": 4,
+          "name": "Join"
+        },
+        "columns": [
+          "l_shipmode",
+          "o_orderpriority"
+        ],
+        "columns_left": [
+          "l_shipmode",
+          "o_orderpriority"
+        ],
+        "columns_right": [],
+        "description": "[Projection] CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END, CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END, l_shipmode",
+        "id": 3,
+        "name": "Projection"
+      },
+      "columns": [
+        "l_shipmode",
+        "o_orderpriority"
+      ],
+      "columns_left": [
+        "l_shipmode",
+        "o_orderpriority"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [l_shipmode] Aggregates: [SUM(CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END), SUM(CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END)]",
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "l_shipmode"
+    ],
+    "columns_left": [
+      "l_shipmode"
+    ],
+    "columns_right": [],
+    "description": "[Sort] l_shipmode (AscendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "l_shipmode",
+    "o_orderpriority"
+  ],
+  "columns_left": [
+    "l_shipmode",
+    "o_orderpriority"
+  ],
+  "columns_right": [],
+  "description": "[Alias] l_shipmode, SUM(CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END) AS high_line_count, SUM(CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END) AS low_line_count",
+  "id": 0,
+  "name": "Alias"
+}

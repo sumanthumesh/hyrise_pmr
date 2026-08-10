@@ -1,0 +1,581 @@
+{
+  "LeftCard": "1 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "121 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "121 row(s)/1 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "40 row(s)/1 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "76 row(s)/1 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "159 row(s)/1 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "159 row(s)/1 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "159 row(s)/1 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "511 row(s)/1 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "511 row(s)/1 chunk(s)",
+                    "Leftchildren": {
+                      "LeftCard": "511 row(s)/1 chunk(s)",
+                      "Leftchildren": {
+                        "LeftCard": "214,377 row(s)/92 chunk(s)",
+                        "Leftchildren": {
+                          "LeftCard": "858,104 row(s)/92 chunk(s)",
+                          "Leftchildren": {
+                            "LeftCard": "0 row(s)/0 chunk(s)",
+                            "Leftchildren": {
+                              "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+                              "Leftchildren": {
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "GetTable (lineitem) pruned: 0/92 chunk(s), 10/16 column(s)",
+                                "id": 0,
+                                "name": "GetTable",
+                                "walltime_ns": 417108
+                              },
+                              "Ops": "TableScan",
+                              "columns": [
+                                "l_shipmode"
+                              ],
+                              "columns_left": [
+                                "l_shipmode"
+                              ],
+                              "columns_right": [],
+                              "description": "TableScan Impl: ColumnVsValue l_shipmode = 'AIR REG'",
+                              "id": 1,
+                              "name": "TableScan",
+                              "walltime_ns": 36946810
+                            },
+                            "RightCard": "858,104 row(s)/92 chunk(s)",
+                            "Rightchildren": {
+                              "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+                              "Leftchildren": {},
+                              "Ops": "TableScan",
+                              "columns": [
+                                "l_shipmode"
+                              ],
+                              "columns_left": [
+                                "l_shipmode"
+                              ],
+                              "columns_right": [],
+                              "description": "TableScan Impl: ColumnVsValue l_shipmode = 'AIR'",
+                              "id": 2,
+                              "name": "TableScan",
+                              "walltime_ns": 35407557
+                            },
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "UnionAll",
+                            "id": 3,
+                            "name": "UnionAll",
+                            "walltime_ns": 107264
+                          },
+                          "Ops": "TableScan",
+                          "columns": [
+                            "l_shipinstruct"
+                          ],
+                          "columns_left": [
+                            "l_shipinstruct"
+                          ],
+                          "columns_right": [],
+                          "description": "TableScan Impl: ColumnVsValue l_shipinstruct = 'DELIVER IN PERSON'",
+                          "id": 4,
+                          "name": "TableScan",
+                          "walltime_ns": 8683962
+                        },
+                        "RightCard": "485 row(s)/1 chunk(s)",
+                        "Rightchildren": {
+                          "LeftCard": "88 row(s)/4 chunk(s)",
+                          "Leftchildren": {
+                            "LeftCard": "794 row(s)/4 chunk(s)",
+                            "Leftchildren": {
+                              "LeftCard": "8,167 row(s)/4 chunk(s)",
+                              "Leftchildren": {
+                                "LeftCard": "200,000 row(s)/4 chunk(s)",
+                                "Leftchildren": {
+                                  "LeftCard": "200,000 row(s)/4 chunk(s)",
+                                  "Leftchildren": {
+                                    "columns": [],
+                                    "columns_left": [],
+                                    "columns_right": [],
+                                    "description": "GetTable (part) pruned: 0/4 chunk(s), 5/9 column(s)",
+                                    "id": 5,
+                                    "name": "GetTable",
+                                    "walltime_ns": 22696
+                                  },
+                                  "columns": [],
+                                  "columns_left": [],
+                                  "columns_right": [],
+                                  "description": "Validate",
+                                  "id": 6,
+                                  "name": "Validate",
+                                  "walltime_ns": 35488654
+                                },
+                                "Ops": "TableScan",
+                                "columns": [
+                                  "p_brand"
+                                ],
+                                "columns_left": [
+                                  "p_brand"
+                                ],
+                                "columns_right": [],
+                                "description": "TableScan Impl: ColumnVsValue p_brand = 'Brand#12'",
+                                "id": 7,
+                                "name": "TableScan",
+                                "walltime_ns": 853671
+                              },
+                              "Ops": "TableScan",
+                              "columns": [
+                                "p_container"
+                              ],
+                              "columns_left": [
+                                "p_container"
+                              ],
+                              "columns_right": [],
+                              "description": "TableScan Impl: ExpressionEvaluator (p_container) IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')",
+                              "id": 8,
+                              "name": "TableScan",
+                              "walltime_ns": 1566941
+                            },
+                            "Ops": "TableScan",
+                            "columns": [
+                              "p_size"
+                            ],
+                            "columns_left": [
+                              "p_size"
+                            ],
+                            "columns_right": [],
+                            "description": "TableScan Impl: ColumnBetween p_size BETWEEN INCLUSIVE 1 AND 5",
+                            "id": 9,
+                            "name": "TableScan",
+                            "walltime_ns": 88670
+                          },
+                          "RightCard": "397 row(s)/1 chunk(s)",
+                          "Rightchildren": {
+                            "LeftCard": "159 row(s)/4 chunk(s)",
+                            "Leftchildren": {
+                              "LeftCard": "755 row(s)/4 chunk(s)",
+                              "Leftchildren": {
+                                "LeftCard": "7,870 row(s)/4 chunk(s)",
+                                "Leftchildren": {
+                                  "LeftCard": "200,000 row(s)/4 chunk(s)",
+                                  "Leftchildren": {},
+                                  "Ops": "TableScan",
+                                  "columns": [
+                                    "p_brand"
+                                  ],
+                                  "columns_left": [
+                                    "p_brand"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "TableScan Impl: ColumnVsValue p_brand = 'Brand#23'",
+                                  "id": 10,
+                                  "name": "TableScan",
+                                  "walltime_ns": 506274
+                                },
+                                "Ops": "TableScan",
+                                "columns": [
+                                  "p_container"
+                                ],
+                                "columns_left": [
+                                  "p_container"
+                                ],
+                                "columns_right": [],
+                                "description": "TableScan Impl: ExpressionEvaluator (p_container) IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')",
+                                "id": 11,
+                                "name": "TableScan",
+                                "walltime_ns": 907651
+                              },
+                              "Ops": "TableScan",
+                              "columns": [
+                                "p_size"
+                              ],
+                              "columns_left": [
+                                "p_size"
+                              ],
+                              "columns_right": [],
+                              "description": "TableScan Impl: ColumnBetween p_size BETWEEN INCLUSIVE 1 AND 10",
+                              "id": 12,
+                              "name": "TableScan",
+                              "walltime_ns": 43259
+                            },
+                            "RightCard": "238 row(s)/4 chunk(s)",
+                            "Rightchildren": {
+                              "LeftCard": "773 row(s)/4 chunk(s)",
+                              "Leftchildren": {
+                                "LeftCard": "8,014 row(s)/4 chunk(s)",
+                                "Leftchildren": {
+                                  "LeftCard": "200,000 row(s)/4 chunk(s)",
+                                  "Leftchildren": {},
+                                  "Ops": "TableScan",
+                                  "columns": [
+                                    "p_brand"
+                                  ],
+                                  "columns_left": [
+                                    "p_brand"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "TableScan Impl: ColumnVsValue p_brand = 'Brand#34'",
+                                  "id": 13,
+                                  "name": "TableScan",
+                                  "walltime_ns": 473010
+                                },
+                                "Ops": "TableScan",
+                                "columns": [
+                                  "p_container"
+                                ],
+                                "columns_left": [
+                                  "p_container"
+                                ],
+                                "columns_right": [],
+                                "description": "TableScan Impl: ExpressionEvaluator (p_container) IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')",
+                                "id": 14,
+                                "name": "TableScan",
+                                "walltime_ns": 849456
+                              },
+                              "Ops": "TableScan",
+                              "columns": [
+                                "p_size"
+                              ],
+                              "columns_left": [
+                                "p_size"
+                              ],
+                              "columns_right": [],
+                              "description": "TableScan Impl: ColumnBetween p_size BETWEEN INCLUSIVE 1 AND 15",
+                              "id": 15,
+                              "name": "TableScan",
+                              "walltime_ns": 39766
+                            },
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "UnionPositions",
+                            "id": 16,
+                            "name": "UnionPositions",
+                            "walltime_ns": 44710
+                          },
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "UnionPositions",
+                          "id": 17,
+                          "name": "UnionPositions",
+                          "walltime_ns": 40426
+                        },
+                        "columns": [
+                          "l_partkey",
+                          "p_partkey"
+                        ],
+                        "columns_left": [
+                          "l_partkey"
+                        ],
+                        "columns_right": [
+                          "p_partkey"
+                        ],
+                        "description": "JoinHash (Semi Reduction) l_partkey = p_partkey",
+                        "id": 18,
+                        "name": "JoinHash",
+                        "walltime_ns": 8071426
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "Validate",
+                      "id": 19,
+                      "name": "Validate",
+                      "walltime_ns": 28108
+                    },
+                    "RightCard": "485 row(s)/1 chunk(s)",
+                    "Rightchildren": {},
+                    "columns": [
+                      "l_partkey",
+                      "p_partkey"
+                    ],
+                    "columns_left": [
+                      "l_partkey"
+                    ],
+                    "columns_right": [
+                      "p_partkey"
+                    ],
+                    "description": "JoinHash (Inner) l_partkey = p_partkey",
+                    "id": 20,
+                    "name": "JoinHash",
+                    "walltime_ns": 336961
+                  },
+                  "Ops": "TableScan",
+                  "columns": [
+                    "p_brand"
+                  ],
+                  "columns_left": [
+                    "p_brand"
+                  ],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ColumnVsValue p_brand = 'Brand#23'",
+                  "id": 21,
+                  "name": "TableScan",
+                  "walltime_ns": 50754
+                },
+                "Ops": "TableScan",
+                "columns": [
+                  "p_container"
+                ],
+                "columns_left": [
+                  "p_container"
+                ],
+                "columns_right": [],
+                "description": "TableScan Impl: ExpressionEvaluator (p_container) IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')",
+                "id": 22,
+                "name": "TableScan",
+                "walltime_ns": 43918
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "p_size"
+              ],
+              "columns_left": [
+                "p_size"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnBetween p_size BETWEEN INCLUSIVE 1 AND 10",
+              "id": 23,
+              "name": "TableScan",
+              "walltime_ns": 19963
+            },
+            "Ops": "TableScan",
+            "columns": [
+              "l_quantity"
+            ],
+            "columns_left": [
+              "l_quantity"
+            ],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnVsValue l_quantity <= 20",
+            "id": 24,
+            "name": "TableScan",
+            "walltime_ns": 121746
+          },
+          "Ops": "TableScan",
+          "columns": [
+            "l_quantity"
+          ],
+          "columns_left": [
+            "l_quantity"
+          ],
+          "columns_right": [],
+          "description": "TableScan Impl: ColumnVsValue l_quantity >= 10",
+          "id": 25,
+          "name": "TableScan",
+          "walltime_ns": 43279
+        },
+        "RightCard": "81 row(s)/1 chunk(s)",
+        "Rightchildren": {
+          "LeftCard": "56 row(s)/1 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "156 row(s)/1 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "262 row(s)/1 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "262 row(s)/1 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "262 row(s)/1 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "511 row(s)/1 chunk(s)",
+                    "Leftchildren": {},
+                    "Ops": "TableScan",
+                    "columns": [
+                      "p_brand"
+                    ],
+                    "columns_left": [
+                      "p_brand"
+                    ],
+                    "columns_right": [],
+                    "description": "TableScan Impl: ColumnVsValue p_brand = 'Brand#34'",
+                    "id": 26,
+                    "name": "TableScan",
+                    "walltime_ns": 27837
+                  },
+                  "Ops": "TableScan",
+                  "columns": [
+                    "p_container"
+                  ],
+                  "columns_left": [
+                    "p_container"
+                  ],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ExpressionEvaluator (p_container) IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')",
+                  "id": 27,
+                  "name": "TableScan",
+                  "walltime_ns": 41927
+                },
+                "Ops": "TableScan",
+                "columns": [
+                  "p_size"
+                ],
+                "columns_left": [
+                  "p_size"
+                ],
+                "columns_right": [],
+                "description": "TableScan Impl: ColumnBetween p_size BETWEEN INCLUSIVE 1 AND 15",
+                "id": 28,
+                "name": "TableScan",
+                "walltime_ns": 17301
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "l_quantity"
+              ],
+              "columns_left": [
+                "l_quantity"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnVsValue l_quantity <= 30",
+              "id": 29,
+              "name": "TableScan",
+              "walltime_ns": 103362
+            },
+            "Ops": "TableScan",
+            "columns": [
+              "l_quantity"
+            ],
+            "columns_left": [
+              "l_quantity"
+            ],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnVsValue l_quantity >= 20",
+            "id": 30,
+            "name": "TableScan",
+            "walltime_ns": 60621
+          },
+          "RightCard": "25 row(s)/1 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "25 row(s)/1 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "90 row(s)/1 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "90 row(s)/1 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "90 row(s)/1 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "511 row(s)/1 chunk(s)",
+                    "Leftchildren": {},
+                    "Ops": "TableScan",
+                    "columns": [
+                      "p_container"
+                    ],
+                    "columns_left": [
+                      "p_container"
+                    ],
+                    "columns_right": [],
+                    "description": "TableScan Impl: ExpressionEvaluator (p_container) IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')",
+                    "id": 31,
+                    "name": "TableScan",
+                    "walltime_ns": 74015
+                  },
+                  "Ops": "TableScan",
+                  "columns": [
+                    "p_brand"
+                  ],
+                  "columns_left": [
+                    "p_brand"
+                  ],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ColumnVsValue p_brand = 'Brand#12'",
+                  "id": 32,
+                  "name": "TableScan",
+                  "walltime_ns": 14805
+                },
+                "Ops": "TableScan",
+                "columns": [
+                  "p_size"
+                ],
+                "columns_left": [
+                  "p_size"
+                ],
+                "columns_right": [],
+                "description": "TableScan Impl: ColumnBetween p_size BETWEEN INCLUSIVE 1 AND 5",
+                "id": 33,
+                "name": "TableScan",
+                "walltime_ns": 12913
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "l_quantity"
+              ],
+              "columns_left": [
+                "l_quantity"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnVsValue l_quantity <= 11",
+              "id": 34,
+              "name": "TableScan",
+              "walltime_ns": 56497
+            },
+            "Ops": "TableScan",
+            "columns": [
+              "l_quantity"
+            ],
+            "columns_left": [
+              "l_quantity"
+            ],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnVsValue l_quantity >= 1",
+            "id": 35,
+            "name": "TableScan",
+            "walltime_ns": 18664
+          },
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "UnionPositions",
+          "id": 36,
+          "name": "UnionPositions",
+          "walltime_ns": 24519
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "UnionPositions",
+        "id": 37,
+        "name": "UnionPositions",
+        "walltime_ns": 13239
+      },
+      "Ops": "projection",
+      "columns": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_right": [],
+      "description": "Projection",
+      "id": 38,
+      "name": "Projection",
+      "walltime_ns": 205566
+    },
+    "columns": [
+      "l_extendedprice * (1 - l_discount)"
+    ],
+    "columns_left": [
+      "l_extendedprice * (1 - l_discount)"
+    ],
+    "columns_right": [],
+    "description": "AggregateHash GroupBy {} SUM(l_extendedprice * (1 - l_discount))",
+    "id": 39,
+    "name": "AggregateHash",
+    "walltime_ns": 24796
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [revenue]",
+  "id": 40,
+  "name": "Alias",
+  "walltime_ns": 2788
+}

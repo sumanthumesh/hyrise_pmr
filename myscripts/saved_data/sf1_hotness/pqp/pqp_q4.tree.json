@@ -1,0 +1,145 @@
+{
+  "LeftCard": "5 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "5 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "52,523 row(s)/23 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "57,218 row(s)/23 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "57,218 row(s)/23 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "1,500,000 row(s)/23 chunk(s)",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "GetTable (orders) pruned: 0/23 chunk(s), 6/9 column(s)",
+              "id": 0,
+              "name": "GetTable",
+              "walltime_ns": 65020
+            },
+            "Ops": "TableScan",
+            "columns": [
+              "o_orderdate"
+            ],
+            "columns_left": [
+              "o_orderdate"
+            ],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnBetween o_orderdate BETWEEN UPPER EXCLUSIVE '1993-07-01' AND '1993-10-01'",
+            "id": 1,
+            "name": "TableScan",
+            "walltime_ns": 12936479
+          },
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "Validate",
+          "id": 2,
+          "name": "Validate",
+          "walltime_ns": 82143
+        },
+        "RightCard": "144,869 row(s)/92 chunk(s)",
+        "Rightchildren": {
+          "LeftCard": "229,691 row(s)/92 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "229,691 row(s)/92 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (lineitem) pruned: 0/92 chunk(s), 13/16 column(s)",
+                "id": 3,
+                "name": "GetTable",
+                "walltime_ns": 276302
+              },
+              "RightCard": "57,218 row(s)/23 chunk(s)",
+              "Rightchildren": {},
+              "columns": [
+                "l_orderkey",
+                "o_orderkey"
+              ],
+              "columns_left": [
+                "l_orderkey"
+              ],
+              "columns_right": [
+                "o_orderkey"
+              ],
+              "description": "JoinHash (Semi Reduction) l_orderkey = o_orderkey",
+              "id": 4,
+              "name": "JoinHash",
+              "walltime_ns": 74161966
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 5,
+            "name": "Validate",
+            "walltime_ns": 191275
+          },
+          "Ops": "TableScan",
+          "columns": [
+            "l_commitdate",
+            "l_receiptdate"
+          ],
+          "columns_left": [
+            "l_commitdate",
+            "l_receiptdate"
+          ],
+          "columns_right": [],
+          "description": "TableScan Impl: ColumnVsColumn l_commitdate < l_receiptdate",
+          "id": 6,
+          "name": "TableScan",
+          "walltime_ns": 19285498
+        },
+        "columns": [
+          "l_orderkey",
+          "o_orderkey"
+        ],
+        "columns_left": [
+          "o_orderkey"
+        ],
+        "columns_right": [
+          "l_orderkey"
+        ],
+        "description": "JoinHash (Semi) o_orderkey = l_orderkey",
+        "id": 7,
+        "name": "JoinHash",
+        "walltime_ns": 20277447
+      },
+      "columns": [
+        "o_orderpriority"
+      ],
+      "columns_left": [
+        "o_orderpriority"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {o_orderpriority} COUNT(*)",
+      "id": 8,
+      "name": "AggregateHash",
+      "walltime_ns": 4214552
+    },
+    "columns": [
+      "o_orderpriority"
+    ],
+    "columns_left": [
+      "o_orderpriority"
+    ],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 9,
+    "name": "Sort",
+    "walltime_ns": 30779
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [o_orderpriority, order_count]",
+  "id": 10,
+  "name": "Alias",
+  "walltime_ns": 4357
+}

@@ -1,0 +1,421 @@
+{
+  "LeftCard": "42443.6 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "42443.6 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "42443.6 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "42443.6 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "42443.6 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "42443.6 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "42443.6 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "42443.6 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "130550.4 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "130550.4 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "435371.0 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "1500000.0 row(s) est.",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "[StoredTable] Name: 'orders' pruned: 0/23 chunk(s), 6/9 column(s)",
+                          "id": 12,
+                          "name": "StoredTable"
+                        },
+                        "columns": [
+                          "o_orderdate"
+                        ],
+                        "columns_left": [
+                          "o_orderdate"
+                        ],
+                        "columns_right": [],
+                        "description": "[Predicate] o_orderdate BETWEEN INCLUSIVE '1995-01-01' AND '1996-12-31'",
+                        "id": 11,
+                        "name": "Predicate"
+                      },
+                      "RightCard": "30000.0 row(s) est.",
+                      "Rightchildren": {
+                        "LeftCard": "30000.0 row(s) est.",
+                        "Leftchildren": {
+                          "LeftCard": "150000.0 row(s) est.",
+                          "Leftchildren": {
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[StoredTable] Name: 'customer' pruned: 0/3 chunk(s), 6/8 column(s)",
+                            "id": 15,
+                            "name": "StoredTable"
+                          },
+                          "RightCard": "5.0 row(s) est.",
+                          "Rightchildren": {
+                            "LeftCard": "5.0 row(s) est.",
+                            "Leftchildren": {
+                              "LeftCard": "25.0 row(s) est.",
+                              "Leftchildren": {
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 1/4 column(s)",
+                                "id": 18,
+                                "name": "StoredTable"
+                              },
+                              "RightCard": "1.0 row(s) est.",
+                              "Rightchildren": {
+                                "LeftCard": "1.0 row(s) est.",
+                                "Leftchildren": {
+                                  "LeftCard": "5.0 row(s) est.",
+                                  "Leftchildren": {
+                                    "columns": [],
+                                    "columns_left": [],
+                                    "columns_right": [],
+                                    "description": "[StoredTable] Name: 'region' pruned: 0/1 chunk(s), 1/3 column(s)",
+                                    "id": 21,
+                                    "name": "StoredTable"
+                                  },
+                                  "columns": [
+                                    "r_name"
+                                  ],
+                                  "columns_left": [
+                                    "r_name"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "[Predicate] r_name = 'AMERICA'",
+                                  "id": 20,
+                                  "name": "Predicate"
+                                },
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "[Validate]",
+                                "id": 19,
+                                "name": "Validate"
+                              },
+                              "columns": [
+                                "n_regionkey",
+                                "r_regionkey"
+                              ],
+                              "columns_left": [
+                                "n_regionkey"
+                              ],
+                              "columns_right": [
+                                "r_regionkey"
+                              ],
+                              "description": "[Join] Mode: Semi [n_regionkey = r_regionkey]",
+                              "id": 17,
+                              "name": "Join"
+                            },
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[Validate]",
+                            "id": 16,
+                            "name": "Validate"
+                          },
+                          "columns": [
+                            "c_nationkey",
+                            "n_nationkey"
+                          ],
+                          "columns_left": [
+                            "c_nationkey"
+                          ],
+                          "columns_right": [
+                            "n_nationkey"
+                          ],
+                          "description": "[Join] Mode: Semi [c_nationkey = n_nationkey]",
+                          "id": 14,
+                          "name": "Join"
+                        },
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[Validate]",
+                        "id": 13,
+                        "name": "Validate"
+                      },
+                      "columns": [
+                        "c_custkey",
+                        "o_custkey"
+                      ],
+                      "columns_left": [
+                        "o_custkey"
+                      ],
+                      "columns_right": [
+                        "c_custkey"
+                      ],
+                      "description": "[Join] Mode: Semi [o_custkey = c_custkey]",
+                      "id": 10,
+                      "name": "Join"
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 9,
+                    "name": "Validate"
+                  },
+                  "RightCard": "42443.6 row(s) est.",
+                  "Rightchildren": {
+                    "LeftCard": "42443.6 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "6001215.0 row(s) est.",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 11/16 column(s)",
+                        "id": 24,
+                        "name": "StoredTable"
+                      },
+                      "RightCard": "1414.5 row(s) est.",
+                      "Rightchildren": {
+                        "LeftCard": "1414.5 row(s) est.",
+                        "Leftchildren": {
+                          "LeftCard": "200000.0 row(s) est.",
+                          "Leftchildren": {
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[StoredTable] Name: 'part' pruned: 0/4 chunk(s), 7/9 column(s)",
+                            "id": 27,
+                            "name": "StoredTable"
+                          },
+                          "columns": [
+                            "p_type"
+                          ],
+                          "columns_left": [
+                            "p_type"
+                          ],
+                          "columns_right": [],
+                          "description": "[Predicate] p_type = 'ECONOMY ANODIZED STEEL'",
+                          "id": 26,
+                          "name": "Predicate"
+                        },
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[Validate]",
+                        "id": 25,
+                        "name": "Validate"
+                      },
+                      "columns": [
+                        "l_partkey",
+                        "p_partkey"
+                      ],
+                      "columns_left": [
+                        "l_partkey"
+                      ],
+                      "columns_right": [
+                        "p_partkey"
+                      ],
+                      "description": "[Join] Mode: Semi [p_partkey = l_partkey]",
+                      "id": 23,
+                      "name": "Join"
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 22,
+                    "name": "Validate"
+                  },
+                  "columns": [
+                    "l_orderkey",
+                    "o_orderkey"
+                  ],
+                  "columns_left": [
+                    "o_orderkey"
+                  ],
+                  "columns_right": [
+                    "l_orderkey"
+                  ],
+                  "description": "[Join] Mode: Inner [l_orderkey = o_orderkey]",
+                  "id": 8,
+                  "name": "Join"
+                },
+                "RightCard": "10000.0 row(s) est.",
+                "Rightchildren": {
+                  "LeftCard": "10000.0 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "10000.0 row(s) est.",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[StoredTable] Name: 'supplier' pruned: 0/1 chunk(s), 5/7 column(s)",
+                      "id": 30,
+                      "name": "StoredTable"
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 29,
+                    "name": "Validate"
+                  },
+                  "RightCard": "25.0 row(s) est.",
+                  "Rightchildren": {
+                    "LeftCard": "25.0 row(s) est.",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 1/4 column(s)",
+                      "id": 32,
+                      "name": "StoredTable"
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 31,
+                    "name": "Validate"
+                  },
+                  "columns": [
+                    "n_nationkey",
+                    "s_nationkey"
+                  ],
+                  "columns_left": [
+                    "s_nationkey"
+                  ],
+                  "columns_right": [
+                    "n_nationkey"
+                  ],
+                  "description": "[Join] Mode: Inner [s_nationkey = n_nationkey]",
+                  "id": 28,
+                  "name": "Join"
+                },
+                "columns": [
+                  "l_suppkey",
+                  "s_suppkey"
+                ],
+                "columns_left": [
+                  "l_suppkey"
+                ],
+                "columns_right": [
+                  "s_suppkey"
+                ],
+                "description": "[Join] Mode: Inner [s_suppkey = l_suppkey]",
+                "id": 7,
+                "name": "Join"
+              },
+              "columns": [
+                "l_discount",
+                "l_extendedprice",
+                "n_name",
+                "o_orderdate"
+              ],
+              "columns_left": [
+                "l_discount",
+                "l_extendedprice",
+                "n_name",
+                "o_orderdate"
+              ],
+              "columns_right": [],
+              "description": "[Projection] EXTRACT(YEAR FROM o_orderdate), l_extendedprice * (1 - l_discount), n_name",
+              "id": 6,
+              "name": "Projection"
+            },
+            "columns": [
+              "l_discount",
+              "l_extendedprice",
+              "n_name",
+              "o_orderdate"
+            ],
+            "columns_left": [
+              "l_discount",
+              "l_extendedprice",
+              "n_name",
+              "o_orderdate"
+            ],
+            "columns_right": [],
+            "description": "[Alias] EXTRACT(YEAR FROM o_orderdate) AS o_year, l_extendedprice * (1 - l_discount) AS volume, n_name AS nation",
+            "id": 5,
+            "name": "Alias"
+          },
+          "columns": [
+            "l_discount",
+            "l_extendedprice",
+            "n_name",
+            "o_orderdate"
+          ],
+          "columns_left": [
+            "l_discount",
+            "l_extendedprice",
+            "n_name",
+            "o_orderdate"
+          ],
+          "columns_right": [],
+          "description": "[Projection] CASE WHEN n_name = 'BRAZIL' THEN l_extendedprice * (1 - l_discount) ELSE 0 END, l_extendedprice * (1 - l_discount), EXTRACT(YEAR FROM o_orderdate)",
+          "id": 4,
+          "name": "Projection"
+        },
+        "columns": [
+          "l_discount",
+          "l_extendedprice",
+          "n_name",
+          "o_orderdate"
+        ],
+        "columns_left": [
+          "l_discount",
+          "l_extendedprice",
+          "n_name",
+          "o_orderdate"
+        ],
+        "columns_right": [],
+        "description": "[Aggregate] GroupBy: [EXTRACT(YEAR FROM o_orderdate)] Aggregates: [SUM(CASE WHEN n_name = 'BRAZIL' THEN l_extendedprice * (1 - l_discount) ELSE 0 END), SUM(l_extendedprice * (1 - l_discount))]",
+        "id": 3,
+        "name": "Aggregate"
+      },
+      "columns": [
+        "o_orderdate"
+      ],
+      "columns_left": [
+        "o_orderdate"
+      ],
+      "columns_right": [],
+      "description": "[Sort] EXTRACT(YEAR FROM o_orderdate) (AscendingNullsFirst)",
+      "id": 2,
+      "name": "Sort"
+    },
+    "columns": [
+      "l_discount",
+      "l_extendedprice",
+      "n_name",
+      "o_orderdate"
+    ],
+    "columns_left": [
+      "l_discount",
+      "l_extendedprice",
+      "n_name",
+      "o_orderdate"
+    ],
+    "columns_right": [],
+    "description": "[Projection] EXTRACT(YEAR FROM o_orderdate), SUM(CASE WHEN n_name = 'BRAZIL' THEN l_extendedprice * (1 - l_discount) ELSE 0 END) / SUM(l_extendedprice * (1 - l_discount))",
+    "id": 1,
+    "name": "Projection"
+  },
+  "columns": [
+    "l_discount",
+    "l_extendedprice",
+    "n_name",
+    "o_orderdate"
+  ],
+  "columns_left": [
+    "l_discount",
+    "l_extendedprice",
+    "n_name",
+    "o_orderdate"
+  ],
+  "columns_right": [],
+  "description": "[Alias] EXTRACT(YEAR FROM o_orderdate) AS o_year, SUM(CASE WHEN n_name = 'BRAZIL' THEN l_extendedprice * (1 - l_discount) ELSE 0 END) / SUM(l_extendedprice * (1 - l_discount)) AS mkt_share",
+  "id": 0,
+  "name": "Alias"
+}

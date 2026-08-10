@@ -1,0 +1,264 @@
+{
+  "LeftCard": "18,314 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "18,314 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "118,274 row(s)/13 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "118,274 row(s)/13 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "118,324 row(s)/13 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "118,324 row(s)/13 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "800,000 row(s)/13 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (partsupp) pruned: 0/13 chunk(s), 3/5 column(s)",
+                "id": 0,
+                "name": "GetTable",
+                "walltime_ns": 48044
+              },
+              "RightCard": "29,581 row(s)/8 chunk(s)",
+              "Rightchildren": {
+                "LeftCard": "14,172 row(s)/4 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "30,568 row(s)/4 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "30,568 row(s)/4 chunk(s)",
+                    "Leftchildren": {
+                      "LeftCard": "31,826 row(s)/4 chunk(s)",
+                      "Leftchildren": {
+                        "LeftCard": "200,000 row(s)/4 chunk(s)",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "GetTable (part) pruned: 0/4 chunk(s), 5/9 column(s)",
+                          "id": 1,
+                          "name": "GetTable",
+                          "walltime_ns": 49291
+                        },
+                        "Ops": "TableScan",
+                        "columns": [
+                          "p_size"
+                        ],
+                        "columns_left": [
+                          "p_size"
+                        ],
+                        "columns_right": [],
+                        "description": "TableScan Impl: ExpressionEvaluator (p_size) IN (49, 14, 23, 45, 19, 3, 36, 9)",
+                        "id": 2,
+                        "name": "TableScan",
+                        "walltime_ns": 6249707
+                      },
+                      "Ops": "TableScan",
+                      "columns": [
+                        "p_brand"
+                      ],
+                      "columns_left": [
+                        "p_brand"
+                      ],
+                      "columns_right": [],
+                      "description": "TableScan Impl: ColumnVsValue p_brand != 'Brand#45'",
+                      "id": 3,
+                      "name": "TableScan",
+                      "walltime_ns": 655502
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 4,
+                    "name": "Validate",
+                    "walltime_ns": 16889
+                  },
+                  "Ops": "TableScan",
+                  "columns": [
+                    "p_type"
+                  ],
+                  "columns_left": [
+                    "p_type"
+                  ],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ColumnVsValue p_type < 'MEDIUM POLISHED'",
+                  "id": 5,
+                  "name": "TableScan",
+                  "walltime_ns": 745485
+                },
+                "RightCard": "15,409 row(s)/4 chunk(s)",
+                "Rightchildren": {
+                  "LeftCard": "30,568 row(s)/4 chunk(s)",
+                  "Leftchildren": {},
+                  "Ops": "TableScan",
+                  "columns": [
+                    "p_type"
+                  ],
+                  "columns_left": [
+                    "p_type"
+                  ],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ColumnVsValue p_type >= 'MEDIUM POLISHEE'",
+                  "id": 6,
+                  "name": "TableScan",
+                  "walltime_ns": 802266
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "UnionAll",
+                "id": 7,
+                "name": "UnionAll",
+                "walltime_ns": 16003
+              },
+              "columns": [
+                "p_partkey",
+                "ps_partkey"
+              ],
+              "columns_left": [
+                "ps_partkey"
+              ],
+              "columns_right": [
+                "p_partkey"
+              ],
+              "description": "JoinHash (Semi Reduction) ps_partkey = p_partkey",
+              "id": 8,
+              "name": "JoinHash",
+              "walltime_ns": 11123846
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 9,
+            "name": "Validate",
+            "walltime_ns": 56441
+          },
+          "RightCard": "4 row(s)/1 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "4 row(s)/1 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "4 row(s)/1 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "10,000 row(s)/1 chunk(s)",
+                "Leftchildren": {
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "GetTable (supplier) pruned: 0/1 chunk(s), 5/7 column(s)",
+                  "id": 10,
+                  "name": "GetTable",
+                  "walltime_ns": 12036
+                },
+                "Ops": "TableScan",
+                "columns": [
+                  "s_comment"
+                ],
+                "columns_left": [
+                  "s_comment"
+                ],
+                "columns_right": [],
+                "description": "TableScan Impl: ColumnLike s_comment LIKE '%Customer%Complaints%'",
+                "id": 11,
+                "name": "TableScan",
+                "walltime_ns": 2533316
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "Validate",
+              "id": 12,
+              "name": "Validate",
+              "walltime_ns": 12726
+            },
+            "Ops": "projection",
+            "columns": [
+              "s_suppkey"
+            ],
+            "columns_left": [
+              "s_suppkey"
+            ],
+            "columns_right": [],
+            "description": "Projection",
+            "id": 13,
+            "name": "Projection",
+            "walltime_ns": 14413
+          },
+          "columns": [
+            "ps_suppkey",
+            "s_suppkey"
+          ],
+          "columns_left": [
+            "ps_suppkey"
+          ],
+          "columns_right": [
+            "s_suppkey"
+          ],
+          "description": "JoinHash (AntiNullAsTrue) ps_suppkey = s_suppkey",
+          "id": 14,
+          "name": "JoinHash",
+          "walltime_ns": 6635948
+        },
+        "RightCard": "29,581 row(s)/8 chunk(s)",
+        "Rightchildren": {},
+        "columns": [
+          "p_partkey",
+          "ps_partkey"
+        ],
+        "columns_left": [
+          "ps_partkey"
+        ],
+        "columns_right": [
+          "p_partkey"
+        ],
+        "description": "JoinHash (Inner) ps_partkey = p_partkey",
+        "id": 15,
+        "name": "JoinHash",
+        "walltime_ns": 13075363
+      },
+      "columns": [
+        "p_brand",
+        "p_size",
+        "p_type",
+        "ps_suppkey"
+      ],
+      "columns_left": [
+        "p_brand",
+        "p_size",
+        "p_type",
+        "ps_suppkey"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {p_brand, p_type, p_size} COUNT(DISTINCT ps_suppkey)",
+      "id": 16,
+      "name": "AggregateHash",
+      "walltime_ns": 45317814
+    },
+    "columns": [
+      "COUNT(DISTINCT ps_suppkey)",
+      "p_brand",
+      "p_size",
+      "p_type"
+    ],
+    "columns_left": [
+      "COUNT(DISTINCT ps_suppkey)",
+      "p_brand",
+      "p_size",
+      "p_type"
+    ],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 17,
+    "name": "Sort",
+    "walltime_ns": 15548217
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [p_brand, p_type, p_size, supplier_cnt]",
+  "id": 18,
+  "name": "Alias",
+  "walltime_ns": 5383
+}

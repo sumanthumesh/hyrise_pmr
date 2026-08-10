@@ -1,0 +1,225 @@
+{
+  "LeftCard": "2 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "2 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "30,988 row(s)/54 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "30,988 row(s)/54 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "30,988 row(s)/184 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "164,472 row(s)/184 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "259,560 row(s)/184 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "259,560 row(s)/184 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "130,036 row(s)/92 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "909,844 row(s)/92 chunk(s)",
+                    "Leftchildren": {
+                      "LeftCard": "6,001,215 row(s)/92 chunk(s)",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "GetTable (lineitem) pruned: 0/92 chunk(s), 11/16 column(s)",
+                        "id": 0,
+                        "name": "GetTable",
+                        "walltime_ns": 6805888
+                      },
+                      "Ops": "TableScan",
+                      "columns": [
+                        "l_receiptdate"
+                      ],
+                      "columns_left": [
+                        "l_receiptdate"
+                      ],
+                      "columns_right": [],
+                      "description": "TableScan Impl: ColumnBetween l_receiptdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
+                      "id": 1,
+                      "name": "TableScan",
+                      "walltime_ns": 64890097
+                    },
+                    "Ops": "TableScan",
+                    "columns": [
+                      "l_shipmode"
+                    ],
+                    "columns_left": [
+                      "l_shipmode"
+                    ],
+                    "columns_right": [],
+                    "description": "TableScan Impl: ColumnVsValue l_shipmode = 'SHIP'",
+                    "id": 2,
+                    "name": "TableScan",
+                    "walltime_ns": 11422962
+                  },
+                  "RightCard": "129,524 row(s)/92 chunk(s)",
+                  "Rightchildren": {
+                    "LeftCard": "909,844 row(s)/92 chunk(s)",
+                    "Leftchildren": {},
+                    "Ops": "TableScan",
+                    "columns": [
+                      "l_shipmode"
+                    ],
+                    "columns_left": [
+                      "l_shipmode"
+                    ],
+                    "columns_right": [],
+                    "description": "TableScan Impl: ColumnVsValue l_shipmode = 'MAIL'",
+                    "id": 3,
+                    "name": "TableScan",
+                    "walltime_ns": 6521931
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "UnionAll",
+                  "id": 4,
+                  "name": "UnionAll",
+                  "walltime_ns": 172350
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "Validate",
+                "id": 5,
+                "name": "Validate",
+                "walltime_ns": 363861
+              },
+              "Ops": "TableScan",
+              "columns": [
+                "l_commitdate",
+                "l_receiptdate"
+              ],
+              "columns_left": [
+                "l_commitdate",
+                "l_receiptdate"
+              ],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnVsColumn l_receiptdate > l_commitdate",
+              "id": 6,
+              "name": "TableScan",
+              "walltime_ns": 26716688
+            },
+            "Ops": "TableScan",
+            "columns": [
+              "l_commitdate",
+              "l_shipdate"
+            ],
+            "columns_left": [
+              "l_commitdate",
+              "l_shipdate"
+            ],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnVsColumn l_commitdate > l_shipdate",
+            "id": 7,
+            "name": "TableScan",
+            "walltime_ns": 17335709
+          },
+          "RightCard": "29,099 row(s)/23 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "29,099 row(s)/23 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "1,500,000 row(s)/23 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (orders) pruned: 0/23 chunk(s), 7/9 column(s)",
+                "id": 8,
+                "name": "GetTable",
+                "walltime_ns": 112238
+              },
+              "RightCard": "30,988 row(s)/184 chunk(s)",
+              "Rightchildren": {},
+              "columns": [
+                "l_orderkey",
+                "o_orderkey"
+              ],
+              "columns_left": [
+                "o_orderkey"
+              ],
+              "columns_right": [
+                "l_orderkey"
+              ],
+              "description": "JoinHash (Semi Reduction) o_orderkey = l_orderkey",
+              "id": 9,
+              "name": "JoinHash",
+              "walltime_ns": 16965293
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 10,
+            "name": "Validate",
+            "walltime_ns": 37121
+          },
+          "columns": [
+            "l_orderkey",
+            "o_orderkey"
+          ],
+          "columns_left": [
+            "l_orderkey"
+          ],
+          "columns_right": [
+            "o_orderkey"
+          ],
+          "description": "JoinHash (Inner) l_orderkey = o_orderkey",
+          "id": 11,
+          "name": "JoinHash",
+          "walltime_ns": 11012500
+        },
+        "Ops": "projection",
+        "columns": [
+          "l_shipmode",
+          "o_orderpriority"
+        ],
+        "columns_left": [
+          "l_shipmode",
+          "o_orderpriority"
+        ],
+        "columns_right": [],
+        "description": "Projection",
+        "id": 12,
+        "name": "Projection",
+        "walltime_ns": 8268267
+      },
+      "columns": [
+        "CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END",
+        "CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END",
+        "l_shipmode"
+      ],
+      "columns_left": [
+        "CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END",
+        "CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END",
+        "l_shipmode"
+      ],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {l_shipmode} SUM(CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END),  SUM(CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END)",
+      "id": 13,
+      "name": "AggregateHash",
+      "walltime_ns": 4700808
+    },
+    "columns": [
+      "l_shipmode"
+    ],
+    "columns_left": [
+      "l_shipmode"
+    ],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 14,
+    "name": "Sort",
+    "walltime_ns": 23553
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [l_shipmode, high_line_count, low_line_count]",
+  "id": 15,
+  "name": "Alias",
+  "walltime_ns": 4045
+}
