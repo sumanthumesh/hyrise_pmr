@@ -1,0 +1,441 @@
+{
+  "edges": [
+    {
+      "dst": 1,
+      "rows": 300005811,
+      "src": 0
+    },
+    {
+      "dst": 3,
+      "rows": 0,
+      "src": 1
+    },
+    {
+      "dst": 2,
+      "rows": 300005811,
+      "src": 0
+    },
+    {
+      "dst": 3,
+      "rows": 42860070,
+      "src": 2
+    },
+    {
+      "dst": 4,
+      "rows": 42860070,
+      "src": 3
+    },
+    {
+      "dst": 18,
+      "rows": 10715616,
+      "src": 4
+    },
+    {
+      "dst": 6,
+      "rows": 10000000,
+      "src": 5
+    },
+    {
+      "dst": 7,
+      "rows": 10000000,
+      "src": 6
+    },
+    {
+      "dst": 8,
+      "rows": 400308,
+      "src": 7
+    },
+    {
+      "dst": 9,
+      "rows": 39803,
+      "src": 8
+    },
+    {
+      "dst": 17,
+      "rows": 3957,
+      "src": 9
+    },
+    {
+      "dst": 10,
+      "rows": 10000000,
+      "src": 6
+    },
+    {
+      "dst": 11,
+      "rows": 399907,
+      "src": 10
+    },
+    {
+      "dst": 12,
+      "rows": 40238,
+      "src": 11
+    },
+    {
+      "dst": 16,
+      "rows": 8154,
+      "src": 12
+    },
+    {
+      "dst": 13,
+      "rows": 10000000,
+      "src": 6
+    },
+    {
+      "dst": 14,
+      "rows": 399509,
+      "src": 13
+    },
+    {
+      "dst": 15,
+      "rows": 39910,
+      "src": 14
+    },
+    {
+      "dst": 16,
+      "rows": 12109,
+      "src": 15
+    },
+    {
+      "dst": 17,
+      "rows": 20263,
+      "src": 16
+    },
+    {
+      "dst": 18,
+      "rows": 24220,
+      "src": 17
+    },
+    {
+      "dst": 19,
+      "rows": 25983,
+      "src": 18
+    },
+    {
+      "dst": 20,
+      "rows": 25983,
+      "src": 19
+    },
+    {
+      "dst": 20,
+      "rows": 24220,
+      "src": 17
+    },
+    {
+      "dst": 21,
+      "rows": 25983,
+      "src": 20
+    },
+    {
+      "dst": 22,
+      "rows": 8750,
+      "src": 21
+    },
+    {
+      "dst": 23,
+      "rows": 8750,
+      "src": 22
+    },
+    {
+      "dst": 24,
+      "rows": 8750,
+      "src": 23
+    },
+    {
+      "dst": 25,
+      "rows": 3518,
+      "src": 24
+    },
+    {
+      "dst": 37,
+      "rows": 1926,
+      "src": 25
+    },
+    {
+      "dst": 26,
+      "rows": 25983,
+      "src": 20
+    },
+    {
+      "dst": 27,
+      "rows": 13074,
+      "src": 26
+    },
+    {
+      "dst": 28,
+      "rows": 13074,
+      "src": 27
+    },
+    {
+      "dst": 29,
+      "rows": 13074,
+      "src": 28
+    },
+    {
+      "dst": 30,
+      "rows": 7956,
+      "src": 29
+    },
+    {
+      "dst": 36,
+      "rows": 2927,
+      "src": 30
+    },
+    {
+      "dst": 31,
+      "rows": 25983,
+      "src": 20
+    },
+    {
+      "dst": 32,
+      "rows": 4159,
+      "src": 31
+    },
+    {
+      "dst": 33,
+      "rows": 4159,
+      "src": 32
+    },
+    {
+      "dst": 34,
+      "rows": 4159,
+      "src": 33
+    },
+    {
+      "dst": 35,
+      "rows": 934,
+      "src": 34
+    },
+    {
+      "dst": 36,
+      "rows": 934,
+      "src": 35
+    },
+    {
+      "dst": 37,
+      "rows": 3861,
+      "src": 36
+    },
+    {
+      "dst": 38,
+      "rows": 5787,
+      "src": 37
+    },
+    {
+      "dst": 39,
+      "rows": 5787,
+      "src": 38
+    },
+    {
+      "dst": 40,
+      "rows": 1,
+      "src": 39
+    }
+  ],
+  "nodes": [
+    {
+      "id": 31,
+      "name": "TableScan",
+      "walltime_ns": 7220467
+    },
+    {
+      "id": 32,
+      "name": "TableScan",
+      "walltime_ns": 6347544
+    },
+    {
+      "id": 33,
+      "name": "TableScan",
+      "walltime_ns": 6380607
+    },
+    {
+      "id": 34,
+      "name": "TableScan",
+      "walltime_ns": 38024567
+    },
+    {
+      "id": 35,
+      "name": "TableScan",
+      "walltime_ns": 21224262
+    },
+    {
+      "id": 26,
+      "name": "TableScan",
+      "walltime_ns": 6874062
+    },
+    {
+      "id": 27,
+      "name": "TableScan",
+      "walltime_ns": 12949361
+    },
+    {
+      "id": 28,
+      "name": "TableScan",
+      "walltime_ns": 10620782
+    },
+    {
+      "id": 29,
+      "name": "TableScan",
+      "walltime_ns": 33610724
+    },
+    {
+      "id": 30,
+      "name": "TableScan",
+      "walltime_ns": 20689063
+    },
+    {
+      "id": 36,
+      "name": "UnionPositions",
+      "walltime_ns": 399170
+    },
+    {
+      "id": 13,
+      "name": "TableScan",
+      "walltime_ns": 10786077
+    },
+    {
+      "id": 4,
+      "name": "TableScan",
+      "walltime_ns": 100419386
+    },
+    {
+      "id": 18,
+      "name": "JoinHash",
+      "walltime_ns": 200695306
+    },
+    {
+      "id": 19,
+      "name": "Validate",
+      "walltime_ns": 746315
+    },
+    {
+      "id": 20,
+      "name": "JoinHash",
+      "walltime_ns": 7918717
+    },
+    {
+      "id": 21,
+      "name": "TableScan",
+      "walltime_ns": 9020335
+    },
+    {
+      "id": 22,
+      "name": "TableScan",
+      "walltime_ns": 5126352
+    },
+    {
+      "id": 23,
+      "name": "TableScan",
+      "walltime_ns": 5842298
+    },
+    {
+      "id": 24,
+      "name": "TableScan",
+      "walltime_ns": 25568541
+    },
+    {
+      "id": 37,
+      "name": "UnionPositions",
+      "walltime_ns": 451160
+    },
+    {
+      "id": 8,
+      "name": "TableScan",
+      "walltime_ns": 2700650
+    },
+    {
+      "id": 25,
+      "name": "TableScan",
+      "walltime_ns": 19085866
+    },
+    {
+      "id": 38,
+      "name": "Projection",
+      "walltime_ns": 8428789
+    },
+    {
+      "id": 9,
+      "name": "TableScan",
+      "walltime_ns": 11172105
+    },
+    {
+      "id": 39,
+      "name": "AggregateHash",
+      "walltime_ns": 50688
+    },
+    {
+      "id": 10,
+      "name": "TableScan",
+      "walltime_ns": 7731469
+    },
+    {
+      "id": 40,
+      "name": "Alias",
+      "walltime_ns": 2880
+    },
+    {
+      "id": 11,
+      "name": "TableScan",
+      "walltime_ns": 13471735
+    },
+    {
+      "id": 3,
+      "name": "UnionAll",
+      "walltime_ns": 5810764
+    },
+    {
+      "id": 1,
+      "name": "TableScan",
+      "walltime_ns": 18324301
+    },
+    {
+      "id": 0,
+      "name": "GetTable",
+      "walltime_ns": 20767053
+    },
+    {
+      "id": 2,
+      "name": "TableScan",
+      "walltime_ns": 186764974
+    },
+    {
+      "id": 17,
+      "name": "UnionPositions",
+      "walltime_ns": 1790388
+    },
+    {
+      "id": 7,
+      "name": "TableScan",
+      "walltime_ns": 11051257
+    },
+    {
+      "id": 6,
+      "name": "Validate",
+      "walltime_ns": 815375
+    },
+    {
+      "id": 5,
+      "name": "GetTable",
+      "walltime_ns": 856307
+    },
+    {
+      "id": 16,
+      "name": "UnionPositions",
+      "walltime_ns": 3987536
+    },
+    {
+      "id": 12,
+      "name": "TableScan",
+      "walltime_ns": 2733609
+    },
+    {
+      "id": 15,
+      "name": "TableScan",
+      "walltime_ns": 2360615
+    },
+    {
+      "id": 14,
+      "name": "TableScan",
+      "walltime_ns": 13994950
+    }
+  ]
+}

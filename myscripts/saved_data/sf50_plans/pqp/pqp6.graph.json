@@ -1,0 +1,81 @@
+{
+  "edges": [
+    {
+      "dst": 1,
+      "rows": 300005811,
+      "src": 0
+    },
+    {
+      "dst": 2,
+      "rows": 45517940,
+      "src": 1
+    },
+    {
+      "dst": 3,
+      "rows": 8271927,
+      "src": 2
+    },
+    {
+      "dst": 4,
+      "rows": 3804648,
+      "src": 3
+    },
+    {
+      "dst": 5,
+      "rows": 3804648,
+      "src": 4
+    },
+    {
+      "dst": 6,
+      "rows": 3804648,
+      "src": 5
+    },
+    {
+      "dst": 7,
+      "rows": 1,
+      "src": 6
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "name": "GetTable",
+      "walltime_ns": 18134186
+    },
+    {
+      "id": 1,
+      "name": "TableScan",
+      "walltime_ns": 326927907
+    },
+    {
+      "id": 2,
+      "name": "TableScan",
+      "walltime_ns": 94237210
+    },
+    {
+      "id": 3,
+      "name": "TableScan",
+      "walltime_ns": 66679635
+    },
+    {
+      "id": 4,
+      "name": "Validate",
+      "walltime_ns": 9027809
+    },
+    {
+      "id": 5,
+      "name": "Projection",
+      "walltime_ns": 40064743
+    },
+    {
+      "id": 6,
+      "name": "AggregateHash",
+      "walltime_ns": 10988211
+    },
+    {
+      "id": 7,
+      "name": "Alias",
+      "walltime_ns": 4741
+    }
+  ]
+}

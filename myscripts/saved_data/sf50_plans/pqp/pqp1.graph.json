@@ -1,0 +1,81 @@
+{
+  "edges": [
+    {
+      "dst": 1,
+      "rows": 300005811,
+      "src": 0
+    },
+    {
+      "dst": 2,
+      "rows": 295783930,
+      "src": 1
+    },
+    {
+      "dst": 3,
+      "rows": 295783930,
+      "src": 2
+    },
+    {
+      "dst": 4,
+      "rows": 295783930,
+      "src": 3
+    },
+    {
+      "dst": 5,
+      "rows": 4,
+      "src": 4
+    },
+    {
+      "dst": 6,
+      "rows": 4,
+      "src": 5
+    },
+    {
+      "dst": 7,
+      "rows": 4,
+      "src": 6
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "name": "GetTable",
+      "walltime_ns": 16285021
+    },
+    {
+      "id": 1,
+      "name": "TableScan",
+      "walltime_ns": 639559281
+    },
+    {
+      "id": 2,
+      "name": "Validate",
+      "walltime_ns": 14766126
+    },
+    {
+      "id": 3,
+      "name": "Projection",
+      "walltime_ns": 1286071785
+    },
+    {
+      "id": 4,
+      "name": "AggregateHash",
+      "walltime_ns": 26767272560
+    },
+    {
+      "id": 5,
+      "name": "Projection",
+      "walltime_ns": 175433
+    },
+    {
+      "id": 6,
+      "name": "Sort",
+      "walltime_ns": 190858
+    },
+    {
+      "id": 7,
+      "name": "Alias",
+      "walltime_ns": 5074
+    }
+  ]
+}

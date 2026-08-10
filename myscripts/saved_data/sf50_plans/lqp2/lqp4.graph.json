@@ -1,0 +1,127 @@
+{
+  "edges": [
+    {
+      "dst": 5,
+      "estimated_rows": [
+        1500000.0
+      ],
+      "src": 6
+    },
+    {
+      "dst": 4,
+      "estimated_rows": [
+        59720.682308815834
+      ],
+      "src": 5
+    },
+    {
+      "dst": 3,
+      "estimated_rows": [
+        59720.682308815834
+      ],
+      "src": 4
+    },
+    {
+      "dst": 9,
+      "estimated_rows": [
+        6001215.0
+      ],
+      "src": 10
+    },
+    {
+      "dst": 9,
+      "estimated_rows": [
+        59720.682308815834
+      ],
+      "src": 4
+    },
+    {
+      "dst": 8,
+      "estimated_rows": [
+        238931.10298793355
+      ],
+      "src": 9
+    },
+    {
+      "dst": 7,
+      "estimated_rows": [
+        238931.10298793355
+      ],
+      "src": 8
+    },
+    {
+      "dst": 3,
+      "estimated_rows": [
+        238931.10298793355
+      ],
+      "src": 7
+    },
+    {
+      "dst": 2,
+      "estimated_rows": [
+        59720.682308815754
+      ],
+      "src": 3
+    },
+    {
+      "dst": 1,
+      "estimated_rows": [
+        59720.682308815754
+      ],
+      "src": 2
+    },
+    {
+      "dst": 0,
+      "estimated_rows": [
+        59720.682308815754
+      ],
+      "src": 1
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "name": "[Alias] o_orderpriority, COUNT(*) AS order_count"
+    },
+    {
+      "id": 1,
+      "name": "[Sort] o_orderpriority (AscendingNullsFirst)"
+    },
+    {
+      "id": 2,
+      "name": "[Aggregate] GroupBy: [o_orderpriority] Aggregates: [COUNT(*)]"
+    },
+    {
+      "id": 3,
+      "name": "[Join] Mode: Semi [o_orderkey = l_orderkey]"
+    },
+    {
+      "id": 4,
+      "name": "[Validate]"
+    },
+    {
+      "id": 5,
+      "name": "[Predicate] o_orderdate BETWEEN UPPER EXCLUSIVE '1993-07-01' AND '1993-10-01'"
+    },
+    {
+      "id": 6,
+      "name": "[StoredTable] Name: 'orders' pruned: 0/23 chunk(s), 6/9 column(s)"
+    },
+    {
+      "id": 7,
+      "name": "[Predicate] l_commitdate < l_receiptdate"
+    },
+    {
+      "id": 8,
+      "name": "[Validate]"
+    },
+    {
+      "id": 9,
+      "name": "[Join] Mode: Semi [o_orderkey = l_orderkey]"
+    },
+    {
+      "id": 10,
+      "name": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 13/16 column(s)"
+    }
+  ]
+}

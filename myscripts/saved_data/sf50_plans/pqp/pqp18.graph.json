@@ -1,0 +1,156 @@
+{
+  "edges": [
+    {
+      "dst": 1,
+      "rows": 300005811,
+      "src": 0
+    },
+    {
+      "dst": 11,
+      "rows": 300005811,
+      "src": 1
+    },
+    {
+      "dst": 3,
+      "rows": 75000000,
+      "src": 2
+    },
+    {
+      "dst": 7,
+      "rows": 75000000,
+      "src": 3
+    },
+    {
+      "dst": 4,
+      "rows": 300005811,
+      "src": 1
+    },
+    {
+      "dst": 5,
+      "rows": 75000000,
+      "src": 4
+    },
+    {
+      "dst": 6,
+      "rows": 3182,
+      "src": 5
+    },
+    {
+      "dst": 7,
+      "rows": 3182,
+      "src": 6
+    },
+    {
+      "dst": 10,
+      "rows": 3182,
+      "src": 7
+    },
+    {
+      "dst": 9,
+      "rows": 7500000,
+      "src": 8
+    },
+    {
+      "dst": 10,
+      "rows": 7500000,
+      "src": 9
+    },
+    {
+      "dst": 11,
+      "rows": 3182,
+      "src": 10
+    },
+    {
+      "dst": 12,
+      "rows": 22274,
+      "src": 11
+    },
+    {
+      "dst": 13,
+      "rows": 3182,
+      "src": 12
+    },
+    {
+      "dst": 14,
+      "rows": 3182,
+      "src": 13
+    }
+  ],
+  "nodes": [
+    {
+      "id": 8,
+      "name": "GetTable",
+      "walltime_ns": 576545
+    },
+    {
+      "id": 9,
+      "name": "Validate",
+      "walltime_ns": 821629
+    },
+    {
+      "id": 14,
+      "name": "Projection",
+      "walltime_ns": 13658
+    },
+    {
+      "id": 1,
+      "name": "Validate",
+      "walltime_ns": 21502922
+    },
+    {
+      "id": 13,
+      "name": "Sort",
+      "walltime_ns": 9701439
+    },
+    {
+      "id": 0,
+      "name": "GetTable",
+      "walltime_ns": 14654229
+    },
+    {
+      "id": 12,
+      "name": "AggregateHash",
+      "walltime_ns": 8985847
+    },
+    {
+      "id": 11,
+      "name": "JoinHash",
+      "walltime_ns": 429125033
+    },
+    {
+      "id": 10,
+      "name": "JoinHash",
+      "walltime_ns": 7133273
+    },
+    {
+      "id": 7,
+      "name": "JoinHash",
+      "walltime_ns": 123976904
+    },
+    {
+      "id": 3,
+      "name": "Validate",
+      "walltime_ns": 6691596
+    },
+    {
+      "id": 2,
+      "name": "GetTable",
+      "walltime_ns": 5550637
+    },
+    {
+      "id": 6,
+      "name": "Projection",
+      "walltime_ns": 1146022
+    },
+    {
+      "id": 5,
+      "name": "TableScan",
+      "walltime_ns": 57385675
+    },
+    {
+      "id": 4,
+      "name": "AggregateHash",
+      "walltime_ns": 12014020648
+    }
+  ]
+}

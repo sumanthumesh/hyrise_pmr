@@ -1,0 +1,200 @@
+{
+  "edges": [
+    {
+      "dst": 6,
+      "estimated_rows": [
+        300005811.0
+      ],
+      "src": 7
+    },
+    {
+      "dst": 10,
+      "estimated_rows": [
+        10000000.0
+      ],
+      "src": 11
+    },
+    {
+      "dst": 9,
+      "estimated_rows": [
+        250532.0
+      ],
+      "src": 10
+    },
+    {
+      "dst": 8,
+      "estimated_rows": [
+        10018.950052400001
+      ],
+      "src": 9
+    },
+    {
+      "dst": 6,
+      "estimated_rows": [
+        10018.950052400001
+      ],
+      "src": 8
+    },
+    {
+      "dst": 5,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 6
+    },
+    {
+      "dst": 4,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 5
+    },
+    {
+      "dst": 4,
+      "estimated_rows": [
+        10018.950052400001
+      ],
+      "src": 8
+    },
+    {
+      "dst": 3,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 4
+    },
+    {
+      "dst": 15,
+      "estimated_rows": [
+        300005811.0
+      ],
+      "src": 16
+    },
+    {
+      "dst": 15,
+      "estimated_rows": [
+        10018.950052400001
+      ],
+      "src": 8
+    },
+    {
+      "dst": 14,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 15
+    },
+    {
+      "dst": 13,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 14
+    },
+    {
+      "dst": 12,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 13
+    },
+    {
+      "dst": 3,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 12
+    },
+    {
+      "dst": 2,
+      "estimated_rows": [
+        300574.3235838755
+      ],
+      "src": 3
+    },
+    {
+      "dst": 1,
+      "estimated_rows": [
+        1.0
+      ],
+      "src": 2
+    },
+    {
+      "dst": 0,
+      "estimated_rows": [
+        1.0
+      ],
+      "src": 1
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "name": "[Alias] SUM(l_extendedprice) / 7 AS avg_yearly"
+    },
+    {
+      "id": 1,
+      "name": "[Projection] SUM(l_extendedprice) / 7"
+    },
+    {
+      "id": 2,
+      "name": "[Aggregate] GroupBy: [] Aggregates: [SUM(l_extendedprice)]"
+    },
+    {
+      "id": 3,
+      "name": "[Join] Mode: Semi [p_partkey = l_partkey] [l_quantity < 0.2 * AVG(l_quantity)]"
+    },
+    {
+      "id": 4,
+      "name": "[Join] Mode: Inner [p_partkey = l_partkey]"
+    },
+    {
+      "id": 5,
+      "name": "[Validate]"
+    },
+    {
+      "id": 6,
+      "name": "[Join] Mode: Semi [p_partkey = l_partkey]"
+    },
+    {
+      "id": 7,
+      "name": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 13/16 column(s)"
+    },
+    {
+      "id": 8,
+      "name": "[Validate]"
+    },
+    {
+      "id": 9,
+      "name": "[Predicate] p_brand = 'Brand#23'"
+    },
+    {
+      "id": 10,
+      "name": "[Predicate] p_container = 'MED BOX'"
+    },
+    {
+      "id": 11,
+      "name": "[StoredTable] Name: 'part' pruned: 0/153 chunk(s), 6/9 column(s)"
+    },
+    {
+      "id": 12,
+      "name": "[Projection] 0.2 * AVG(l_quantity), l_partkey"
+    },
+    {
+      "id": 13,
+      "name": "[Aggregate] GroupBy: [l_partkey] Aggregates: [AVG(l_quantity)]"
+    },
+    {
+      "id": 14,
+      "name": "[Validate]"
+    },
+    {
+      "id": 15,
+      "name": "[Join] Mode: Semi [p_partkey = l_partkey]"
+    },
+    {
+      "id": 16,
+      "name": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 13/16 column(s)"
+    }
+  ]
+}

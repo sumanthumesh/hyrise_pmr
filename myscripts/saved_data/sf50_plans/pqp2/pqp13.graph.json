@@ -1,0 +1,101 @@
+{
+  "edges": [
+    {
+      "dst": 1,
+      "rows": 150000,
+      "src": 0
+    },
+    {
+      "dst": 5,
+      "rows": 150000,
+      "src": 1
+    },
+    {
+      "dst": 3,
+      "rows": 1500000,
+      "src": 2
+    },
+    {
+      "dst": 4,
+      "rows": 1483918,
+      "src": 3
+    },
+    {
+      "dst": 5,
+      "rows": 1483918,
+      "src": 4
+    },
+    {
+      "dst": 6,
+      "rows": 1533923,
+      "src": 5
+    },
+    {
+      "dst": 7,
+      "rows": 150000,
+      "src": 6
+    },
+    {
+      "dst": 8,
+      "rows": 42,
+      "src": 7
+    },
+    {
+      "dst": 9,
+      "rows": 42,
+      "src": 8
+    }
+  ],
+  "nodes": [
+    {
+      "id": 2,
+      "name": "GetTable",
+      "walltime_ns": 118855
+    },
+    {
+      "id": 3,
+      "name": "TableScan",
+      "walltime_ns": 34493721
+    },
+    {
+      "id": 4,
+      "name": "Validate",
+      "walltime_ns": 168033
+    },
+    {
+      "id": 0,
+      "name": "GetTable",
+      "walltime_ns": 38822
+    },
+    {
+      "id": 1,
+      "name": "Validate",
+      "walltime_ns": 50421
+    },
+    {
+      "id": 5,
+      "name": "JoinHash",
+      "walltime_ns": 102381818
+    },
+    {
+      "id": 6,
+      "name": "AggregateHash",
+      "walltime_ns": 62626589
+    },
+    {
+      "id": 7,
+      "name": "AggregateHash",
+      "walltime_ns": 5340492
+    },
+    {
+      "id": 8,
+      "name": "Sort",
+      "walltime_ns": 56958
+    },
+    {
+      "id": 9,
+      "name": "Alias",
+      "walltime_ns": 4292
+    }
+  ]
+}

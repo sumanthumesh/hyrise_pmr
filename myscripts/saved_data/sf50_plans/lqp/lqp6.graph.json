@@ -1,0 +1,87 @@
+{
+  "edges": [
+    {
+      "dst": 6,
+      "estimated_rows": [
+        300005811.0
+      ],
+      "src": 7
+    },
+    {
+      "dst": 5,
+      "estimated_rows": [
+        44455670.053812556
+      ],
+      "src": 6
+    },
+    {
+      "dst": 4,
+      "estimated_rows": [
+        12124006.827887923
+      ],
+      "src": 5
+    },
+    {
+      "dst": 3,
+      "estimated_rows": [
+        5577133.218029577
+      ],
+      "src": 4
+    },
+    {
+      "dst": 2,
+      "estimated_rows": [
+        5577133.218029577
+      ],
+      "src": 3
+    },
+    {
+      "dst": 1,
+      "estimated_rows": [
+        5577133.218029577
+      ],
+      "src": 2
+    },
+    {
+      "dst": 0,
+      "estimated_rows": [
+        1.0
+      ],
+      "src": 1
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "name": "[Alias] SUM(l_extendedprice * l_discount) AS revenue"
+    },
+    {
+      "id": 1,
+      "name": "[Aggregate] GroupBy: [] Aggregates: [SUM(l_extendedprice * l_discount)]"
+    },
+    {
+      "id": 2,
+      "name": "[Projection] l_extendedprice * l_discount"
+    },
+    {
+      "id": 3,
+      "name": "[Validate]"
+    },
+    {
+      "id": 4,
+      "name": "[Predicate] l_quantity < 24"
+    },
+    {
+      "id": 5,
+      "name": "[Predicate] l_discount BETWEEN INCLUSIVE 0.05 AND 0.07"
+    },
+    {
+      "id": 6,
+      "name": "[Predicate] l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'"
+    },
+    {
+      "id": 7,
+      "name": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)"
+    }
+  ]
+}

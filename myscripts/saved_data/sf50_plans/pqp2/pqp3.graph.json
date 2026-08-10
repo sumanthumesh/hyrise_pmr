@@ -1,0 +1,176 @@
+{
+  "edges": [
+    {
+      "dst": 1,
+      "rows": 6001215,
+      "src": 0
+    },
+    {
+      "dst": 9,
+      "rows": 3241776,
+      "src": 1
+    },
+    {
+      "dst": 3,
+      "rows": 1500000,
+      "src": 2
+    },
+    {
+      "dst": 7,
+      "rows": 727305,
+      "src": 3
+    },
+    {
+      "dst": 5,
+      "rows": 150000,
+      "src": 4
+    },
+    {
+      "dst": 6,
+      "rows": 30142,
+      "src": 5
+    },
+    {
+      "dst": 7,
+      "rows": 30142,
+      "src": 6
+    },
+    {
+      "dst": 8,
+      "rows": 147126,
+      "src": 7
+    },
+    {
+      "dst": 9,
+      "rows": 147126,
+      "src": 8
+    },
+    {
+      "dst": 10,
+      "rows": 30519,
+      "src": 9
+    },
+    {
+      "dst": 11,
+      "rows": 30519,
+      "src": 10
+    },
+    {
+      "dst": 11,
+      "rows": 147126,
+      "src": 8
+    },
+    {
+      "dst": 12,
+      "rows": 30519,
+      "src": 11
+    },
+    {
+      "dst": 13,
+      "rows": 30519,
+      "src": 12
+    },
+    {
+      "dst": 14,
+      "rows": 11620,
+      "src": 13
+    },
+    {
+      "dst": 15,
+      "rows": 11620,
+      "src": 14
+    },
+    {
+      "dst": 16,
+      "rows": 11620,
+      "src": 15
+    }
+  ],
+  "nodes": [
+    {
+      "id": 4,
+      "name": "GetTable",
+      "walltime_ns": 40399
+    },
+    {
+      "id": 5,
+      "name": "TableScan",
+      "walltime_ns": 869777
+    },
+    {
+      "id": 6,
+      "name": "Validate",
+      "walltime_ns": 23862
+    },
+    {
+      "id": 2,
+      "name": "GetTable",
+      "walltime_ns": 103183
+    },
+    {
+      "id": 16,
+      "name": "Alias",
+      "walltime_ns": 4334
+    },
+    {
+      "id": 3,
+      "name": "TableScan",
+      "walltime_ns": 3138223
+    },
+    {
+      "id": 15,
+      "name": "Projection",
+      "walltime_ns": 13089
+    },
+    {
+      "id": 14,
+      "name": "Sort",
+      "walltime_ns": 8561060
+    },
+    {
+      "id": 1,
+      "name": "TableScan",
+      "walltime_ns": 7186958
+    },
+    {
+      "id": 13,
+      "name": "AggregateHash",
+      "walltime_ns": 13619108
+    },
+    {
+      "id": 0,
+      "name": "GetTable",
+      "walltime_ns": 393704
+    },
+    {
+      "id": 12,
+      "name": "Projection",
+      "walltime_ns": 1090947
+    },
+    {
+      "id": 11,
+      "name": "JoinHash",
+      "walltime_ns": 11079147
+    },
+    {
+      "id": 10,
+      "name": "Validate",
+      "walltime_ns": 470817
+    },
+    {
+      "id": 9,
+      "name": "JoinHash",
+      "walltime_ns": 29692122
+    },
+    {
+      "id": 8,
+      "name": "Validate",
+      "walltime_ns": 108348
+    },
+    {
+      "id": 7,
+      "name": "JoinHash",
+      "walltime_ns": 6543018
+    }
+  ]
+}

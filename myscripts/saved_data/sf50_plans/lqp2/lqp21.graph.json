@@ -1,0 +1,317 @@
+{
+  "edges": [
+    {
+      "dst": 9,
+      "estimated_rows": [
+        6001215.0
+      ],
+      "src": 10
+    },
+    {
+      "dst": 12,
+      "estimated_rows": [
+        10000.0
+      ],
+      "src": 13
+    },
+    {
+      "dst": 15,
+      "estimated_rows": [
+        25.0
+      ],
+      "src": 16
+    },
+    {
+      "dst": 14,
+      "estimated_rows": [
+        1.0
+      ],
+      "src": 15
+    },
+    {
+      "dst": 12,
+      "estimated_rows": [
+        1.0
+      ],
+      "src": 14
+    },
+    {
+      "dst": 11,
+      "estimated_rows": [
+        400.0
+      ],
+      "src": 12
+    },
+    {
+      "dst": 9,
+      "estimated_rows": [
+        400.0
+      ],
+      "src": 11
+    },
+    {
+      "dst": 8,
+      "estimated_rows": [
+        240048.60000000003
+      ],
+      "src": 9
+    },
+    {
+      "dst": 7,
+      "estimated_rows": [
+        240048.60000000003
+      ],
+      "src": 8
+    },
+    {
+      "dst": 18,
+      "estimated_rows": [
+        1500000.0
+      ],
+      "src": 19
+    },
+    {
+      "dst": 17,
+      "estimated_rows": [
+        729413.0
+      ],
+      "src": 18
+    },
+    {
+      "dst": 7,
+      "estimated_rows": [
+        729413.0
+      ],
+      "src": 17
+    },
+    {
+      "dst": 6,
+      "estimated_rows": [
+        240048.60000000015
+      ],
+      "src": 7
+    },
+    {
+      "dst": 5,
+      "estimated_rows": [
+        240048.60000000015
+      ],
+      "src": 6
+    },
+    {
+      "dst": 5,
+      "estimated_rows": [
+        400.0
+      ],
+      "src": 11
+    },
+    {
+      "dst": 4,
+      "estimated_rows": [
+        240048.6000000001
+      ],
+      "src": 5
+    },
+    {
+      "dst": 22,
+      "estimated_rows": [
+        6001215.0
+      ],
+      "src": 23
+    },
+    {
+      "dst": 22,
+      "estimated_rows": [
+        240048.6000000001
+      ],
+      "src": 5
+    },
+    {
+      "dst": 21,
+      "estimated_rows": [
+        960404.1394693333
+      ],
+      "src": 22
+    },
+    {
+      "dst": 20,
+      "estimated_rows": [
+        960404.1394693333
+      ],
+      "src": 21
+    },
+    {
+      "dst": 4,
+      "estimated_rows": [
+        960404.1394693333
+      ],
+      "src": 20
+    },
+    {
+      "dst": 3,
+      "estimated_rows": [
+        240048.6000000001
+      ],
+      "src": 4
+    },
+    {
+      "dst": 25,
+      "estimated_rows": [
+        6001215.0
+      ],
+      "src": 26
+    },
+    {
+      "dst": 25,
+      "estimated_rows": [
+        240048.6000000001
+      ],
+      "src": 5
+    },
+    {
+      "dst": 24,
+      "estimated_rows": [
+        960404.1394693333
+      ],
+      "src": 25
+    },
+    {
+      "dst": 3,
+      "estimated_rows": [
+        960404.1394693333
+      ],
+      "src": 24
+    },
+    {
+      "dst": 2,
+      "estimated_rows": [
+        240048.60000000015
+      ],
+      "src": 3
+    },
+    {
+      "dst": 1,
+      "estimated_rows": [
+        240048.60000000015
+      ],
+      "src": 2
+    },
+    {
+      "dst": 0,
+      "estimated_rows": [
+        240048.60000000015
+      ],
+      "src": 1
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "name": "[Alias] s_name, COUNT(*) AS numwait"
+    },
+    {
+      "id": 1,
+      "name": "[Sort] COUNT(*) (DescendingNullsFirst), s_name (AscendingNullsFirst)"
+    },
+    {
+      "id": 2,
+      "name": "[Aggregate] GroupBy: [s_name] Aggregates: [COUNT(*)]"
+    },
+    {
+      "id": 3,
+      "name": "[Join] Mode: Semi [l_orderkey = l_orderkey] [l_suppkey != l_suppkey]"
+    },
+    {
+      "id": 4,
+      "name": "[Join] Mode: AntiNullAsFalse [l_orderkey = l_orderkey] [l_suppkey != l_suppkey]"
+    },
+    {
+      "id": 5,
+      "name": "[Join] Mode: Inner [s_suppkey = l_suppkey]"
+    },
+    {
+      "id": 6,
+      "name": "[Predicate] l_receiptdate > l_commitdate"
+    },
+    {
+      "id": 7,
+      "name": "[Join] Mode: Semi [o_orderkey = l_orderkey]"
+    },
+    {
+      "id": 8,
+      "name": "[Validate]"
+    },
+    {
+      "id": 9,
+      "name": "[Join] Mode: Semi [s_suppkey = l_suppkey]"
+    },
+    {
+      "id": 10,
+      "name": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 12/16 column(s)"
+    },
+    {
+      "id": 11,
+      "name": "[Validate]"
+    },
+    {
+      "id": 12,
+      "name": "[Join] Mode: Semi [s_nationkey = n_nationkey]"
+    },
+    {
+      "id": 13,
+      "name": "[StoredTable] Name: 'supplier' pruned: 0/1 chunk(s), 4/7 column(s)"
+    },
+    {
+      "id": 14,
+      "name": "[Validate]"
+    },
+    {
+      "id": 15,
+      "name": "[Predicate] n_name = 'SAUDI ARABIA'"
+    },
+    {
+      "id": 16,
+      "name": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)"
+    },
+    {
+      "id": 17,
+      "name": "[Validate]"
+    },
+    {
+      "id": 18,
+      "name": "[Predicate] o_orderstatus = 'F'"
+    },
+    {
+      "id": 19,
+      "name": "[StoredTable] Name: 'orders' pruned: 0/23 chunk(s), 7/9 column(s)"
+    },
+    {
+      "id": 20,
+      "name": "[Predicate] l_receiptdate > l_commitdate"
+    },
+    {
+      "id": 21,
+      "name": "[Validate]"
+    },
+    {
+      "id": 22,
+      "name": "[Join] Mode: Semi [l_orderkey = l_orderkey]"
+    },
+    {
+      "id": 23,
+      "name": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 12/16 column(s)"
+    },
+    {
+      "id": 24,
+      "name": "[Validate]"
+    },
+    {
+      "id": 25,
+      "name": "[Join] Mode: Semi [l_orderkey = l_orderkey]"
+    },
+    {
+      "id": 26,
+      "name": "[StoredTable] Name: 'lineitem' pruned: 0/92 chunk(s), 12/16 column(s)"
+    }
+  ]
+}
