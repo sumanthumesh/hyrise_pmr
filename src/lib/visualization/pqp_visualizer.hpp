@@ -88,6 +88,13 @@ class PQPVisualizer : public AbstractVisualizer<std::vector<std::shared_ptr<Abst
         const std::shared_ptr<const AbstractOperator> &op,
         std::unordered_set<std::shared_ptr<const AbstractOperator>> &visited_ops);
 
+    // Emit the source columns an operator READS as a JSON array of
+    // {"table_name", "column_name"} (deduplicated). Empty for pass-through ops.
+    nlohmann::json _collect_columns(const std::shared_ptr<const AbstractOperator> &op);
+
+    // Cache of Table* -> stored-table-name (populated on first lookup per query).
+    std::unordered_map<const void *, std::string> _stored_table_names;
+
     std::unordered_map<std::string, std::chrono::nanoseconds> _duration_by_operator_name;
 };
 

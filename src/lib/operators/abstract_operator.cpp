@@ -15,6 +15,7 @@
 #include "expression/abstract_expression.hpp"
 #include "expression/expression_utils.hpp"
 #include "expression/pqp_subquery_expression.hpp"
+#include "operators/collect_read_columns.hpp"
 #include "logical_query_plan/dummy_table_node.hpp"
 #include "memory/mem_manager.hpp"
 #include "operators/operator_performance_data.hpp"
@@ -272,6 +273,14 @@ void AbstractOperator::execute()
         performance_data->output_chunk_count = _output->chunk_count();
     }
     performance_data->walltime = performance_timer.lap();
+
+    // Snapshot the (table_name, column_name) pairs this operator READ from its input tables.
+    // Must happen BEFORE deregister_consumer() below, which can trigger input clear_output()
+    // and destroy the intermediate tables we need to resolve reference-segment provenance.
+    if (track_per_operator_memory)
+    {
+        performance_data->read_columns_snapshot = collect_read_columns(*this);
+    }
 
     _transition_to(OperatorState::ExecutedAndAvailable);
 

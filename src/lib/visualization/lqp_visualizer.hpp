@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 #include "expression/abstract_expression.hpp"
 #include "logical_query_plan/abstract_lqp_node.hpp"
@@ -43,6 +44,14 @@ class LQPVisualizer : public AbstractVisualizer<std::vector<std::shared_ptr<Abst
     void export_as_graph_json(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots,
                               const std::string &json_filename);
 
+    // Nested-tree JSON dump per plan. Each node emits:
+    //   { "id", "name", "description", "columns",
+    //     "Leftchildren"?, "LeftCard"?, "Rightchildren"?, "RightCard"? }
+    // `columns` lists the storage-column names this LQP node references directly (deduplicated).
+    // LeftCard/RightCard are cardinality estimates. Diamond-shaped LQPs emit shared subtrees once.
+    void export_as_hierarchical_json(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots,
+                                     const std::string &json_filename);
+
   protected:
     void _build_graph(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots) override;
 
@@ -61,6 +70,13 @@ class LQPVisualizer : public AbstractVisualizer<std::vector<std::shared_ptr<Abst
         std::unordered_map<std::shared_ptr<const AbstractLQPNode>, size_t> &node_id_map,
         std::vector<std::pair<std::shared_ptr<const AbstractLQPNode>, std::string>> &nodes_list,
         std::vector<LQPEdge> &edges_list);
+
+    nlohmann::json _build_hierarchical_subtree(
+        const std::shared_ptr<const AbstractLQPNode> &node,
+        const CardinalityEstimator &cardinality_estimator,
+        std::unordered_set<std::shared_ptr<const AbstractLQPNode>> &visited_nodes);
+
+    nlohmann::json _collect_columns(const std::shared_ptr<const AbstractLQPNode> &node);
 
     // Visit-order node ids assigned during _build_subtree so both the PNG label and the JSON
     // export agree on the same numbering.

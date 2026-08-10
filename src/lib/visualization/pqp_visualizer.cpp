@@ -7,6 +7,7 @@
 #include <locale>
 #include <memory>
 #include <ratio>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -24,11 +25,21 @@
 
 #include "expression/abstract_expression.hpp"
 #include "expression/expression_utils.hpp"
+#include "expression/pqp_column_expression.hpp"
 #include "expression/pqp_subquery_expression.hpp"
+#include "expression/window_function_expression.hpp"
+#include "hyrise.hpp"
+#include "operators/abstract_aggregate_operator.hpp"
+#include "operators/abstract_join_operator.hpp"
 #include "operators/abstract_operator.hpp"
+#include "operators/get_table.hpp"
 #include "operators/limit.hpp"
 #include "operators/projection.hpp"
+#include "operators/sort.hpp"
 #include "operators/table_scan.hpp"
+#include "storage/chunk.hpp"
+#include "storage/reference_segment.hpp"
+#include "storage/table.hpp"
 #include "types.hpp"
 #include "utils/format_duration.hpp"
 #include "visualization/abstract_visualizer.hpp"
@@ -46,23 +57,23 @@ PQPVisualizer::PQPVisualizer(GraphvizConfig graphviz_config, VizGraphInfo graph_
 void PQPVisualizer::visualize(const std::vector<std::shared_ptr<AbstractOperator>> &plans, const std::string &img_filename)
 {
     AbstractVisualizer::visualize(plans, img_filename);
-    auto txt_filename = img_filename;
-    const auto last_dot = txt_filename.find_last_of('.');
-    if (last_dot != std::string::npos)
-    {
-        txt_filename = txt_filename.substr(0, last_dot);
-    }
-    txt_filename += ".graph";
-    export_as_graph_text(plans, txt_filename);
+    // auto txt_filename = img_filename;
+    // const auto last_dot = txt_filename.find_last_of('.');
+    // if (last_dot != std::string::npos)
+    // {
+    //     txt_filename = txt_filename.substr(0, last_dot);
+    // }
+    // txt_filename += ".graph";
+    // export_as_graph_text(plans, txt_filename);
 
-    auto json_filename = img_filename;
-    const auto last_dot_json = json_filename.find_last_of('.');
-    if (last_dot_json != std::string::npos)
-    {
-        json_filename = json_filename.substr(0, last_dot_json);
-    }
-    json_filename += ".graph.json";
-    export_as_graph_json(plans, json_filename);
+    // auto json_filename = img_filename;
+    // const auto last_dot_json = json_filename.find_last_of('.');
+    // if (last_dot_json != std::string::npos)
+    // {
+    //     json_filename = json_filename.substr(0, last_dot_json);
+    // }
+    // json_filename += ".graph.json";
+    // export_as_graph_json(plans, json_filename);
 
     auto tree_filename = img_filename;
     const auto last_dot_tree = tree_filename.find_last_of('.');
@@ -339,6 +350,7 @@ void PQPVisualizer::export_as_graph_json(const std::vector<std::shared_ptr<Abstr
 void PQPVisualizer::export_as_hierarchical_json(const std::vector<std::shared_ptr<AbstractOperator>> &plans,
                                                 const std::string &json_filename)
 {
+    _stored_table_names.clear();
     std::unordered_set<std::shared_ptr<const AbstractOperator>> visited_ops;
     auto trees_json = nlohmann::json::array();
     for (const auto &plan : plans)
@@ -371,6 +383,206 @@ static std::string dataflow_label(const std::shared_ptr<const AbstractOperator> 
     return stream.str();
 }
 
+// Live-lookup implementation was removed — column info is now snapshotted onto
+// performance_data->read_columns_snapshot during AbstractOperator::execute() while the input
+// tables are still available. See operators/collect_read_columns.hpp.
+#if 0
+static std::pair<std::string, std::string> resolve_column(const std::shared_ptr<const Table> &input, const ColumnID column_id,
+                                std::unordered_map<const void *, std::string> &stored_table_names)
+{
+    // Lazy cache lookup helper.
+    auto name_of = [&](const std::shared_ptr<const Table> &table) -> std::string {
+        const auto key = static_cast<const void *>(table.get());
+        const auto it = stored_table_names.find(key);
+        if (it != stored_table_names.end())
+        {
+            return it->second;
+        }
+        for (const auto &[name, stored_table] : Hyrise::get().storage_manager.tables())
+        {
+            if (stored_table.get() == table.get())
+            {
+                stored_table_names[key] = name;
+                return name;
+            }
+        }
+        // Not found in StorageManager (e.g., a purely intermediate table).
+        stored_table_names[key] = std::string{"<unknown>"};
+        return "<unknown>";
+    };
+
+    if (input->type() == TableType::References)
+    {
+        // Find a non-null chunk to inspect; chunk 0 may be pruned.
+        const auto chunk_count = input->chunk_count();
+        for (auto chunk_id = ChunkID{0}; chunk_id < chunk_count; ++chunk_id)
+        {
+            const auto chunk = input->get_chunk(chunk_id);
+            if (!chunk)
+            {
+                continue;
+            }
+            const auto seg = std::dynamic_pointer_cast<const ReferenceSegment>(chunk->get_segment(column_id));
+            if (!seg)
+            {
+                break;  // fall through to the stored-table branch
+            }
+            const auto referenced_table = seg->referenced_table();
+            return {name_of(referenced_table),
+                    std::string{referenced_table->column_name(seg->referenced_column_id())}};
+        }
+    }
+    return {name_of(input), std::string{input->column_name(column_id)}};
+}
+
+#endif  // end of legacy live-lookup fallback
+
+nlohmann::json PQPVisualizer::_collect_columns(const std::shared_ptr<const AbstractOperator> &op)
+{
+    return op->performance_data->read_columns_snapshot;
+}
+
+#if 0  // Retired live-lookup implementation kept for reference.
+nlohmann::json PQPVisualizer::_collect_columns_LEGACY(const std::shared_ptr<const AbstractOperator> &op)
+{
+    // Deduplicated collection keyed by (table, column) so an operator that references the same
+    // column multiple times (e.g. l_shipdate BETWEEN X AND Y) counts once.
+    std::set<std::pair<std::string, std::string>> refs;
+
+    // Walk an expression tree, pushing every PQPColumnExpression's column against `input`.
+    const auto collect_from_expression =
+        [&](const std::shared_ptr<AbstractExpression> &root, const std::shared_ptr<const Table> &input) {
+            auto mut_root = root;  // visit_expression wants a non-const lvalue.
+            visit_expression(mut_root, [&](const auto &sub) {
+                const auto col_expr = std::dynamic_pointer_cast<PQPColumnExpression>(sub);
+                if (col_expr && input)
+                {
+                    refs.insert(resolve_column(input, col_expr->column_id, _stored_table_names));
+                }
+                return ExpressionVisitation::VisitArguments;
+            });
+        };
+
+    // Fetching an input operator's output table only works when it's still ExecutedAndAvailable.
+    // After a full query run only the root retains its output; every intermediate op is cleared
+    // to save memory. Guard so `visualize pqp` on a completed pipeline degrades gracefully to
+    // empty column lists instead of crashing.
+    const auto safe_output = [](const std::shared_ptr<const AbstractOperator> &input_op) {
+        if (!input_op || input_op->state() != OperatorState::ExecutedAndAvailable)
+        {
+            return std::shared_ptr<const Table>{};
+        }
+        return input_op->get_output();
+    };
+    const auto left_input_table = safe_output(op->left_input());
+    const auto right_input_table = safe_output(op->right_input());
+
+    switch (op->type())
+    {
+    case OperatorType::GetTable:
+    {
+        // A GetTable materializes all non-pruned columns of the stored table. Attributing every
+        // column of a wide table to GetTable's row count would drown out downstream signals, so
+        // deliberately emit an empty list here — downstream TableScan/Join/Aggregate/Projection
+        // ops name what they actually read.
+        break;
+    }
+    case OperatorType::TableScan:
+    {
+        const auto table_scan = std::dynamic_pointer_cast<const TableScan>(op);
+        collect_from_expression(table_scan->predicate(), left_input_table);
+        break;
+    }
+    case OperatorType::JoinHash:
+    case OperatorType::JoinSortMerge:
+    case OperatorType::JoinNestedLoop:
+    case OperatorType::JoinIndex:
+    case OperatorType::JoinVerification:
+    {
+        const auto join = std::dynamic_pointer_cast<const AbstractJoinOperator>(op);
+        if (join)
+        {
+            const auto &primary = join->primary_predicate();
+            if (left_input_table)
+            {
+                refs.insert(resolve_column(left_input_table, primary.column_ids.first, _stored_table_names));
+            }
+            if (right_input_table)
+            {
+                refs.insert(resolve_column(right_input_table, primary.column_ids.second, _stored_table_names));
+            }
+            for (const auto &secondary : join->secondary_predicates())
+            {
+                if (left_input_table)
+                {
+                    refs.insert(resolve_column(left_input_table, secondary.column_ids.first, _stored_table_names));
+                }
+                if (right_input_table)
+                {
+                    refs.insert(resolve_column(right_input_table, secondary.column_ids.second, _stored_table_names));
+                }
+            }
+        }
+        break;
+    }
+    case OperatorType::Aggregate:
+    {
+        const auto aggregate = std::dynamic_pointer_cast<const AbstractAggregateOperator>(op);
+        if (aggregate && left_input_table)
+        {
+            for (const auto column_id : aggregate->groupby_column_ids())
+            {
+                refs.insert(resolve_column(left_input_table, column_id, _stored_table_names));
+            }
+            for (const auto &agg : aggregate->aggregates())
+            {
+                if (agg->argument())
+                {
+                    collect_from_expression(agg->argument(), left_input_table);
+                }
+            }
+        }
+        break;
+    }
+    case OperatorType::Projection:
+    {
+        const auto projection = std::dynamic_pointer_cast<const Projection>(op);
+        if (projection && left_input_table)
+        {
+            for (const auto &expression : projection->expressions)
+            {
+                collect_from_expression(expression, left_input_table);
+            }
+        }
+        break;
+    }
+    case OperatorType::Sort:
+    {
+        const auto sort = std::dynamic_pointer_cast<const Sort>(op);
+        if (sort && left_input_table)
+        {
+            for (const auto &sort_def : sort->sort_definitions())
+            {
+                refs.insert(resolve_column(left_input_table, sort_def.column, _stored_table_names));
+            }
+        }
+        break;
+    }
+    default:
+        // Pass-through / structural operators (Alias, UnionAll, UnionPositions, Validate, Limit,
+        // GetTable already handled, etc.) don't read new columns.
+        break;
+    }
+
+    auto out = nlohmann::json::array();
+    for (const auto &[table_name, column_name] : refs)
+    {
+        out.push_back({{"table_name", table_name}, {"column_name", column_name}});
+    }
+    return out;
+}
+#endif  // end of retired live-lookup _collect_columns
+
 nlohmann::json PQPVisualizer::_build_hierarchical_subtree(
     const std::shared_ptr<const AbstractOperator> &op,
     std::unordered_set<std::shared_ptr<const AbstractOperator>> &visited_ops)
@@ -387,6 +599,7 @@ nlohmann::json PQPVisualizer::_build_hierarchical_subtree(
     node["name"] = std::string{op->name()};
     node["walltime_ns"] = op->performance_data->walltime.count();
     node["description"] = op->description();
+    node["columns"] = _collect_columns(op);
 
     if (op->left_input())
     {

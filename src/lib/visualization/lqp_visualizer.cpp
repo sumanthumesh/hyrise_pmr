@@ -14,9 +14,13 @@
 #include <utility>
 #include <vector>
 
+#include "magic_enum/magic_enum.hpp"
 #include "nlohmann/json.hpp"
 
+#include <set>
+
 #include "expression/abstract_expression.hpp"
+#include "expression/lqp_column_expression.hpp"
 #include "expression/expression_utils.hpp"
 #include "expression/lqp_subquery_expression.hpp"
 #include "logical_query_plan/abstract_lqp_node.hpp"
@@ -47,14 +51,23 @@ void LQPVisualizer::visualize(const std::vector<std::shared_ptr<AbstractLQPNode>
 {
     AbstractVisualizer::visualize(lqp_roots, img_filename);
 
-    auto json_filename = img_filename;
-    const auto last_dot = json_filename.find_last_of('.');
-    if (last_dot != std::string::npos)
+    // auto json_filename = img_filename;
+    // const auto last_dot = json_filename.find_last_of('.');
+    // if (last_dot != std::string::npos)
+    // {
+    //     json_filename = json_filename.substr(0, last_dot);
+    // }
+    // json_filename += ".graph.json";
+    // export_as_graph_json(lqp_roots, json_filename);
+
+    auto tree_filename = img_filename;
+    const auto last_dot_tree = tree_filename.find_last_of('.');
+    if (last_dot_tree != std::string::npos)
     {
-        json_filename = json_filename.substr(0, last_dot);
+        tree_filename = tree_filename.substr(0, last_dot_tree);
     }
-    json_filename += ".graph.json";
-    export_as_graph_json(lqp_roots, json_filename);
+    tree_filename += ".tree.json";
+    export_as_hierarchical_json(lqp_roots, tree_filename);
 }
 
 void LQPVisualizer::export_as_graph_json(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots,
@@ -105,6 +118,104 @@ void LQPVisualizer::export_as_graph_json(const std::vector<std::shared_ptr<Abstr
     auto file = std::ofstream(json_filename);
     Assert(file.is_open(), "Failed to open file for writing: " + json_filename);
     file << graph_json.dump(2) << "\n";
+}
+
+// Format the estimated cardinality of an edge (source -> parent) as a short string,
+// matching the graphviz label style. Returns "" when the estimate is NaN.
+static std::string card_label(double estimated_rows)
+{
+    if (std::isnan(estimated_rows))
+    {
+        return {};
+    }
+    auto stream = std::ostringstream{};
+    stream << std::fixed << std::setprecision(1) << estimated_rows << " row(s) est.";
+    return stream.str();
+}
+
+nlohmann::json LQPVisualizer::_collect_columns(const std::shared_ptr<const AbstractLQPNode> &node)
+{
+    // LQPColumnExpression::description() already resolves through the original StoredTableNode
+    // to give the storage-column name — so we just visit each expression on this node, pull out
+    // LQPColumnExpression leaves, and take description().
+    std::set<std::string> names;
+    for (const auto &expression : node->node_expressions)
+    {
+        auto mut = expression;
+        visit_expression(mut, [&](const auto &sub) {
+            const auto lqp_col = std::dynamic_pointer_cast<LQPColumnExpression>(sub);
+            if (lqp_col)
+            {
+                names.insert(lqp_col->description(AbstractExpression::DescriptionMode::ColumnName));
+            }
+            return ExpressionVisitation::VisitArguments;
+        });
+    }
+    return nlohmann::json(std::vector<std::string>{names.begin(), names.end()});
+}
+
+nlohmann::json LQPVisualizer::_build_hierarchical_subtree(
+    const std::shared_ptr<const AbstractLQPNode> &node,
+    const CardinalityEstimator &cardinality_estimator,
+    std::unordered_set<std::shared_ptr<const AbstractLQPNode>> &visited_nodes)
+{
+    // Diamond-shaped LQPs: shared subtrees are emitted only once.
+    if (visited_nodes.contains(node))
+    {
+        return nlohmann::json::object();
+    }
+    visited_nodes.insert(node);
+
+    // Use the same visit-order id that _build_subtree (PNG pass) assigned, so PNG labels and
+    // JSON ids agree.
+    const auto id_it = _node_ids.find(node);
+    const auto assigned_id =
+        (id_it != _node_ids.end()) ? id_it->second : _node_ids.size();
+    if (id_it == _node_ids.end())
+    {
+        _node_ids[node] = assigned_id;
+    }
+
+    auto out = nlohmann::json::object();
+    out["id"] = assigned_id;
+    out["name"] = std::string{magic_enum::enum_name(node->type)};
+    out["description"] = node->description();
+    out["columns"] = _collect_columns(node);
+
+    if (node->left_input())
+    {
+        const auto left = node->left_input();
+        out["Leftchildren"] = _build_hierarchical_subtree(left, cardinality_estimator, visited_nodes);
+        out["LeftCard"] = card_label(cardinality_estimator.estimate_cardinality(left));
+    }
+
+    if (node->right_input())
+    {
+        const auto right = node->right_input();
+        out["Rightchildren"] = _build_hierarchical_subtree(right, cardinality_estimator, visited_nodes);
+        out["RightCard"] = card_label(cardinality_estimator.estimate_cardinality(right));
+    }
+
+    return out;
+}
+
+void LQPVisualizer::export_as_hierarchical_json(const std::vector<std::shared_ptr<AbstractLQPNode>> &lqp_roots,
+                                                const std::string &json_filename)
+{
+    std::unordered_set<std::shared_ptr<const AbstractLQPNode>> visited_nodes;
+    auto trees_json = nlohmann::json::array();
+    for (const auto &root : lqp_roots)
+    {
+        const auto cardinality_estimator = CardinalityEstimator{};
+        cardinality_estimator.guarantee_bottom_up_construction(root);
+        trees_json.push_back(_build_hierarchical_subtree(root, cardinality_estimator, visited_nodes));
+    }
+
+    auto out_json = (lqp_roots.size() == 1) ? trees_json.front() : nlohmann::json{trees_json};
+
+    auto file = std::ofstream(json_filename);
+    Assert(file.is_open(), "Failed to open file for writing: " + json_filename);
+    file << out_json.dump(2) << "\n";
 }
 
 void LQPVisualizer::_collect_subtree_info(

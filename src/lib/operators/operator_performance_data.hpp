@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 // Warning: In the past, magic_enum has led to problems with TSan. See #2154 for details.
 #include "magic_enum/magic_enum.hpp"
@@ -44,6 +46,11 @@ struct AbstractOperatorPerformanceData : public Noncopyable
         size_t allocated_bytes{0};
     };
     std::unordered_map<size_t, ResourceDelta> per_resource_allocation_delta;
+
+    // Populated only when AbstractOperator::track_per_operator_memory is on. Deduplicated list
+    // of source storage-table column names this operator READ from its inputs, captured during
+    // execute() while input tables are still available.
+    std::vector<std::string> read_columns_snapshot;
 };
 
 /**
