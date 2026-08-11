@@ -248,7 +248,7 @@ void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const s
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
     if (print_migration_stats)
     {
-        double bandwidth = (static_cast<double>(column_size) / 1000000000.0) / (static_cast<double>(duration) / 1000000000.0);
+        double bandwidth = (static_cast<double>(column_size) / (1ULL << 30)) / (static_cast<double>(duration) / 1000000000.0);
         std::printf("##Migration: column %s of size %luB to NUMA node %d in %ld ns (Bandwidth: %.2f GB/s)\n", column_name.c_str(), column_size, numa_node_id, duration, bandwidth);
     }
 
