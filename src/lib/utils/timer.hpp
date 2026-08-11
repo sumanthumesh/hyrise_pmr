@@ -21,6 +21,12 @@ class Timer final
     std::chrono::nanoseconds lap();
 
     /**
+     * @return The instant this timer started measuring, i.e. construction or the last lap(),
+     *         whichever was later. begin() + lap() is exactly the instant lap() was called.
+     */
+    std::chrono::steady_clock::time_point begin() const;
+
+    /**
      * Calls lap() and formats the result into a human-readable form
      */
     std::string lap_formatted();

@@ -21,6 +21,11 @@ std::chrono::nanoseconds Timer::lap()
     return lap_duration;
 }
 
+std::chrono::steady_clock::time_point Timer::begin() const
+{
+    return _begin;
+}
+
 std::string Timer::lap_formatted()
 {
     return format_duration(lap());

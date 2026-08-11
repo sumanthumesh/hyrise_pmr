@@ -30,6 +30,19 @@ struct AbstractOperatorPerformanceData : public Noncopyable
 
     std::chrono::nanoseconds walltime{0};
 
+    // The instant AbstractOperator::execute() started measuring walltime; the end of the measured
+    // region is start_time + walltime. steady_clock, so it is only meaningful relative to other
+    // operators' start times (which is the point: it lets a plan's operators be laid out on a
+    // common timeline to see what actually overlapped). Left at its default for operators that
+    // never executed.
+    std::chrono::steady_clock::time_point start_time{};
+
+    // start_time as a plain integer for export. Zero iff the operator never executed.
+    int64_t start_time_ns() const
+    {
+        return start_time.time_since_epoch().count();
+    }
+
     // Some operators do not return a table (e.g., Insert).
     // Note: The operator returning an empty table will be expressed as has_output == true, output_row_count == 0
     bool has_output{false};

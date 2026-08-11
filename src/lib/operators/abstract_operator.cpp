@@ -210,6 +210,9 @@ void AbstractOperator::execute()
     }
 
     auto performance_timer = Timer{};
+    // Captured here rather than next to the walltime assignment below, because lap() rebases the
+    // timer -- taking it afterwards would yield the end of the interval, not its start.
+    performance_data->start_time = performance_timer.begin();
 
     auto transaction_context = this->transaction_context();
     if (transaction_context)
