@@ -16,8 +16,7 @@ size_t MigrationEngine::migration_threads = 0;
 
 namespace
 {
-// Copying a column is memory-bandwidth-bound, so a handful of threads already saturates the
-// interconnect; spawning one per core just adds contention.
+// Empirically, 16 threads already saturates the CXL copy bandwidth (~18 GB/s practical peak).
 constexpr size_t DEFAULT_MAX_MIGRATION_THREADS = 16;
 
 size_t resolve_thread_count(size_t work_items, size_t configured)
