@@ -48,6 +48,13 @@ class MigrationEngine
     void migrate_column(std::shared_ptr<Table> &table_name, const std::string &column_name, int numa_node_id);
     void delete_column_pool(const std::string &column_name);
     /**
+     * Copy the given chunks' segments of one column into `memory_resource`, in parallel.
+     * Returns the (sorted) chunk IDs whose segment did not fit and still need a pool.
+     */
+    std::vector<ChunkID> migrate_chunks(std::shared_ptr<Table> &table, ColumnID column_id,
+                                        const std::vector<ChunkID> &chunk_ids,
+                                        std::shared_ptr<NumaMonotonicResource> &memory_resource);
+    /**
      * Migrate a dictionary or value segment
      */
     void migrate_segment(std::shared_ptr<Chunk> &chunk_ptr, std::shared_ptr<AbstractSegment> &segment_ptr, ColumnID column_id, std::shared_ptr<NumaMonotonicResource> &memory_resource);
@@ -187,6 +194,8 @@ class MigrationEngine
     }
     
     static bool print_migration_stats;
+    // Threads used to copy a column's segments. 0 = auto (min(hardware_concurrency, 16)).
+    static size_t migration_threads;
 
     private:
     MemPoolManager& _pool_manager;

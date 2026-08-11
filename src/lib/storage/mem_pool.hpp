@@ -16,7 +16,19 @@
 #include "memory/mem_common.hpp"
 #include "utils/debug_util.hpp"
 
-void *allocate_on_numa_node(std::size_t bytes, int node);
+// A raw mapping owned by a NumaMonotonicResource. `size` is the requested size rounded up to a
+// 2 MiB huge page, and is what must be handed back to free_numa_allocation.
+struct NumaAllocation
+{
+    void *ptr{nullptr};
+    std::size_t size{0};
+};
+
+// `prefault` eagerly faults the whole mapping in (in parallel) so that whoever fills the pool does
+// not pay the fault cost. Only pass true for a pool that is going to be filled anyway -- it commits
+// the physical memory up front.
+NumaAllocation allocate_on_numa_node(std::size_t bytes, int node, bool prefault = false);
+void free_numa_allocation(const NumaAllocation &allocation);
 
 // NUMA-backed bump allocator. One numa_alloc upfront; every do_allocate advances an
 // atomic bump pointer via lock-free CAS, so multiple threads can allocate concurrently
@@ -30,23 +42,23 @@ class NumaMonotonicResource : public std::pmr::memory_resource
 {
   public:
     NumaMonotonicResource(std::size_t size_bytes, int numa_node, bool serialize = false,
-                          std::pmr::memory_resource * /*upstream*/ = std::pmr::null_memory_resource())
-        : _size(size_bytes),
+                          std::pmr::memory_resource * /*upstream*/ = std::pmr::null_memory_resource(),
+                          bool prefault = false)
+        : _allocation(allocate_on_numa_node(size_bytes, numa_node, prefault)),
+          // The mapping is rounded up to a huge page; hand the rounded-up capacity to the bump
+          // pointer rather than wasting the tail.
+          _size(_allocation.size),
           _numa_node(numa_node),
-          _buffer(static_cast<char *>(allocate_on_numa_node(size_bytes, numa_node))),
+          _buffer(static_cast<char *>(_allocation.ptr)),
           _next(_buffer),
-          _end(_buffer + size_bytes),
+          _end(_buffer + _size),
           _serialize(serialize)
     {
     }
 
     ~NumaMonotonicResource() override
     {
-        // Important: free NUMA memory
-        if (_buffer && _size)
-        {
-            numa_free(_buffer, _size);
-        }
+        free_numa_allocation(_allocation);
     }
 
     std::uintptr_t start_address() const
@@ -205,6 +217,7 @@ class NumaMonotonicResource : public std::pmr::memory_resource
     }
 
   private:
+    NumaAllocation _allocation{};
     std::size_t _size{};
     int _numa_node{-1};
     char *_buffer{};
@@ -226,7 +239,7 @@ namespace hyrise
 class MemPoolManager
 {
   public:
-    size_t create_pool(uint64_t size, int numa_node, bool serialize = false);
+    size_t create_pool(uint64_t size, int numa_node, bool serialize = false, bool prefault = false);
     std::shared_ptr<NumaMonotonicResource> get_pool(const size_t pool_id);
     bool exists(const size_t pool_id) const
     {
