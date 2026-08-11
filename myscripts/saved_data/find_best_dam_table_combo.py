@@ -6,10 +6,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process consolidated data to find best dam/table combo per query")
     parser.add_argument("--input", "-i", help="Input CSV file (default: consolidated_data.csv)")
     parser.add_argument("--output", "-o", default="per_query_min_duration.csv", help="Output CSV file for per-query min duration (default: per_query_min_duration.csv)")
+    parser.add_argument("--migration", "-m", default=None,
+                        help="Migration duration CSV (columns: dam_size_gb, local_capacity_gb, query_id, migration_duration_ns). "
+                             "When provided, migration cost is added to execution duration before finding the best combo.")
     args = parser.parse_args()
 
-    INPUT_CSV = args.input
+    INPUT_CSV  = args.input
     OUTPUT_CSV = args.output
+    MIGRATION_CSV = args.migration
 
     # ---------------------------------------------------------------------------
     # Load and reduce to one row per (query_id, dam_size, table_size) by taking
@@ -44,6 +48,29 @@ if __name__ == "__main__":
     df_rest = df_rest[pd.to_numeric(df_rest["dam_size"], errors="coerce").notna()].copy()
     df_rest["dam_size"]   = df_rest["dam_size"].astype(int)
     df_rest["table_size"] = df_rest["table_size"].astype(int)
+
+    # ---------------------------------------------------------------------------
+    # Optionally add migration duration to execution duration.
+    # Migration CSV uses GB units; consolidated CSV uses bytes.
+    # ---------------------------------------------------------------------------
+    if MIGRATION_CSV:
+        df_mig = pd.read_csv(MIGRATION_CSV)
+        # Convert bytes -> GB to match migration CSV keys
+        df_rest["dam_size_gb"]   = df_rest["dam_size"]   / (1 << 30)
+        df_rest["table_size_gb"] = df_rest["table_size"] / (1 << 30)
+
+        df_rest = df_rest.merge(
+            df_mig[["dam_size_gb", "local_capacity_gb", "query_id", "migration_duration_ns"]],
+            left_on=["dam_size_gb", "table_size_gb", "query_id"],
+            right_on=["dam_size_gb", "local_capacity_gb", "query_id"],
+            how="left"
+        )
+        missing = df_rest["migration_duration_ns"].isna().sum()
+        if missing:
+            print(f"WARNING: {missing} (dam_size, table_size, query_id) combos had no matching migration duration — treated as 0.")
+        df_rest["migration_duration_ns"] = df_rest["migration_duration_ns"].fillna(0)
+        df_rest["duration"] = df_rest["duration"] + df_rest["migration_duration_ns"]
+        df_rest = df_rest.drop(columns=["dam_size_gb", "table_size_gb", "local_capacity_gb", "migration_duration_ns"])
 
     # ---------------------------------------------------------------------------
     # Pivot: one row per query_id, columns are (dam_size, table_size) combos
