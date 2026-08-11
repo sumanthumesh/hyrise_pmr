@@ -1613,6 +1613,11 @@ int Console::_move2cxl(const std::string &args)
 
     int numa_node = boost::lexical_cast<int>(arguments[2]);
 
+    if (_migration_queue_active) {
+        _migration_queue.push_back({table_name, column_name, numa_node});
+        return ReturnCode::Ok;
+    }
+
     // Fetch migration engine
     auto &migration_engine = Hyrise::get().migration_engine;
 
@@ -2012,6 +2017,53 @@ int Console::_hshell(const std::string &args)
         }
         std::ofstream json_file("column_sizes.json");
         json_file << json_out.dump(2) << "\n";
+    }
+    else if (cmd == "queue")
+    {
+        if (arguments.size() != 2)
+        {
+            out("Usage: hsh queue (start|end)\n");
+            return ReturnCode::Error;
+        }
+        if (arguments[1] == "start")
+        {
+            _migration_queue.clear();
+            _migration_queue_active = true;
+            out("Migration queue open\n");
+        }
+        else if (arguments[1] == "end")
+        {
+            _migration_queue_active = false;
+            if (_migration_queue.empty())
+            {
+                out("Migration queue is empty, nothing to do\n");
+                return ReturnCode::Ok;
+            }
+
+            out("Running " + std::to_string(_migration_queue.size()) + " migrations in parallel\n");
+            auto &migration_engine = Hyrise::get().migration_engine;
+            auto &sm = Hyrise::get().storage_manager;
+
+            auto threads = std::vector<std::thread>{};
+            threads.reserve(_migration_queue.size());
+            for (const auto &m : _migration_queue)
+            {
+                auto table_ptr = sm.get_table(m.table_name);
+                threads.emplace_back([&migration_engine, table_ptr, m]() mutable {
+                    migration_engine->migrate_column(table_ptr, m.column_name, m.numa_node);
+                });
+            }
+            for (auto &t : threads) { t.join(); }
+
+            migration_engine->aggregate_migrated_status();
+            _migration_queue.clear();
+            out("Parallel migration done\n");
+        }
+        else
+        {
+            out("Usage: hsh queue (start|end)\n");
+            return ReturnCode::Error;
+        }
     }
     else if (cmd == "clear_plan_caches")
     {

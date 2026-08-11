@@ -173,6 +173,14 @@ class Console : public Singleton<Console>
     std::shared_ptr<TransactionContext> _explicitly_created_transaction_context;
 
     bool _reset_pipeline_after_exec{false};
+
+    struct QueuedMigration {
+        std::string table_name;
+        std::string column_name;
+        int numa_node;
+    };
+    bool _migration_queue_active{false};
+    std::vector<QueuedMigration> _migration_queue;
 };
 
 } // namespace hyrise
