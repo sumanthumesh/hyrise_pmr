@@ -266,6 +266,159 @@ void MigrationEngine::delete_column_pool(const std::string &column_name)
     _columns_to_pools_mapping.erase(it);
 }
 
+void MigrationEngine::run_parallel_migrations(const std::vector<MigrationRequest>& requests)
+{
+    if (requests.empty()) return;
+
+    // ---- Phase 1 (serial): size columns, provision destination pools ----
+    // All writes to _columns_to_pools_mapping happen here and nowhere else.
+    struct ColInfo {
+        std::shared_ptr<Table>                 table;
+        std::string                            column_name;
+        int                                    numa_node;
+        ColumnID                               column_id;
+        size_t                                 pool_id;
+        std::shared_ptr<NumaMonotonicResource> pool;
+        std::vector<size_t>                    segment_sizes;
+        size_t                                 column_size{0};
+        std::deque<size_t>                     old_pool_ids;  // freed in Phase 3, after replace_segment
+    };
+
+    auto col_infos = std::vector<ColInfo>{};
+    col_infos.reserve(requests.size());
+
+    for (const auto& req : requests) {
+        auto& ci    = col_infos.emplace_back();
+        ci.table       = req.table;
+        ci.column_name = req.column_name;
+        ci.numa_node   = req.numa_node;
+        ci.column_id   = req.table->column_id_by_name(req.column_name);
+
+        const auto chunk_count = req.table->chunk_count();
+        ci.segment_sizes.resize(chunk_count, 0);
+        for (ChunkID cid{0}; cid < chunk_count; ++cid) {
+            const auto sz = req.table->get_chunk(cid)->get_segment(ci.column_id)
+                                ->memory_usage(MemoryUsageCalculationMode::Full);
+            ci.segment_sizes[cid] = sz;
+            ci.column_size += sz;
+        }
+
+        const auto pool_size = static_cast<size_t>(static_cast<float>(ci.column_size) * 1.2f);
+        // prefault=true: pages are faulted into the destination NUMA node before any copy starts
+        ci.pool_id = _pool_manager.create_pool(pool_size, ci.numa_node, false, true);
+        ci.pool    = _pool_manager.get_pool(ci.pool_id);
+
+        // Save old pool ids but do NOT free them yet — the chunks still hold shared_ptrs to
+        // segments in those pools. Freeing now would make Phase 2 workers segfault on get_segment.
+        // The old pools are released in Phase 3 after all replace_segment calls are done.
+        const auto old_it = _columns_to_pools_mapping.find(ci.column_name);
+        if (old_it != _columns_to_pools_mapping.end()) {
+            ci.old_pool_ids = old_it->second;
+            _columns_to_pools_mapping.erase(old_it);
+        }
+        _columns_to_pools_mapping[ci.column_name].push_back(ci.pool_id);
+    }
+
+    // ---- Build round-robin task list (serial) ----
+    // Round-robin interleaving ensures threads from different columns hit CXL simultaneously,
+    // maximising aggregate CXL read bandwidth instead of serialising column-by-column.
+    struct MigrationTask {
+        std::shared_ptr<Table>                 table;
+        ColumnID                               column_id;
+        ChunkID                                chunk_id;
+        std::shared_ptr<NumaMonotonicResource> pool;
+        size_t                                 col_idx;
+    };
+
+    size_t max_chunks = 0;
+    for (const auto& ci : col_infos) {
+        max_chunks = std::max(max_chunks, static_cast<size_t>(ci.table->chunk_count()));
+    }
+
+    auto tasks = std::vector<MigrationTask>{};
+    tasks.reserve(max_chunks * col_infos.size());
+    for (size_t round = 0; round < max_chunks; ++round) {
+        for (size_t i = 0; i < col_infos.size(); ++i) {
+            const auto& ci = col_infos[i];
+            if (round < static_cast<size_t>(ci.table->chunk_count())) {
+                tasks.push_back({ci.table, ci.column_id,
+                                 ChunkID{static_cast<ChunkID::base_type>(round)},
+                                 ci.pool, i});
+            }
+        }
+    }
+
+    // ---- Phase 2 (parallel): drain task queue with a fixed thread pool ----
+    // Only shared mutable state in the hot path is next_task (one relaxed fetch_add).
+    // Each (table, column_id, chunk_id) triple appears exactly once so replace_segment
+    // is never called concurrently for the same segment.
+    const auto thread_count = std::min(
+        tasks.size(),
+        static_cast<size_t>(std::max(1u, std::thread::hardware_concurrency())));
+
+    auto next_task    = std::atomic<size_t>{0};
+    auto failed_mutex = std::mutex{};
+    auto failed_col_indices = std::vector<size_t>{};
+
+    const auto wall_start = std::chrono::high_resolution_clock::now();
+
+    const auto worker = [&] {
+        for (;;) {
+            const auto idx = next_task.fetch_add(1, std::memory_order_relaxed);
+            if (idx >= tasks.size()) return;
+            const auto& t = tasks[idx];
+            auto chunk_ptr = t.table->get_chunk(t.chunk_id);
+            auto seg_ptr   = chunk_ptr->get_segment(t.column_id);
+            auto pool      = t.pool;
+            try {
+                migrate_segment(chunk_ptr, seg_ptr, t.column_id, pool);
+            } catch (const std::bad_alloc&) {
+                auto lock = std::lock_guard{failed_mutex};
+                failed_col_indices.push_back(t.col_idx);
+            }
+        }
+    };
+
+    auto threads = std::vector<std::thread>{};
+    threads.reserve(thread_count - 1);
+    for (size_t i = 1; i < thread_count; ++i) threads.emplace_back(worker);
+    worker();
+    for (auto& thr : threads) thr.join();
+
+    const auto wall_end = std::chrono::high_resolution_clock::now();
+
+    // ---- Phase 3 (serial): release old pools and handle any overflow failures ----
+    // Old segments have been swapped out by replace_segment; it is now safe to free their pools.
+    for (const auto& ci : col_infos) {
+        for (const auto old_id : ci.old_pool_ids) {
+            _pool_manager.delete_pool(old_id);
+        }
+    }
+
+    if (!failed_col_indices.empty()) {
+        std::sort(failed_col_indices.begin(), failed_col_indices.end());
+        failed_col_indices.erase(std::unique(failed_col_indices.begin(), failed_col_indices.end()),
+                                 failed_col_indices.end());
+        for (const auto col_idx : failed_col_indices) {
+            const auto& ci = col_infos[col_idx];
+            std::fprintf(stderr, "run_parallel_migrations: pool overflow for column %s, "
+                                 "retrying serially\n", ci.column_name.c_str());
+            migrate_column(const_cast<std::shared_ptr<Table>&>(ci.table), ci.column_name, ci.numa_node);
+        }
+    }
+
+    if (print_migration_stats) {
+        size_t total_bytes = 0;
+        for (const auto& ci : col_infos) total_bytes += ci.column_size;
+        const auto duration_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            wall_end - wall_start).count();
+        const double bw = (static_cast<double>(total_bytes) / static_cast<double>(1ULL << 30))
+                          / (static_cast<double>(duration_ns) / 1e9);
+        std::printf("##ParallelMigration: %zu columns, %zu bytes in %ld ns (%.2f GB/s aggregate)\n",
+                    col_infos.size(), total_bytes, duration_ns, bw);
+    }
+}
+
 std::unordered_map<int, MemResourceStatus> &MigrationEngine::aggregate_migrated_status()
 {
     _migrated_status.clear();

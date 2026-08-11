@@ -2044,16 +2044,13 @@ int Console::_hshell(const std::string &args)
             auto &migration_engine = Hyrise::get().migration_engine;
             auto &sm = Hyrise::get().storage_manager;
 
-            auto threads = std::vector<std::thread>{};
-            threads.reserve(_migration_queue.size());
-            for (const auto &m : _migration_queue)
-            {
-                auto table_ptr = sm.get_table(m.table_name);
-                threads.emplace_back([&migration_engine, table_ptr, m]() mutable {
-                    migration_engine->migrate_column(table_ptr, m.column_name, m.numa_node);
-                });
+            auto requests = std::vector<MigrationEngine::MigrationRequest>{};
+            requests.reserve(_migration_queue.size());
+            for (const auto &m : _migration_queue) {
+                requests.push_back({sm.get_table(m.table_name), m.column_name, m.numa_node});
             }
-            for (auto &t : threads) { t.join(); }
+
+            migration_engine->run_parallel_migrations(requests);
 
             migration_engine->aggregate_migrated_status();
             _migration_queue.clear();

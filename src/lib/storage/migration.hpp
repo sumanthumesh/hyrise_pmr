@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <csignal>
@@ -18,9 +19,11 @@
 #include <iostream>
 #include <malloc.h>
 #include <memory>
+#include <mutex>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -47,6 +50,15 @@ class MigrationEngine
 
     void migrate_column(std::shared_ptr<Table> &table_name, const std::string &column_name, int numa_node_id);
     void delete_column_pool(const std::string &column_name);
+
+    struct MigrationRequest {
+        std::shared_ptr<Table> table;
+        std::string            column_name;
+        int                    numa_node;
+    };
+
+    // Run migrations for all requests with a shared thread pool and round-robin task interleaving.
+    void run_parallel_migrations(const std::vector<MigrationRequest>& requests);
     /**
      * Copy the given chunks' segments of one column into `memory_resource`, in parallel.
      * Returns the (sorted) chunk IDs whose segment did not fit and still need a pool.
