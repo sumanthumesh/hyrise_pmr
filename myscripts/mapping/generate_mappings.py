@@ -18,5 +18,7 @@ for dam_size in DAM_sizes:
     for table_fraction in table_fractions:
         for query_id in query_ids:
             #Run the mapping script with the given parameters
-            cmd = f"python {MAPPING_SCRIPT} -p {HYRISE_ROOT}/myscripts/saved_data/sf1_hotness/hotness_{query_id}.json -s {HYRISE_ROOT}/myscripts/saved_data/column_sizes_sf50.dat -c {int(dam_size*table_fraction)},none -l 45,145 -o {os.path.abspath(f'scratch/sf50/map_d{dam_size}_f{int(table_fraction*100)}_q{query_id}.json')} --sql-out"
+            # cmd = f"python {MAPPING_SCRIPT} -p {HYRISE_ROOT}/myscripts/saved_data/sf1_hotness/hotness_{query_id}.json -s {HYRISE_ROOT}/myscripts/saved_data/column_sizes_sf50.dat -c {int(dam_size*table_fraction)},none -l 45,145 -o {os.path.abspath(f'scratch/sf50/map_d{dam_size}_f{int(table_fraction*100)}_q{query_id}.json')} --sql-out"
+            # cmd = f"python {MAPPING_SCRIPT} -p {HYRISE_ROOT}/myscripts/saved_data/sf50_hotness/lqp/hotness_{query_id}.json -s {HYRISE_ROOT}/myscripts/saved_data/column_sizes_sf50.dat -c {int(dam_size*table_fraction)},none -l 45,145 -o {os.path.abspath(f'scratch/sf50_lqp/map_d{dam_size}_f{int(table_fraction*100)}_q{query_id}.json')} --sql-out"
+            cmd = f"python {MAPPING_SCRIPT} -p {HYRISE_ROOT}/myscripts/saved_data/sf50_hotness/pqp/hotness_{query_id}.json -s {HYRISE_ROOT}/myscripts/saved_data/column_sizes_sf50.dat -c {int(dam_size*table_fraction)},none -l 45,145 -o {os.path.abspath(f'scratch/sf50_pqp/map_d{dam_size}_f{int(table_fraction*100)}_q{query_id}.json')} --sql-out"
             print(cmd)
