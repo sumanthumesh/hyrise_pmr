@@ -109,14 +109,30 @@ if __name__ == "__main__":
 
     best_idx = df_rest.groupby("query_id")["duration"].idxmin()
     df_best = df_rest.loc[best_idx, ["query_id", "dam_size", "table_size", "duration"]].copy()
+
+    # Retrieve the migration duration for the best combo (0 if migration CSV was not provided).
+    if MIGRATION_CSV:
+        df_mig2 = pd.read_csv(MIGRATION_CSV)
+        df_best["dam_size_gb"]   = df_best["dam_size"] / (1 << 30)
+        df_best["table_size_gb"] = df_best["table_size"] / (1 << 30)
+        df_best = df_best.merge(
+            df_mig2[["dam_size_gb", "local_capacity_gb", "query_id", "migration_duration_ns"]],
+            left_on=["dam_size_gb", "table_size_gb", "query_id"],
+            right_on=["dam_size_gb", "local_capacity_gb", "query_id"],
+            how="left"
+        )
+        df_best["migration_duration_ns"] = df_best["migration_duration_ns"].fillna(0)
+        df_best = df_best.drop(columns=["dam_size_gb", "table_size_gb", "local_capacity_gb"])
+    else:
+        df_best["migration_duration_ns"] = 0
     df_best["dam_size_gb"]   = df_best["dam_size"].apply(to_gb)
     df_best["table_size_gb"] = df_best["table_size"].apply(to_gb)
     df_best = df_best.rename(columns={"duration": "best_duration"})
-    df_best = df_best[["query_id", "dam_size_gb", "table_size_gb", "best_duration"]]
+    df_best = df_best[["query_id", "dam_size_gb", "table_size_gb", "best_duration", "migration_duration_ns"]]
 
     df_best = df_best.merge(df_baseline, on="query_id", how="left")
     df_best = df_best.merge(df_ideal,    on="query_id", how="left")
-    df_best = df_best[["query_id", "dam_size_gb", "table_size_gb", "baseline", "ideal", "best_duration"]]
+    df_best = df_best[["query_id", "dam_size_gb", "table_size_gb", "baseline", "ideal", "best_duration", "migration_duration_ns"]]
     df_best = df_best.sort_values("query_id").reset_index(drop=True)
 
     df_best.to_csv(BEST_CSV, index=False)
