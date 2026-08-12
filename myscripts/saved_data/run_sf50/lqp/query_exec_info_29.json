@@ -1,0 +1,20 @@
+{
+  "duration": 1610221915,
+  "label": "d10737418240_tf1073741824_q16",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 3004220,
+      "numa_node": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 4026449962
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/16.sql",
+  "sql": "select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> 'Brand#45'\n\tand p_type not like 'MEDIUM POLISHED%'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like '%Customer%Complaints%'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;"
+}

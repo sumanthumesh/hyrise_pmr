@@ -1,0 +1,309 @@
+{
+  "column_access_deltas": [
+    {
+      "access_delta": 300005811,
+      "column_name": "l_returnflag",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 79755740,
+      "column_name": "l_orderkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 75000000,
+      "column_name": "o_orderdate",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 20881583,
+      "column_name": "c_custkey",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 13381583,
+      "column_name": "c_acctbal",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 13381583,
+      "column_name": "c_comment",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 13381583,
+      "column_name": "c_name",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 13381583,
+      "column_name": "c_address",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 13381583,
+      "column_name": "n_name",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 13381583,
+      "column_name": "c_phone",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 7500000,
+      "column_name": "c_nationkey",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 5729340,
+      "column_name": "l_discount",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 5729340,
+      "column_name": "l_extendedprice",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 5728846,
+      "column_name": "o_orderkey",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 2864423,
+      "column_name": "o_custkey",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 25,
+      "column_name": "n_nationkey",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "c_mktsegment",
+      "table_name": "customer"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderstatus",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_totalprice",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_orderpriority",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_clerk",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_shippriority",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "o_comment",
+      "table_name": "orders"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_partkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_suppkey",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_linenumber",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_quantity",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_tax",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_linestatus",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_commitdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_receiptdate",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipinstruct",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_shipmode",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "l_comment",
+      "table_name": "lineitem"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_partkey",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_name",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_mfgr",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_brand",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_type",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_size",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_container",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_retailprice",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "p_comment",
+      "table_name": "part"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_partkey",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_suppkey",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_availqty",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_supplycost",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "ps_comment",
+      "table_name": "partsupp"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_suppkey",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_name",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_address",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_nationkey",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_phone",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_acctbal",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "s_comment",
+      "table_name": "supplier"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "n_regionkey",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "n_comment",
+      "table_name": "nation"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "r_regionkey",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "r_name",
+      "table_name": "region"
+    },
+    {
+      "access_delta": 0,
+      "column_name": "r_comment",
+      "table_name": "region"
+    }
+  ]
+}
