@@ -347,14 +347,22 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
 
     size_t vmrss_before = f();
 
-    // Snapshot per-resource total_allocated_bytes before execution so we can compute deltas.
-    // Keyed by resource_id; numa_node is captured alongside for the output JSON.
+    // Snapshot per-resource counters before execution so we can compute deltas.
+    // - total_allocated_before: baseline for the cumulative-churn delta.
+    // - allocated_before: baseline for the peak-above-baseline delta; must be captured at the
+    //   same instant reset_peak() is called, since reset_peak() seeds peak = allocated_bytes.
     const auto pool_status_before = MemManager::get().all_pool_status();
     auto total_allocated_before = std::unordered_map<size_t, size_t>{};
+    auto allocated_before = std::unordered_map<size_t, size_t>{};
     total_allocated_before.reserve(pool_status_before.size());
+    allocated_before.reserve(pool_status_before.size());
     for (const auto &status : pool_status_before)
     {
         total_allocated_before[status.resource_id] = status.total_allocated_bytes;
+        allocated_before[status.resource_id] = status.allocated_bytes;
+        // Reset peak so it tracks the max live-bytes reached DURING this query. Seeds peak
+        // at the current allocated_bytes, so peak_after >= baseline always.
+        MemManager::get().get_pool(status.resource_id)->reset_peak();
     }
 
     // If access_delta_tracking is enabled, collect the pre-execution access counters for all columns
@@ -405,14 +413,22 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     auto memory_deltas = nlohmann::json::array();
     for (const auto &status_after : MemManager::get().all_pool_status())
     {
-        const auto before_it = total_allocated_before.find(status_after.resource_id);
-        const auto before_value = before_it == total_allocated_before.end() ? size_t{0} : before_it->second;
+        const auto tot_it = total_allocated_before.find(status_after.resource_id);
+        const auto tot_before = tot_it == total_allocated_before.end() ? size_t{0} : tot_it->second;
+        const auto liv_it = allocated_before.find(status_after.resource_id);
+        const auto liv_before = liv_it == allocated_before.end() ? size_t{0} : liv_it->second;
         memory_deltas.push_back({
             {"resource_id", status_after.resource_id},
             {"numa_node", status_after.numa_node},
             {"total_allocated_bytes_delta", static_cast<int64_t>(status_after.total_allocated_bytes) -
-                                                static_cast<int64_t>(before_value)},
+                                                static_cast<int64_t>(tot_before)},
             {"allocated_bytes", status_after.allocated_bytes},
+            // Max simultaneous live bytes this query added on top of the pre-query baseline.
+            // Signed because a query that frees more than it allocates can legitimately go
+            // negative (though with a monotonic bump allocator the physical footprint doesn't
+            // actually shrink — see total_allocated_bytes_delta for that).
+            {"peak_mem_usage", static_cast<int64_t>(status_after.peak_allocated_bytes) -
+                                   static_cast<int64_t>(liv_before)},
         });
     }
 
