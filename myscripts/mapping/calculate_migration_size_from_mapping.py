@@ -23,15 +23,15 @@ import re
 import sys
 
 GB = 2**30
-NAME_RE = re.compile(r"map_d(\d+)_f(\d+)_")
+NAME_RE = re.compile(r"map_d(\d+)_f(\d+)_q(\d+)")
 
 
 def parse_name(path: str):
-    """Return (dram_bytes, table_fraction_pct) or (None, None) if the name doesn't match."""
+    """Return (dram_bytes, table_fraction_pct, query_id) or (None, None, None) if it doesn't match."""
     m = NAME_RE.search(os.path.basename(path))
     if not m:
-        return None, None
-    return int(m.group(1)), int(m.group(2))
+        return None, None, None
+    return int(m.group(1)), int(m.group(2)), int(m.group(3))
 
 
 def dram_resident_bytes(path: str) -> int:
@@ -50,9 +50,9 @@ def main():
 
     rows = []
     for path in args.mapping_files:
-        dram_bytes, table_pct = parse_name(path)
+        dram_bytes, table_pct, query_id = parse_name(path)
         if dram_bytes is None:
-            print(f"warning: skipping {path} — name does not match map_d<bytes>_f<pct>_ pattern", file=sys.stderr)
+            print(f"warning: skipping {path} — name does not match map_d<bytes>_f<pct>_q<id> pattern", file=sys.stderr)
             continue
 
         table_bytes = dram_bytes * table_pct / 100.0
@@ -61,6 +61,7 @@ def main():
         rows.append(
             {
                 "filename": os.path.basename(path),
+                "query_id": query_id,
                 "dram_size_gb": dram_bytes / GB,
                 "table_size_gb": table_bytes / GB,
                 "dram_resident_size_gb": resident_bytes / GB,
@@ -68,7 +69,9 @@ def main():
         )
 
     with open(args.output, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["filename", "dram_size_gb", "table_size_gb", "dram_resident_size_gb"])
+        writer = csv.DictWriter(
+            f, fieldnames=["filename", "query_id", "dram_size_gb", "table_size_gb", "dram_resident_size_gb"]
+        )
         writer.writeheader()
         writer.writerows(rows)
 
