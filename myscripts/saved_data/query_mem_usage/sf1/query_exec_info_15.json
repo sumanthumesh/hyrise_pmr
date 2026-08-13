@@ -1,0 +1,15 @@
+{
+  "duration": 28352942,
+  "label": "",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 8962736,
+      "numa_node": 1,
+      "peak_mem_usage": 120318556,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 138542900
+    }
+  ],
+  "script_file": "/data1/sumanthu/tpch_queries/17.sql",
+  "sql": "select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = 'Brand#23'\n\tand p_container = 'MED BOX'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);"
+}
