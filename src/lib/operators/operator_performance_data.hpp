@@ -57,6 +57,12 @@ struct AbstractOperatorPerformanceData : public Noncopyable
         int numa_node{-1};
         int64_t total_allocated_bytes_delta{0};
         size_t allocated_bytes{0};
+        // Max live bytes reached DURING this operator's _on_execute(), above the operator's
+        // allocated-bytes baseline. Uses the pool's single _peak_allocated_bytes counter,
+        // which is mutually exclusive with per-query peak tracking: when
+        // track_per_operator_memory is on, sql_pipeline_statement skips its own reset_peak
+        // and the query-level peak_mem_usage field is a sentinel (-1).
+        int64_t peak_mem_usage_delta{0};
     };
     std::unordered_map<size_t, ResourceDelta> per_resource_allocation_delta;
 

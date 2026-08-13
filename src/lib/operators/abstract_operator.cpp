@@ -196,16 +196,25 @@ void AbstractOperator::execute()
                                                           { OperatorMemoryUsage::get().track_memory(tracker_handle); });
     }
 
-    // Snapshot per-resource total_allocated_bytes BEFORE _on_execute(). Only meaningful
-    // under SINGLE-worker execution — concurrent operators would contaminate the delta.
+    // Snapshot per-resource total_allocated_bytes and allocated_bytes BEFORE _on_execute().
+    // Only meaningful under SINGLE-worker execution — concurrent operators would contaminate
+    // the delta. reset_peak() must be called at the same instant allocated_before is captured,
+    // since reset_peak() seeds peak = current allocated_bytes; the two together let us compute
+    // peak_after − allocated_before as this operator's peak-above-baseline delta. Mutually
+    // exclusive with sql_pipeline_statement's query-level reset_peak/read, which is gated off
+    // when track_per_operator_memory is on.
     auto total_allocated_before = std::unordered_map<size_t, size_t>{};
+    auto allocated_before = std::unordered_map<size_t, size_t>{};
     if (track_per_operator_memory)
     {
         const auto pool_status_before = MemManager::get().all_pool_status();
         total_allocated_before.reserve(pool_status_before.size());
+        allocated_before.reserve(pool_status_before.size());
         for (const auto &status : pool_status_before)
         {
             total_allocated_before[status.resource_id] = status.total_allocated_bytes;
+            allocated_before[status.resource_id] = status.allocated_bytes;
+            MemManager::get().get_pool(status.resource_id)->reset_peak();
         }
     }
 
@@ -251,8 +260,12 @@ void AbstractOperator::execute()
                 before_it == total_allocated_before.end() ? size_t{0} : before_it->second;
             const auto delta = static_cast<int64_t>(status_after.total_allocated_bytes) -
                                static_cast<int64_t>(before_value);
+            const auto liv_it = allocated_before.find(status_after.resource_id);
+            const auto liv_before = liv_it == allocated_before.end() ? size_t{0} : liv_it->second;
+            const auto peak_delta = static_cast<int64_t>(status_after.peak_allocated_bytes) -
+                                    static_cast<int64_t>(liv_before);
             performance_data->per_resource_allocation_delta[status_after.resource_id] =
-                {status_after.numa_node, delta, status_after.allocated_bytes};
+                {status_after.numa_node, delta, status_after.allocated_bytes, peak_delta};
         }
     }
 

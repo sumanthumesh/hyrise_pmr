@@ -356,13 +356,19 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
     auto allocated_before = std::unordered_map<size_t, size_t>{};
     total_allocated_before.reserve(pool_status_before.size());
     allocated_before.reserve(pool_status_before.size());
+    // Query-scope peak tracking is mutually exclusive with per-operator peak tracking: they
+    // share the pool's single _peak_allocated_bytes counter, and per-op reset_peak() calls
+    // would clobber the query-scope high-water mark. When track_per_operator_memory is on,
+    // skip the query-scope reset AND emit peak_mem_usage as a -1 sentinel below.
+    const auto query_peak_tracking = !AbstractOperator::track_per_operator_memory;
     for (const auto &status : pool_status_before)
     {
         total_allocated_before[status.resource_id] = status.total_allocated_bytes;
         allocated_before[status.resource_id] = status.allocated_bytes;
-        // Reset peak so it tracks the max live-bytes reached DURING this query. Seeds peak
-        // at the current allocated_bytes, so peak_after >= baseline always.
-        MemManager::get().get_pool(status.resource_id)->reset_peak();
+        if (query_peak_tracking)
+        {
+            MemManager::get().get_pool(status.resource_id)->reset_peak();
+        }
     }
 
     // If access_delta_tracking is enabled, collect the pre-execution access counters for all columns
@@ -427,8 +433,10 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
             // Signed because a query that frees more than it allocates can legitimately go
             // negative (though with a monotonic bump allocator the physical footprint doesn't
             // actually shrink — see total_allocated_bytes_delta for that).
-            {"peak_mem_usage", static_cast<int64_t>(status_after.peak_allocated_bytes) -
-                                   static_cast<int64_t>(liv_before)},
+            {"peak_mem_usage", query_peak_tracking
+                                   ? static_cast<int64_t>(status_after.peak_allocated_bytes) -
+                                         static_cast<int64_t>(liv_before)
+                                   : int64_t{-1}},
         });
     }
 
@@ -486,6 +494,7 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
                     {"numa_node", delta.numa_node},
                     {"total_allocated_bytes_delta", delta.total_allocated_bytes_delta},
                     {"allocated_bytes", delta.allocated_bytes},
+                    {"peak_mem_usage", delta.peak_mem_usage_delta},
                 });
             }
             operator_memory_deltas.push_back({
