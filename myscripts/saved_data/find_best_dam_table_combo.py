@@ -9,11 +9,15 @@ if __name__ == "__main__":
     parser.add_argument("--migration", "-m", default=None,
                         help="Migration duration CSV (columns: dam_size_gb, local_capacity_gb, query_id, migration_duration_ns). "
                              "When provided, migration cost is added to execution duration before finding the best combo.")
+    parser.add_argument("--migration-size", "-s",  default=None,
+                        help="Migration size CSV (columns: filename, query_id, dram_size_gb, table_size_gb, dram_resident_size_gb). "
+                             "When provided, the best-combo output includes dram_resident_size_gb per (dam_size, table_size, query_id).")
     args = parser.parse_args()
 
     INPUT_CSV  = args.input
     OUTPUT_CSV = args.output
     MIGRATION_CSV = args.migration
+    MIGRATION_SIZE_CSV = args.migration_size
 
     # ---------------------------------------------------------------------------
     # Load and reduce to one row per (query_id, dam_size, table_size) by taking
@@ -132,7 +136,28 @@ if __name__ == "__main__":
 
     df_best = df_best.merge(df_baseline, on="query_id", how="left")
     df_best = df_best.merge(df_ideal,    on="query_id", how="left")
-    df_best = df_best[["query_id", "dam_size_gb", "table_size_gb", "baseline", "ideal", "best_duration", "migration_duration_ns"]]
+
+    # Optionally attach dram_resident_size_gb from the migration-size CSV.
+    output_columns = ["query_id", "dam_size_gb", "table_size_gb", "baseline", "ideal", "best_duration", "migration_duration_ns"]
+    if MIGRATION_SIZE_CSV:
+        df_ms = pd.read_csv(MIGRATION_SIZE_CSV)
+        # The migration-size CSV uses `dram_size_gb` (spelled with an 'r'); rename to match
+        # the join key used everywhere else in this script.
+        df_ms = df_ms.rename(columns={"dram_size_gb": "dam_size_gb"})
+        # Normalize the join keys to the same string form we already use for size columns.
+        df_ms["dam_size_gb"]   = df_ms["dam_size_gb"].apply(lambda v: f"{float(v):g}")
+        df_ms["table_size_gb"] = df_ms["table_size_gb"].apply(lambda v: f"{float(v):g}")
+        df_best = df_best.merge(
+            df_ms[["dam_size_gb", "table_size_gb", "query_id", "dram_resident_size_gb"]],
+            on=["dam_size_gb", "table_size_gb", "query_id"],
+            how="left",
+        )
+        missing = df_best["dram_resident_size_gb"].isna().sum()
+        if missing:
+            print(f"WARNING: {missing} (dam_size, table_size, query_id) combos had no matching dram_resident_size — left as NaN.")
+        output_columns.append("dram_resident_size_gb")
+
+    df_best = df_best[output_columns]
     df_best = df_best.sort_values("query_id").reset_index(drop=True)
 
     df_best.to_csv(BEST_CSV, index=False)
