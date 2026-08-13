@@ -1350,6 +1350,26 @@ int Console::_change_runtime_setting(const std::string &input)
         }
         return 0;
     }
+    
+    if (property == "track_peak")
+    {
+        if (value == "on")
+        {
+            NumaMonotonicResource::track_peak = true;
+            out("Track peak allocation turned on\n");
+        }
+        else if (value == "off")
+        {
+            NumaMonotonicResource::track_peak = false;
+            out("Track peak allocation turned off\n");
+        }
+        else
+        {
+            out("Usage: track_peak (on|off)\n");
+            return 1;
+        }
+        return 0;
+    }
 
     out("Error: Unknown property\n");
     return 1;

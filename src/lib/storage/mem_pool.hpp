@@ -153,55 +153,10 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         status.bump_ptr_loc = bump_ptr_offset();
         return status;
     }
+    static bool track_peak;
 
   protected:
-    void *do_allocate(std::size_t bytes, std::size_t alignment) override
-    {
-        // Lock-free bump-pointer allocate. Standard CAS loop:
-        //   1. Read current bump position.
-        //   2. Compute aligned start and new bump position.
-        //   3. CAS — if another thread moved the pointer in between, retry against the new value.
-        char *cur = _next.load(std::memory_order_relaxed);
-        char *aligned;
-        char *new_next;
-        for (;;)
-        {
-            const auto a = (reinterpret_cast<std::uintptr_t>(cur) + alignment - 1) & ~(alignment - 1);
-            aligned = reinterpret_cast<char *>(a);
-            new_next = aligned + bytes;
-            if (new_next > _end)
-            {
-                std::cerr << "NumaMonotonicResource allocation failed: requested " << bytes << " bytes with alignment " << alignment
-                          << ", but only " << (_end - cur) << " bytes remain in the pool of size " << _size
-                          << " on NUMA node " << _numa_node << "\n";
-                std::cerr << print_backtrace() << std::endl;
-                throw std::bad_alloc{};
-            }
-            if (_next.compare_exchange_weak(cur, new_next,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_relaxed))
-            {
-                break;
-            }
-            // cur was updated by compare_exchange_weak to the current value; retry.
-        }
-
-        _allocated_bytes.fetch_add(bytes, std::memory_order_relaxed);
-        _total_allocated_bytes.fetch_add(bytes, std::memory_order_relaxed);
-
-        // Update peak with a lock-free max(): load, compare, CAS, retry if stale.
-        const auto current = _allocated_bytes.load(std::memory_order_relaxed);
-        auto prev_peak = _peak_allocated_bytes.load(std::memory_order_relaxed);
-        while (current > prev_peak &&
-               !_peak_allocated_bytes.compare_exchange_weak(prev_peak, current,
-                                                            std::memory_order_relaxed,
-                                                            std::memory_order_relaxed))
-        {
-            // prev_peak refreshed by CAS; loop continues if current still exceeds it.
-        }
-
-        return aligned;
-    }
+    void *do_allocate(std::size_t bytes, std::size_t alignment) override;
 
     void do_deallocate(void * /*p*/, std::size_t bytes, std::size_t /*alignment*/) override
     {
