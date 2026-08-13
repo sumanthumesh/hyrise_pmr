@@ -225,3 +225,11 @@ void *NumaMonotonicResource::do_allocate(std::size_t bytes, std::size_t alignmen
     }
     return aligned;
 }
+
+void NumaMonotonicResource::reset_peak()
+{
+    // Seed peak at whatever is currently live so subsequent max-updates measure the true
+    // high-water mark from this point forward, not "high-water above zero".
+    _peak_allocated_bytes.store(_allocated_bytes.load(std::memory_order_acquire),
+                                std::memory_order_relaxed);
+}

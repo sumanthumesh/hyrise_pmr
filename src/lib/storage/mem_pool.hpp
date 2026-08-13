@@ -97,12 +97,8 @@ class NumaMonotonicResource : public std::pmr::memory_resource
         return _numa_node;
     }
 
-    void reset_peak()
-    {
-        _peak_allocated_bytes.store(0, std::memory_order_relaxed);
-        _total_allocated_bytes.store(0, std::memory_order_relaxed);
-        std::cout << __func__ << "\n";
-    }
+    void reset_peak();
+
 
     // Rewind the bump pointer to the start of the buffer, reusing the underlying pages.
     // MUST only be called when nothing still holds memory from this pool — otherwise the
