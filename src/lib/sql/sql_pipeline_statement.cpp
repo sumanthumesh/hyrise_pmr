@@ -3,6 +3,7 @@
 #include <chrono>
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -25,6 +26,8 @@
 #include "logical_query_plan/lqp_utils.hpp"
 // #include "memory/new_delete.hpp"
 #include "operators/abstract_operator.hpp"
+#include "operators/table_scan.hpp"
+#include "expression/abstract_predicate_expression.hpp"
 #include "operators/import.hpp"
 #include "operators/maintenance/create_prepared_plan.hpp"
 #include "operators/maintenance/create_table.hpp"
@@ -497,12 +500,47 @@ std::pair<SQLPipelineStatus, const std::shared_ptr<const Table> &> SQLPipelineSt
                     {"peak_mem_usage", delta.peak_mem_usage_delta},
                 });
             }
-            operator_memory_deltas.push_back({
+            auto op_entry = nlohmann::json{
                 {"operator_id", op->operator_id},
                 {"name", std::string{op->name()}},
                 {"walltime_ns", op->performance_data->walltime.count()},
                 {"resources", resources},
-            });
+            };
+            // TableScan-only footprint hints: columns actually read + input/output row counts.
+            // Sourced from data already stashed on performance_data during execute() (columns
+            // snapshotted by collect_read_columns; input rows = left input's output_row_count),
+            // so no extra tracking is needed. Emission is guarded by the outer
+            // track_per_operator_memory branch, matching operator_memory_deltas itself.
+            if (op->name() == "TableScan")
+            {
+                op_entry["columns"] = op->performance_data->left_read_columns;
+                op_entry["input_row_count"] =
+                    op->left_input() && op->left_input()->performance_data->has_output
+                        ? op->left_input()->performance_data->output_row_count
+                        : uint64_t{0};
+                op_entry["output_row_count"] = op->performance_data->output_row_count;
+                // Reference-vs-value nature of the input: flips the TableScan allocation regime
+                // (base scan builds only `matches`; reference scan additionally builds
+                // filtered_pos_lists + chunk_offsets_by_chunk_id).
+                op_entry["is_reference_input"] =
+                    static_cast<int>(op->performance_data->left_input_is_reference);
+                // Predicate condition (Equals / Between* / Like / IsNull / ...): different impls
+                // pick different allocation paths (dictionary fast path vs LIKE regex vs
+                // expression evaluator that materializes O(input_rows) buffers).
+                auto predicate_kind = std::string{"unknown"};
+                if (const auto table_scan = std::dynamic_pointer_cast<const TableScan>(op))
+                {
+                    if (const auto predicate =
+                            std::dynamic_pointer_cast<const AbstractPredicateExpression>(table_scan->predicate()))
+                    {
+                        auto oss = std::ostringstream{};
+                        oss << predicate->predicate_condition;
+                        predicate_kind = oss.str();
+                    }
+                }
+                op_entry["predicate_kind"] = predicate_kind;
+            }
+            operator_memory_deltas.push_back(std::move(op_entry));
             return PQPVisitation::VisitInputs; });
         query_exec_info["operator_memory_deltas"] = operator_memory_deltas;
     }

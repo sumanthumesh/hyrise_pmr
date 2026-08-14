@@ -298,6 +298,15 @@ void AbstractOperator::execute()
         auto snap = collect_read_columns(*this);
         performance_data->left_read_columns = std::move(snap.from_left);
         performance_data->right_read_columns = std::move(snap.from_right);
+
+        // Capture reference-vs-value nature of the left input BEFORE deregister_consumer()
+        // below drops the input table. Left it as an int8_t sentinel (-1) when not applicable
+        // (no left input or output was never produced).
+        if (_left_input && _left_input->get_output())
+        {
+            performance_data->left_input_is_reference =
+                (_left_input->get_output()->type() == TableType::References) ? 1 : 0;
+        }
     }
 
     _transition_to(OperatorState::ExecutedAndAvailable);

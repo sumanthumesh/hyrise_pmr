@@ -72,6 +72,13 @@ struct AbstractOperatorPerformanceData : public Noncopyable
     // downstream hotness analysis can pair columns with LeftCard / RightCard.
     std::vector<std::string> left_read_columns;
     std::vector<std::string> right_read_columns;
+
+    // Populated only when AbstractOperator::track_per_operator_memory is on. -1 = not tracked,
+    // 0 = left input produced a value table, 1 = left input produced a reference table.
+    // Captured during execute() before deregister_consumer() clears the input's output.
+    // Mainly meaningful for TableScan — reference vs value input picks entirely different
+    // allocation paths (matches + filtered_pos_lists + chunk_offsets_by_chunk_id vs matches only).
+    int8_t left_input_is_reference{-1};
 };
 
 /**
