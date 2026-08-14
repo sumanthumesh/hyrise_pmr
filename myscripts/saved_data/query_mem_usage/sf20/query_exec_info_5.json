@@ -1,0 +1,15 @@
+{
+  "duration": 278730691,
+  "label": "",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 7794016,
+      "numa_node": 1,
+      "peak_mem_usage": 268840104,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 638704192
+    }
+  ],
+  "script_file": "/data1/sumanthu/tpch_queries/6.sql",
+  "sql": "select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date '1994-01-01'\n\tand l_shipdate < date '1994-01-01' + interval '1' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;"
+}
