@@ -23,7 +23,13 @@
                     "description": "GetTable (customer) pruned: 0/115 chunk(s), 5/8 column(s)",
                     "id": 0,
                     "name": "GetTable",
-                    "walltime_ns": 277189
+                    "table_name": "customer",
+                    "used_columns": [
+                      "c_custkey",
+                      "c_phone",
+                      "c_acctbal"
+                    ],
+                    "walltime_ns": 119119
                   },
                   "columns": [],
                   "columns_left": [],
@@ -31,33 +37,36 @@
                   "description": "Validate",
                   "id": 1,
                   "name": "Validate",
-                  "walltime_ns": 440061
+                  "walltime_ns": 208857
                 },
                 "Ops": "TableScan",
-                "columns": [
-                  "c_acctbal"
-                ],
-                "columns_left": [
-                  "c_acctbal"
-                ],
+                "columns": [],
+                "columns_left": [],
                 "columns_right": [],
-                "description": "TableScan Impl: ColumnVsValue c_acctbal > SUBQUERY (PQP, 0x7b0e86933410)",
+                "description": "TableScan Impl: ColumnVsValue c_acctbal > SUBQUERY (PQP, 0x7672ddbb9610)",
                 "id": 7,
+                "is_reference_input": -1,
                 "name": "TableScan",
-                "walltime_ns": 73062992
+                "predicate": {
+                  "column": "c_acctbal",
+                  "kind": "binary",
+                  "op": ">",
+                  "value": "SUBQUERY (PQP, 0x7672ddbb9610)"
+                },
+                "walltime_ns": 2825141
               },
               "Ops": "TableScan",
-              "columns": [
-                "c_phone"
-              ],
-              "columns_left": [
-                "c_phone"
-              ],
+              "columns": [],
+              "columns_left": [],
               "columns_right": [],
               "description": "TableScan Impl: ExpressionEvaluator (SUBSTR(c_phone,1,2)) IN ('13', '31', '23', '29', '30', '18', '17')",
               "id": 8,
+              "is_reference_input": -1,
               "name": "TableScan",
-              "walltime_ns": 559060408
+              "predicate": {
+                "kind": "complex"
+              },
+              "walltime_ns": 67869872
             },
             "RightCard": "75,000,000 row(s)/1,145 chunk(s)",
             "Rightchildren": {
@@ -69,7 +78,11 @@
                 "description": "GetTable (orders) pruned: 0/1145 chunk(s), 8/9 column(s)",
                 "id": 9,
                 "name": "GetTable",
-                "walltime_ns": 15155726
+                "table_name": "orders",
+                "used_columns": [
+                  "o_custkey"
+                ],
+                "walltime_ns": 2650053
               },
               "columns": [],
               "columns_left": [],
@@ -77,37 +90,25 @@
               "description": "Validate",
               "id": 10,
               "name": "Validate",
-              "walltime_ns": 58973131
+              "walltime_ns": 2359386
             },
-            "columns": [
-              "c_custkey",
-              "o_custkey"
-            ],
-            "columns_left": [
-              "c_custkey"
-            ],
-            "columns_right": [
-              "o_custkey"
-            ],
+            "build_side": "right",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
             "description": "JoinHash (AntiNullAsFalse) c_custkey = o_custkey",
             "id": 11,
             "name": "JoinHash",
-            "walltime_ns": 4709615794
+            "walltime_ns": 300914266
           },
           "Ops": "projection",
-          "columns": [
-            "c_acctbal",
-            "c_phone"
-          ],
-          "columns_left": [
-            "c_acctbal",
-            "c_phone"
-          ],
+          "columns": [],
+          "columns_left": [],
           "columns_right": [],
           "description": "Projection",
           "id": 12,
           "name": "Projection",
-          "walltime_ns": 166055025
+          "walltime_ns": 13040916
         },
         "columns": [],
         "columns_left": [],
@@ -115,33 +116,30 @@
         "description": "Alias [cntrycode, c_acctbal]",
         "id": 13,
         "name": "Alias",
-        "walltime_ns": 173730
+        "walltime_ns": 46720
       },
-      "columns": [
-        "SUBSTR(c_phone,1,2)",
-        "c_acctbal"
+      "aggregate_expressions": [
+        "COUNT(*)",
+        "SUM(c_acctbal)"
       ],
-      "columns_left": [
-        "SUBSTR(c_phone,1,2)",
-        "c_acctbal"
-      ],
+      "columns": [],
+      "columns_left": [],
       "columns_right": [],
       "description": "AggregateHash GroupBy {SUBSTR(c_phone,1,2)} COUNT(*),  SUM(c_acctbal)",
+      "groupby_column_ids": [
+        0
+      ],
       "id": 14,
       "name": "AggregateHash",
-      "walltime_ns": 64940754
+      "walltime_ns": 38361506
     },
-    "columns": [
-      "SUBSTR(c_phone,1,2)"
-    ],
-    "columns_left": [
-      "SUBSTR(c_phone,1,2)"
-    ],
+    "columns": [],
+    "columns_left": [],
     "columns_right": [],
     "description": "Sort",
     "id": 15,
     "name": "Sort",
-    "walltime_ns": 43159
+    "walltime_ns": 26440
   },
   "columns": [],
   "columns_left": [],
@@ -149,5 +147,5 @@
   "description": "Alias [cntrycode, numcust, totacctbal]",
   "id": 16,
   "name": "Alias",
-  "walltime_ns": 4360
+  "walltime_ns": 2730
 }

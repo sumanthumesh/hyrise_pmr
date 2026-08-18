@@ -19,46 +19,64 @@
                 "description": "GetTable (lineitem) pruned: 0/4578 chunk(s), 12/16 column(s)",
                 "id": 0,
                 "name": "GetTable",
-                "walltime_ns": 44899691
+                "table_name": "lineitem",
+                "used_columns": [
+                  "l_quantity",
+                  "l_extendedprice",
+                  "l_discount",
+                  "l_shipdate"
+                ],
+                "walltime_ns": 11199545
               },
               "Ops": "TableScan",
-              "columns": [
-                "l_shipdate"
-              ],
-              "columns_left": [
-                "l_shipdate"
-              ],
+              "columns": [],
+              "columns_left": [],
               "columns_right": [],
               "description": "TableScan Impl: ColumnBetween l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
               "id": 1,
+              "is_reference_input": -1,
               "name": "TableScan",
-              "walltime_ns": 1765706117
+              "predicate": {
+                "column": "l_shipdate",
+                "kind": "between",
+                "lower": "1994-01-01",
+                "op": "BETWEEN UPPER EXCLUSIVE",
+                "upper": "1995-01-01"
+              },
+              "walltime_ns": 126390710
             },
             "Ops": "TableScan",
-            "columns": [
-              "l_discount"
-            ],
-            "columns_left": [
-              "l_discount"
-            ],
+            "columns": [],
+            "columns_left": [],
             "columns_right": [],
             "description": "TableScan Impl: ColumnBetween l_discount BETWEEN INCLUSIVE 0.05 AND 0.07",
             "id": 2,
+            "is_reference_input": -1,
             "name": "TableScan",
-            "walltime_ns": 506639158
+            "predicate": {
+              "column": "l_discount",
+              "kind": "between",
+              "lower": "0.05",
+              "op": "BETWEEN INCLUSIVE",
+              "upper": "0.07"
+            },
+            "walltime_ns": 48980626
           },
           "Ops": "TableScan",
-          "columns": [
-            "l_quantity"
-          ],
-          "columns_left": [
-            "l_quantity"
-          ],
+          "columns": [],
+          "columns_left": [],
           "columns_right": [],
           "description": "TableScan Impl: ColumnVsValue l_quantity < 24",
           "id": 3,
+          "is_reference_input": -1,
           "name": "TableScan",
-          "walltime_ns": 198768789
+          "predicate": {
+            "column": "l_quantity",
+            "kind": "binary",
+            "op": "<",
+            "value": "24"
+          },
+          "walltime_ns": 15345322
         },
         "columns": [],
         "columns_left": [],
@@ -66,34 +84,28 @@
         "description": "Validate",
         "id": 4,
         "name": "Validate",
-        "walltime_ns": 9229406
+        "walltime_ns": 5985958
       },
       "Ops": "projection",
-      "columns": [
-        "l_discount",
-        "l_extendedprice"
-      ],
-      "columns_left": [
-        "l_discount",
-        "l_extendedprice"
-      ],
+      "columns": [],
+      "columns_left": [],
       "columns_right": [],
       "description": "Projection",
       "id": 5,
       "name": "Projection",
-      "walltime_ns": 264255108
+      "walltime_ns": 22844325
     },
-    "columns": [
-      "l_extendedprice * l_discount"
+    "aggregate_expressions": [
+      "SUM(l_extendedprice * l_discount)"
     ],
-    "columns_left": [
-      "l_extendedprice * l_discount"
-    ],
+    "columns": [],
+    "columns_left": [],
     "columns_right": [],
     "description": "AggregateHash GroupBy {} SUM(l_extendedprice * l_discount)",
+    "groupby_column_ids": [],
     "id": 6,
     "name": "AggregateHash",
-    "walltime_ns": 10953371
+    "walltime_ns": 13226294
   },
   "columns": [],
   "columns_left": [],
@@ -101,5 +113,5 @@
   "description": "Alias [revenue]",
   "id": 7,
   "name": "Alias",
-  "walltime_ns": 4648
+  "walltime_ns": 4510
 }

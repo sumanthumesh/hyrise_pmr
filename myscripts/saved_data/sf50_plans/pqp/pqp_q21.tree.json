@@ -25,7 +25,14 @@
                       "description": "GetTable (lineitem) pruned: 0/4578 chunk(s), 12/16 column(s)",
                       "id": 0,
                       "name": "GetTable",
-                      "walltime_ns": 9225248
+                      "table_name": "lineitem",
+                      "used_columns": [
+                        "l_orderkey",
+                        "l_suppkey",
+                        "l_commitdate",
+                        "l_receiptdate"
+                      ],
+                      "walltime_ns": 15475651
                     },
                     "RightCard": "19,931 row(s)/8 chunk(s)",
                     "Rightchildren": {
@@ -39,7 +46,13 @@
                           "description": "GetTable (supplier) pruned: 0/8 chunk(s), 4/7 column(s)",
                           "id": 1,
                           "name": "GetTable",
-                          "walltime_ns": 20430
+                          "table_name": "supplier",
+                          "used_columns": [
+                            "s_suppkey",
+                            "s_name",
+                            "s_nationkey"
+                          ],
+                          "walltime_ns": 26400
                         },
                         "RightCard": "1 row(s)/1 chunk(s)",
                         "Rightchildren": {
@@ -53,20 +66,28 @@
                               "description": "GetTable (nation) pruned: 0/1 chunk(s), 2/4 column(s)",
                               "id": 2,
                               "name": "GetTable",
-                              "walltime_ns": 13502
+                              "table_name": "nation",
+                              "used_columns": [
+                                "n_nationkey",
+                                "n_name"
+                              ],
+                              "walltime_ns": 28360
                             },
                             "Ops": "TableScan",
-                            "columns": [
-                              "n_name"
-                            ],
-                            "columns_left": [
-                              "n_name"
-                            ],
+                            "columns": [],
+                            "columns_left": [],
                             "columns_right": [],
                             "description": "TableScan Impl: ColumnVsValue n_name = 'SAUDI ARABIA'",
                             "id": 3,
+                            "is_reference_input": -1,
                             "name": "TableScan",
-                            "walltime_ns": 26633
+                            "predicate": {
+                              "column": "n_name",
+                              "kind": "binary",
+                              "op": "=",
+                              "value": "SAUDI ARABIA"
+                            },
+                            "walltime_ns": 31090
                           },
                           "columns": [],
                           "columns_left": [],
@@ -74,22 +95,16 @@
                           "description": "Validate",
                           "id": 4,
                           "name": "Validate",
-                          "walltime_ns": 3045
+                          "walltime_ns": 4950
                         },
-                        "columns": [
-                          "n_nationkey",
-                          "s_nationkey"
-                        ],
-                        "columns_left": [
-                          "s_nationkey"
-                        ],
-                        "columns_right": [
-                          "n_nationkey"
-                        ],
+                        "build_side": "right",
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
                         "description": "JoinHash (Semi) s_nationkey = n_nationkey",
                         "id": 5,
                         "name": "JoinHash",
-                        "walltime_ns": 10937491
+                        "walltime_ns": 542921647
                       },
                       "columns": [],
                       "columns_left": [],
@@ -97,22 +112,16 @@
                       "description": "Validate",
                       "id": 6,
                       "name": "Validate",
-                      "walltime_ns": 11062
+                      "walltime_ns": 12390
                     },
-                    "columns": [
-                      "l_suppkey",
-                      "s_suppkey"
-                    ],
-                    "columns_left": [
-                      "l_suppkey"
-                    ],
-                    "columns_right": [
-                      "s_suppkey"
-                    ],
+                    "build_side": "right",
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
                     "description": "JoinHash (Semi Reduction) l_suppkey = s_suppkey",
                     "id": 7,
                     "name": "JoinHash",
-                    "walltime_ns": 2448674825
+                    "walltime_ns": 185647901
                   },
                   "columns": [],
                   "columns_left": [],
@@ -120,7 +129,7 @@
                   "description": "Validate",
                   "id": 8,
                   "name": "Validate",
-                  "walltime_ns": 9064363
+                  "walltime_ns": 4877950
                 },
                 "RightCard": "36,536,161 row(s)/1,145 chunk(s)",
                 "Rightchildren": {
@@ -134,20 +143,28 @@
                       "description": "GetTable (orders) pruned: 0/1145 chunk(s), 7/9 column(s)",
                       "id": 9,
                       "name": "GetTable",
-                      "walltime_ns": 11239678
+                      "table_name": "orders",
+                      "used_columns": [
+                        "o_orderkey",
+                        "o_orderstatus"
+                      ],
+                      "walltime_ns": 1227148
                     },
                     "Ops": "TableScan",
-                    "columns": [
-                      "o_orderstatus"
-                    ],
-                    "columns_left": [
-                      "o_orderstatus"
-                    ],
+                    "columns": [],
+                    "columns_left": [],
                     "columns_right": [],
                     "description": "TableScan Impl: ColumnVsValue o_orderstatus = 'F'",
                     "id": 10,
+                    "is_reference_input": -1,
                     "name": "TableScan",
-                    "walltime_ns": 625143716
+                    "predicate": {
+                      "column": "o_orderstatus",
+                      "kind": "binary",
+                      "op": "=",
+                      "value": "F"
+                    },
+                    "walltime_ns": 42513423
                   },
                   "columns": [],
                   "columns_left": [],
@@ -155,54 +172,47 @@
                   "description": "Validate",
                   "id": 11,
                   "name": "Validate",
-                  "walltime_ns": 3203155
+                  "walltime_ns": 1516315
                 },
-                "columns": [
-                  "l_orderkey",
-                  "o_orderkey"
-                ],
-                "columns_left": [
-                  "l_orderkey"
-                ],
-                "columns_right": [
-                  "o_orderkey"
-                ],
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
                 "description": "JoinHash (Semi) l_orderkey = o_orderkey",
                 "id": 12,
                 "name": "JoinHash",
-                "walltime_ns": 4452667844
+                "walltime_ns": 408129144
               },
               "Ops": "TableScan",
-              "columns": [
-                "l_commitdate",
-                "l_receiptdate"
-              ],
-              "columns_left": [
-                "l_commitdate",
-                "l_receiptdate"
-              ],
+              "columns": [],
+              "columns_left": [],
               "columns_right": [],
               "description": "TableScan Impl: ColumnVsColumn l_receiptdate > l_commitdate",
               "id": 13,
+              "is_reference_input": -1,
               "name": "TableScan",
-              "walltime_ns": 4605978644
+              "predicate": {
+                "column": "l_receiptdate",
+                "kind": "binary",
+                "op": ">",
+                "value": "l_commitdate"
+              },
+              "walltime_ns": 404550161
             },
             "RightCard": "19,931 row(s)/8 chunk(s)",
-            "Rightchildren": {},
-            "columns": [
-              "l_suppkey",
-              "s_suppkey"
-            ],
-            "columns_left": [
-              "l_suppkey"
-            ],
-            "columns_right": [
-              "s_suppkey"
-            ],
+            "Rightchildren": {
+              "id": 6,
+              "name": "Validate",
+              "shared_ref": true
+            },
+            "build_side": "right",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
             "description": "JoinHash (Inner) l_suppkey = s_suppkey",
             "id": 14,
             "name": "JoinHash",
-            "walltime_ns": 1487938352
+            "walltime_ns": 134471918
           },
           "RightCard": "12,085,278 row(s)/8 chunk(s)",
           "Rightchildren": {
@@ -211,22 +221,25 @@
               "LeftCard": "17,207,472 row(s)/8 chunk(s)",
               "Leftchildren": {
                 "LeftCard": "300,005,811 row(s)/4,578 chunk(s)",
-                "Leftchildren": {},
+                "Leftchildren": {
+                  "id": 0,
+                  "name": "GetTable",
+                  "shared_ref": true
+                },
                 "RightCard": "3,651,580 row(s)/64 chunk(s)",
-                "Rightchildren": {},
-                "columns": [
-                  "l_orderkey"
-                ],
-                "columns_left": [
-                  "l_orderkey"
-                ],
-                "columns_right": [
-                  "l_orderkey"
-                ],
+                "Rightchildren": {
+                  "id": 14,
+                  "name": "JoinHash",
+                  "shared_ref": true
+                },
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
                 "description": "JoinHash (Semi Reduction) l_orderkey = l_orderkey",
                 "id": 15,
                 "name": "JoinHash",
-                "walltime_ns": 11846986780
+                "walltime_ns": 1160038543
               },
               "columns": [],
               "columns_left": [],
@@ -234,84 +247,69 @@
               "description": "Validate",
               "id": 16,
               "name": "Validate",
-              "walltime_ns": 57829227
+              "walltime_ns": 8681181
             },
             "Ops": "TableScan",
-            "columns": [
-              "l_commitdate",
-              "l_receiptdate"
-            ],
-            "columns_left": [
-              "l_commitdate",
-              "l_receiptdate"
-            ],
+            "columns": [],
+            "columns_left": [],
             "columns_right": [],
             "description": "TableScan Impl: ColumnVsColumn l_receiptdate > l_commitdate",
             "id": 17,
+            "is_reference_input": -1,
             "name": "TableScan",
-            "walltime_ns": 5141693826
+            "predicate": {
+              "column": "l_receiptdate",
+              "kind": "binary",
+              "op": ">",
+              "value": "l_commitdate"
+            },
+            "walltime_ns": 413419490
           },
-          "columns": [
-            "l_orderkey",
-            "l_suppkey"
-          ],
-          "columns_left": [
-            "l_orderkey",
-            "l_suppkey"
-          ],
-          "columns_right": [
-            "l_orderkey",
-            "l_suppkey"
-          ],
+          "build_side": "right",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
           "description": "JoinHash (AntiNullAsFalse) l_orderkey = l_orderkey AND l_suppkey != l_suppkey",
           "id": 18,
           "name": "JoinHash",
-          "walltime_ns": 6243281494
+          "walltime_ns": 836368571
         },
         "RightCard": "17,207,472 row(s)/8 chunk(s)",
-        "Rightchildren": {},
-        "columns": [
-          "l_orderkey",
-          "l_suppkey"
-        ],
-        "columns_left": [
-          "l_orderkey",
-          "l_suppkey"
-        ],
-        "columns_right": [
-          "l_orderkey",
-          "l_suppkey"
-        ],
+        "Rightchildren": {
+          "id": 16,
+          "name": "Validate",
+          "shared_ref": true
+        },
+        "build_side": "right",
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
         "description": "JoinHash (Semi) l_orderkey = l_orderkey AND l_suppkey != l_suppkey",
         "id": 19,
         "name": "JoinHash",
-        "walltime_ns": 2801947752
+        "walltime_ns": 610554332
       },
-      "columns": [
-        "s_name"
+      "aggregate_expressions": [
+        "COUNT(*)"
       ],
-      "columns_left": [
-        "s_name"
-      ],
+      "columns": [],
+      "columns_left": [],
       "columns_right": [],
       "description": "AggregateHash GroupBy {s_name} COUNT(*)",
+      "groupby_column_ids": [
+        5
+      ],
       "id": 20,
       "name": "AggregateHash",
-      "walltime_ns": 54548118
+      "walltime_ns": 33379447
     },
-    "columns": [
-      "COUNT(*)",
-      "s_name"
-    ],
-    "columns_left": [
-      "COUNT(*)",
-      "s_name"
-    ],
+    "columns": [],
+    "columns_left": [],
     "columns_right": [],
     "description": "Sort",
     "id": 21,
     "name": "Sort",
-    "walltime_ns": 12248841
+    "walltime_ns": 7667751
   },
   "columns": [],
   "columns_left": [],
@@ -319,5 +317,5 @@
   "description": "Alias [s_name, numwait]",
   "id": 22,
   "name": "Alias",
-  "walltime_ns": 4240
+  "walltime_ns": 3320
 }

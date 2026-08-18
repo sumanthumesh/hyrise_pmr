@@ -15,7 +15,12 @@
             "description": "GetTable (lineitem) pruned: 0/4578 chunk(s), 14/16 column(s)",
             "id": 0,
             "name": "GetTable",
-            "walltime_ns": 18001629
+            "table_name": "lineitem",
+            "used_columns": [
+              "l_orderkey",
+              "l_quantity"
+            ],
+            "walltime_ns": 7504163
           },
           "columns": [],
           "columns_left": [],
@@ -23,7 +28,7 @@
           "description": "Validate",
           "id": 1,
           "name": "Validate",
-          "walltime_ns": 82735538
+          "walltime_ns": 10127875
         },
         "RightCard": "3,182 row(s)/7 chunk(s)",
         "Rightchildren": {
@@ -39,7 +44,14 @@
                 "description": "GetTable (orders) pruned: 0/1145 chunk(s), 5/9 column(s)",
                 "id": 2,
                 "name": "GetTable",
-                "walltime_ns": 2331054
+                "table_name": "orders",
+                "used_columns": [
+                  "o_orderkey",
+                  "o_custkey",
+                  "o_totalprice",
+                  "o_orderdate"
+                ],
+                "walltime_ns": 2064799
               },
               "columns": [],
               "columns_left": [],
@@ -47,7 +59,7 @@
               "description": "Validate",
               "id": 3,
               "name": "Validate",
-              "walltime_ns": 6211106
+              "walltime_ns": 41294996
             },
             "RightCard": "3,182 row(s)/2,333 chunk(s)",
             "Rightchildren": {
@@ -56,61 +68,58 @@
                 "LeftCard": "75,000,000 row(s)/4,578 chunk(s)",
                 "Leftchildren": {
                   "LeftCard": "300,005,811 row(s)/4,578 chunk(s)",
-                  "Leftchildren": {},
-                  "columns": [
-                    "l_orderkey",
-                    "l_quantity"
+                  "Leftchildren": {
+                    "id": 1,
+                    "name": "Validate",
+                    "shared_ref": true
+                  },
+                  "aggregate_expressions": [
+                    "SUM(l_quantity)"
                   ],
-                  "columns_left": [
-                    "l_orderkey",
-                    "l_quantity"
-                  ],
+                  "columns": [],
+                  "columns_left": [],
                   "columns_right": [],
                   "description": "AggregateHash GroupBy {l_orderkey} SUM(l_quantity)",
+                  "groupby_column_ids": [
+                    0
+                  ],
                   "id": 4,
                   "name": "AggregateHash",
-                  "walltime_ns": 14514263429
+                  "walltime_ns": 7424843228
                 },
                 "Ops": "TableScan",
-                "columns": [
-                  "SUM(l_quantity)"
-                ],
-                "columns_left": [
-                  "SUM(l_quantity)"
-                ],
+                "columns": [],
+                "columns_left": [],
                 "columns_right": [],
                 "description": "TableScan Impl: ColumnVsValue SUM(l_quantity) > 300",
                 "id": 5,
+                "is_reference_input": -1,
                 "name": "TableScan",
-                "walltime_ns": 773140448
+                "predicate": {
+                  "column": "SUM(l_quantity)",
+                  "kind": "binary",
+                  "op": ">",
+                  "value": "300"
+                },
+                "walltime_ns": 16576200
               },
               "Ops": "projection",
-              "columns": [
-                "l_orderkey"
-              ],
-              "columns_left": [
-                "l_orderkey"
-              ],
+              "columns": [],
+              "columns_left": [],
               "columns_right": [],
               "description": "Projection",
               "id": 6,
               "name": "Projection",
-              "walltime_ns": 1128717
+              "walltime_ns": 511675
             },
-            "columns": [
-              "l_orderkey",
-              "o_orderkey"
-            ],
-            "columns_left": [
-              "o_orderkey"
-            ],
-            "columns_right": [
-              "l_orderkey"
-            ],
+            "build_side": "right",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
             "description": "JoinHash (Semi) o_orderkey = l_orderkey",
             "id": 7,
             "name": "JoinHash",
-            "walltime_ns": 210024875
+            "walltime_ns": 52640008
           },
           "RightCard": "7,500,000 row(s)/115 chunk(s)",
           "Rightchildren": {
@@ -122,7 +131,12 @@
               "description": "GetTable (customer) pruned: 0/115 chunk(s), 6/8 column(s)",
               "id": 8,
               "name": "GetTable",
-              "walltime_ns": 415329
+              "table_name": "customer",
+              "used_columns": [
+                "c_custkey",
+                "c_name"
+              ],
+              "walltime_ns": 147128
             },
             "columns": [],
             "columns_left": [],
@@ -130,94 +144,58 @@
             "description": "Validate",
             "id": 9,
             "name": "Validate",
-            "walltime_ns": 101478194
+            "walltime_ns": 242808
           },
-          "columns": [
-            "c_custkey",
-            "o_custkey"
-          ],
-          "columns_left": [
-            "o_custkey"
-          ],
-          "columns_right": [
-            "c_custkey"
-          ],
+          "build_side": "left",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
           "description": "JoinHash (Inner) o_custkey = c_custkey",
           "id": 10,
           "name": "JoinHash",
-          "walltime_ns": 19832417
+          "walltime_ns": 3202657
         },
-        "columns": [
-          "l_orderkey",
-          "o_orderkey"
-        ],
-        "columns_left": [
-          "l_orderkey"
-        ],
-        "columns_right": [
-          "o_orderkey"
-        ],
+        "build_side": "right",
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
         "description": "JoinHash (Inner) l_orderkey = o_orderkey",
         "id": 11,
         "name": "JoinHash",
-        "walltime_ns": 1030794276
+        "walltime_ns": 156341342
       },
-      "columns": [
-        "c_custkey",
-        "c_name",
-        "l_quantity",
-        "o_orderdate",
-        "o_orderkey",
-        "o_totalprice"
+      "aggregate_expressions": [
+        "SUM(l_quantity)",
+        "ANY(c_name)",
+        "ANY(o_orderdate)",
+        "ANY(o_totalprice)"
       ],
-      "columns_left": [
-        "c_custkey",
-        "c_name",
-        "l_quantity",
-        "o_orderdate",
-        "o_orderkey",
-        "o_totalprice"
-      ],
+      "columns": [],
+      "columns_left": [],
       "columns_right": [],
       "description": "AggregateHash GroupBy {c_custkey, o_orderkey} SUM(l_quantity),  ANY(c_name),  ANY(o_orderdate),  ANY(o_totalprice)",
+      "groupby_column_ids": [
+        6,
+        2
+      ],
       "id": 12,
       "name": "AggregateHash",
-      "walltime_ns": 9825922
+      "walltime_ns": 5738521
     },
-    "columns": [
-      "o_orderdate",
-      "o_totalprice"
-    ],
-    "columns_left": [
-      "o_orderdate",
-      "o_totalprice"
-    ],
+    "columns": [],
+    "columns_left": [],
     "columns_right": [],
     "description": "Sort",
     "id": 13,
     "name": "Sort",
-    "walltime_ns": 29533898
+    "walltime_ns": 8516052
   },
   "Ops": "projection",
-  "columns": [
-    "SUM(l_quantity)",
-    "c_custkey",
-    "c_name",
-    "o_orderdate",
-    "o_orderkey",
-    "o_totalprice"
-  ],
-  "columns_left": [
-    "SUM(l_quantity)",
-    "c_custkey",
-    "c_name",
-    "o_orderdate",
-    "o_orderkey",
-    "o_totalprice"
-  ],
+  "columns": [],
+  "columns_left": [],
   "columns_right": [],
   "description": "Projection",
   "id": 14,
   "name": "Projection",
-  "walltime_ns": 37431
+  "walltime_ns": 9270
 }

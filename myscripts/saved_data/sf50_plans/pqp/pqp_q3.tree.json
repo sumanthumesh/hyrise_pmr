@@ -23,20 +23,30 @@
                     "description": "GetTable (lineitem) pruned: 0/4578 chunk(s), 12/16 column(s)",
                     "id": 0,
                     "name": "GetTable",
-                    "walltime_ns": 8348233
+                    "table_name": "lineitem",
+                    "used_columns": [
+                      "l_orderkey",
+                      "l_extendedprice",
+                      "l_discount",
+                      "l_shipdate"
+                    ],
+                    "walltime_ns": 13209234
                   },
                   "Ops": "TableScan",
-                  "columns": [
-                    "l_shipdate"
-                  ],
-                  "columns_left": [
-                    "l_shipdate"
-                  ],
+                  "columns": [],
+                  "columns_left": [],
                   "columns_right": [],
                   "description": "TableScan Impl: ColumnVsValue l_shipdate > '1995-03-15'",
                   "id": 1,
+                  "is_reference_input": -1,
                   "name": "TableScan",
-                  "walltime_ns": 1384380077
+                  "predicate": {
+                    "column": "l_shipdate",
+                    "kind": "binary",
+                    "op": ">",
+                    "value": "1995-03-15"
+                  },
+                  "walltime_ns": 147494773
                 },
                 "RightCard": "7,291,134 row(s)/16 chunk(s)",
                 "Rightchildren": {
@@ -52,20 +62,30 @@
                         "description": "GetTable (orders) pruned: 0/1145 chunk(s), 5/9 column(s)",
                         "id": 2,
                         "name": "GetTable",
-                        "walltime_ns": 4481917
+                        "table_name": "orders",
+                        "used_columns": [
+                          "o_orderkey",
+                          "o_custkey",
+                          "o_orderdate",
+                          "o_shippriority"
+                        ],
+                        "walltime_ns": 4381215
                       },
                       "Ops": "TableScan",
-                      "columns": [
-                        "o_orderdate"
-                      ],
-                      "columns_left": [
-                        "o_orderdate"
-                      ],
+                      "columns": [],
+                      "columns_left": [],
                       "columns_right": [],
                       "description": "TableScan Impl: ColumnVsValue o_orderdate < '1995-03-15'",
                       "id": 3,
+                      "is_reference_input": -1,
                       "name": "TableScan",
-                      "walltime_ns": 2132932924
+                      "predicate": {
+                        "column": "o_orderdate",
+                        "kind": "binary",
+                        "op": "<",
+                        "value": "1995-03-15"
+                      },
+                      "walltime_ns": 85336052
                     },
                     "RightCard": "1,500,036 row(s)/115 chunk(s)",
                     "Rightchildren": {
@@ -79,20 +99,28 @@
                           "description": "GetTable (customer) pruned: 0/115 chunk(s), 6/8 column(s)",
                           "id": 4,
                           "name": "GetTable",
-                          "walltime_ns": 583058
+                          "table_name": "customer",
+                          "used_columns": [
+                            "c_custkey",
+                            "c_mktsegment"
+                          ],
+                          "walltime_ns": 888741
                         },
                         "Ops": "TableScan",
-                        "columns": [
-                          "c_mktsegment"
-                        ],
-                        "columns_left": [
-                          "c_mktsegment"
-                        ],
+                        "columns": [],
+                        "columns_left": [],
                         "columns_right": [],
                         "description": "TableScan Impl: ColumnVsValue c_mktsegment = 'BUILDING'",
                         "id": 5,
+                        "is_reference_input": -1,
                         "name": "TableScan",
-                        "walltime_ns": 53219426
+                        "predicate": {
+                          "column": "c_mktsegment",
+                          "kind": "binary",
+                          "op": "=",
+                          "value": "BUILDING"
+                        },
+                        "walltime_ns": 4526263
                       },
                       "columns": [],
                       "columns_left": [],
@@ -100,22 +128,16 @@
                       "description": "Validate",
                       "id": 6,
                       "name": "Validate",
-                      "walltime_ns": 424727
+                      "walltime_ns": 287637
                     },
-                    "columns": [
-                      "c_custkey",
-                      "o_custkey"
-                    ],
-                    "columns_left": [
-                      "o_custkey"
-                    ],
-                    "columns_right": [
-                      "c_custkey"
-                    ],
+                    "build_side": "right",
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
                     "description": "JoinHash (Semi) o_custkey = c_custkey",
                     "id": 7,
                     "name": "JoinHash",
-                    "walltime_ns": 2623027543
+                    "walltime_ns": 228280893
                   },
                   "columns": [],
                   "columns_left": [],
@@ -123,22 +145,16 @@
                   "description": "Validate",
                   "id": 8,
                   "name": "Validate",
-                  "walltime_ns": 25919500
+                  "walltime_ns": 3590373
                 },
-                "columns": [
-                  "l_orderkey",
-                  "o_orderkey"
-                ],
-                "columns_left": [
-                  "l_orderkey"
-                ],
-                "columns_right": [
-                  "o_orderkey"
-                ],
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
                 "description": "JoinHash (Semi Reduction) l_orderkey = o_orderkey",
                 "id": 9,
                 "name": "JoinHash",
-                "walltime_ns": 6742353370
+                "walltime_ns": 726543949
               },
               "columns": [],
               "columns_left": [],
@@ -146,96 +162,64 @@
               "description": "Validate",
               "id": 10,
               "name": "Validate",
-              "walltime_ns": 11351159
+              "walltime_ns": 4349086
             },
             "RightCard": "7,291,134 row(s)/16 chunk(s)",
-            "Rightchildren": {},
-            "columns": [
-              "l_orderkey",
-              "o_orderkey"
-            ],
-            "columns_left": [
-              "l_orderkey"
-            ],
-            "columns_right": [
-              "o_orderkey"
-            ],
+            "Rightchildren": {
+              "id": 8,
+              "name": "Validate",
+              "shared_ref": true
+            },
+            "build_side": "left",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
             "description": "JoinHash (Inner) l_orderkey = o_orderkey",
             "id": 11,
             "name": "JoinHash",
-            "walltime_ns": 1167609558
+            "walltime_ns": 151358884
           },
           "Ops": "projection",
-          "columns": [
-            "l_discount",
-            "l_extendedprice",
-            "l_orderkey",
-            "o_orderdate",
-            "o_shippriority"
-          ],
-          "columns_left": [
-            "l_discount",
-            "l_extendedprice",
-            "l_orderkey",
-            "o_orderdate",
-            "o_shippriority"
-          ],
+          "columns": [],
+          "columns_left": [],
           "columns_right": [],
           "description": "Projection",
           "id": 12,
           "name": "Projection",
-          "walltime_ns": 349961781
+          "walltime_ns": 40932929
         },
-        "columns": [
-          "l_extendedprice * (1 - l_discount)",
-          "l_orderkey",
-          "o_orderdate",
-          "o_shippriority"
+        "aggregate_expressions": [
+          "SUM(l_extendedprice * (1 - l_discount))"
         ],
-        "columns_left": [
-          "l_extendedprice * (1 - l_discount)",
-          "l_orderkey",
-          "o_orderdate",
-          "o_shippriority"
-        ],
+        "columns": [],
+        "columns_left": [],
         "columns_right": [],
         "description": "AggregateHash GroupBy {l_orderkey, o_orderdate, o_shippriority} SUM(l_extendedprice * (1 - l_discount))",
+        "groupby_column_ids": [
+          1,
+          2,
+          3
+        ],
         "id": 13,
         "name": "AggregateHash",
-        "walltime_ns": 903795027
+        "walltime_ns": 346313519
       },
-      "columns": [
-        "SUM(l_extendedprice * (1 - l_discount))",
-        "o_orderdate"
-      ],
-      "columns_left": [
-        "SUM(l_extendedprice * (1 - l_discount))",
-        "o_orderdate"
-      ],
+      "columns": [],
+      "columns_left": [],
       "columns_right": [],
       "description": "Sort",
       "id": 14,
       "name": "Sort",
-      "walltime_ns": 443817932
+      "walltime_ns": 322136707
     },
     "Ops": "projection",
-    "columns": [
-      "SUM(l_extendedprice * (1 - l_discount))",
-      "l_orderkey",
-      "o_orderdate",
-      "o_shippriority"
-    ],
-    "columns_left": [
-      "SUM(l_extendedprice * (1 - l_discount))",
-      "l_orderkey",
-      "o_orderdate",
-      "o_shippriority"
-    ],
+    "columns": [],
+    "columns_left": [],
     "columns_right": [],
     "description": "Projection",
     "id": 15,
     "name": "Projection",
-    "walltime_ns": 26011
+    "walltime_ns": 19770
   },
   "columns": [],
   "columns_left": [],
@@ -243,5 +227,5 @@
   "description": "Alias [l_orderkey, revenue, o_orderdate, o_shippriority]",
   "id": 16,
   "name": "Alias",
-  "walltime_ns": 7756
+  "walltime_ns": 4150
 }
