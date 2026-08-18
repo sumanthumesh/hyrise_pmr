@@ -1,0 +1,95 @@
+setting print off
+setting binary_caching on
+setting workers 16
+hsh mem_usage
+generate_tpch 50
+hsh mem_usage
+hsh new_mem 64000000000 1 3
+hsh mem_usage
+setting workers 8
+setting mem_strategy Remote
+setting track_peak on
+hsh mem_usage
+script /home/umeshsum/tpch_queries/1.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/2.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/3.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/4.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/5.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/6.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/7.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/8.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/9.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/10.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/11.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/12.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/13.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/14.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/16.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/17.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/18.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/19.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/20.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/21.sql
+hsh clear_plan_caches
+hsh clear_pipeline
+hsh reset_exec_pools
+script /home/umeshsum/tpch_queries/22.sql
+hsh mem_usage
+quit
