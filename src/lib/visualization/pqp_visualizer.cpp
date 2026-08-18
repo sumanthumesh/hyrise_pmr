@@ -24,15 +24,21 @@
 #include "nlohmann/json.hpp"
 
 #include "expression/abstract_expression.hpp"
+#include "expression/abstract_predicate_expression.hpp"
+#include "expression/between_expression.hpp"
+#include "expression/binary_predicate_expression.hpp"
 #include "expression/expression_utils.hpp"
+#include "expression/is_null_expression.hpp"
 #include "expression/pqp_column_expression.hpp"
 #include "expression/pqp_subquery_expression.hpp"
+#include "expression/value_expression.hpp"
 #include "expression/window_function_expression.hpp"
 #include "hyrise.hpp"
 #include "operators/abstract_aggregate_operator.hpp"
 #include "operators/abstract_join_operator.hpp"
 #include "operators/abstract_operator.hpp"
 #include "operators/get_table.hpp"
+#include "operators/join_hash.hpp"
 #include "operators/limit.hpp"
 #include "operators/projection.hpp"
 #include "operators/sort.hpp"
@@ -588,14 +594,99 @@ nlohmann::json PQPVisualizer::_collect_columns_LEGACY(const std::shared_ptr<cons
 }
 #endif  // end of retired live-lookup _collect_columns
 
+namespace
+{
+// Best-effort stringification of an AllTypeVariant for structured-predicate emission.
+// Falls back to "<unstringifiable>" so a rare-type predicate never breaks JSON export.
+std::string variant_to_string(const AllTypeVariant &value)
+{
+    try
+    {
+        auto oss = std::ostringstream{};
+        oss << value;
+        return oss.str();
+    }
+    catch (...)
+    {
+        return std::string{"<unstringifiable>"};
+    }
+}
+
+std::string predicate_condition_string(PredicateCondition condition)
+{
+    auto oss = std::ostringstream{};
+    oss << condition;
+    return oss.str();
+}
+
+// Extract the value payload from an expression if it is a ValueExpression; empty string otherwise.
+std::string value_expression_string(const std::shared_ptr<AbstractExpression> &expression)
+{
+    if (const auto value_expr = std::dynamic_pointer_cast<const ValueExpression>(expression))
+    {
+        return variant_to_string(value_expr->value);
+    }
+    // Anything else (subquery, another column, arithmetic) — fall back to as_column_name()
+    // so the JSON still carries something recognizable.
+    return expression ? expression->as_column_name() : std::string{};
+}
+
+// Fills node["predicate"] with a structured {column, op, [value|lower|upper]} block
+// for the three predicate flavors TableScan accepts.
+void emit_structured_predicate(nlohmann::json &node, const std::shared_ptr<AbstractExpression> &predicate)
+{
+    if (!predicate) return;
+
+    if (const auto binary = std::dynamic_pointer_cast<const BinaryPredicateExpression>(predicate))
+    {
+        node["predicate"] = {
+            {"kind", "binary"},
+            {"column", binary->left_operand()->as_column_name()},
+            {"op", predicate_condition_string(binary->predicate_condition)},
+            {"value", value_expression_string(binary->right_operand())},
+        };
+        return;
+    }
+    if (const auto between = std::dynamic_pointer_cast<const BetweenExpression>(predicate))
+    {
+        node["predicate"] = {
+            {"kind", "between"},
+            {"column", between->operand()->as_column_name()},
+            {"op", predicate_condition_string(between->predicate_condition)},
+            {"lower", value_expression_string(between->lower_bound())},
+            {"upper", value_expression_string(between->upper_bound())},
+        };
+        return;
+    }
+    if (const auto is_null = std::dynamic_pointer_cast<const IsNullExpression>(predicate))
+    {
+        node["predicate"] = {
+            {"kind", "is_null"},
+            {"column", is_null->operand()->as_column_name()},
+            {"op", predicate_condition_string(is_null->predicate_condition)},
+        };
+        return;
+    }
+    // Complex predicate (subquery, expression eval) — record kind only, no structural fields.
+    node["predicate"] = {{"kind", "complex"}};
+}
+} // namespace
+
 nlohmann::json PQPVisualizer::_build_hierarchical_subtree(
     const std::shared_ptr<const AbstractOperator> &op,
     std::unordered_set<std::shared_ptr<const AbstractOperator>> &visited_ops)
 {
-    // Diamond-shaped PQPs: shared subtrees are emitted only once.
+    // Diamond-shaped PQPs: shared subtrees are emitted only once. Prior versions returned
+    // an empty {} placeholder here, which showed up in the JSON as a nameless "?" node.
+    // Emit a minimal stub that preserves identity so consumers can join back to the
+    // full node emitted elsewhere in the tree.
     if (visited_ops.contains(op))
     {
-        return nlohmann::json::object();
+        return nlohmann::json{
+            {"id", op->operator_id},
+            {"name", std::string{op->name()}},
+            {"shared_ref", true},
+        };
     }
     visited_ops.insert(op);
 
@@ -622,17 +713,98 @@ nlohmann::json PQPVisualizer::_build_hierarchical_subtree(
         node["RightCard"] = dataflow_label(right);
     }
 
+    // Per-operator-type structured detail. Emitted as extra keys on the same node so
+    // consumers can read them alongside the generic fields.
     switch (op->type())
     {
     case OperatorType::Projection:
         node["Ops"] = "projection";
         break;
     case OperatorType::TableScan:
+    {
         node["Ops"] = "TableScan";
+        // Reference-vs-value nature of the input flips the TableScan allocation regime
+        // (base scan builds only `matches`; reference scan adds filtered_pos_lists +
+        // chunk_offsets_by_chunk_id). Captured on performance_data during execute().
+        node["is_reference_input"] = static_cast<int>(op->performance_data->left_input_is_reference);
+        const auto table_scan = std::dynamic_pointer_cast<const TableScan>(op);
+        if (table_scan)
+        {
+            emit_structured_predicate(node, table_scan->predicate());
+        }
         break;
+    }
     case OperatorType::Limit:
         node["Ops"] = "Limit";
         break;
+    case OperatorType::GetTable:
+    {
+        // GetTable's own columns_left/right/columns are empty (it reads nothing itself).
+        // Emit the surviving-column list here so downstream analysis can map the query's
+        // referenced columns back to their originating base table without needing to
+        // parse the "pruned: X/Y column(s)" hint out of description.
+        const auto get_table = std::dynamic_pointer_cast<const GetTable>(op);
+        if (get_table)
+        {
+            const auto &table = *Hyrise::get().storage_manager.get_table(get_table->table_name());
+            const auto &pruned = get_table->pruned_column_ids();
+            auto used = std::vector<std::string>{};
+            used.reserve(table.column_count());
+            auto pruned_it = pruned.begin();
+            for (auto column_id = ColumnID{0}; column_id < table.column_count(); ++column_id)
+            {
+                if (pruned_it != pruned.end() && *pruned_it == column_id)
+                {
+                    ++pruned_it;
+                    continue;
+                }
+                used.push_back(table.column_name(column_id));
+            }
+            node["used_columns"] = used;
+            node["table_name"] = get_table->table_name();
+        }
+        break;
+    }
+    case OperatorType::JoinHash:
+    {
+        // Which side is the hash-table build side. Build side dominates JoinHash temp
+        // memory (~24 B per row for the hash table), so this decides the memory model.
+        const auto perf = dynamic_cast<const JoinHash::PerformanceData *>(op->performance_data.get());
+        if (perf)
+        {
+            node["build_side"] = perf->left_input_is_build_side ? "left" : "right";
+        }
+        break;
+    }
+    case OperatorType::Aggregate:
+    {
+        // Split the AggregateHash node's inputs into group-by columns and aggregate
+        // expressions so downstream analysis can size the hash table
+        // (#groups × (key_bytes + aggregate_state_bytes)) properly.
+        const auto agg = std::dynamic_pointer_cast<const AbstractAggregateOperator>(op);
+        if (agg)
+        {
+            auto agg_exprs = std::vector<std::string>{};
+            agg_exprs.reserve(agg->aggregates().size());
+            for (const auto &expression : agg->aggregates())
+            {
+                agg_exprs.push_back(expression->as_column_name());
+            }
+            node["aggregate_expressions"] = agg_exprs;
+            // Raw group-by column IDs into the aggregate's INPUT table. Resolving to
+            // names requires the input's column_definitions, which may have been cleared
+            // by deregister_consumer() before this runs; consumers can join IDs back to
+            // names via the upstream GetTable's used_columns list.
+            auto gb_ids = std::vector<uint32_t>{};
+            gb_ids.reserve(agg->groupby_column_ids().size());
+            for (const auto column_id : agg->groupby_column_ids())
+            {
+                gb_ids.push_back(static_cast<uint32_t>(column_id));
+            }
+            node["groupby_column_ids"] = gb_ids;
+        }
+        break;
+    }
     default:
         break;
     }
