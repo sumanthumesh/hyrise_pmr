@@ -25,9 +25,14 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------------------
     df = pd.read_csv(INPUT_CSV, dtype={"dam_size": str, "table_size": str})
 
+    # Mean over repetitions of duration; also carry total_allocated_bytes_delta_pool3
+    # (regDAM churn) through to raw_result.csv when present in the input.
+    agg_cols = {"duration": "mean"}
+    if "total_allocated_bytes_delta_pool3" in df.columns:
+        agg_cols["total_allocated_bytes_delta_pool3"] = "mean"
     df_min = (
-        df.groupby(["query_id", "dam_size", "table_size"], as_index=False)["duration"]
-        .mean()
+        df.groupby(["query_id", "dam_size", "table_size"], as_index=False)
+        .agg(agg_cols)
     )
 
     # ---------------------------------------------------------------------------
@@ -162,3 +167,61 @@ if __name__ == "__main__":
 
     df_best.to_csv(BEST_CSV, index=False)
     print(f"Written {BEST_CSV}  ({len(df_best)} rows)")
+
+    # ---------------------------------------------------------------------------
+    # Third output: raw per-(query, dam, table) rows with raw execution duration
+    # (i.e. duration WITHOUT migration added), plus migration_duration_ns and
+    # dram_resident_size_gb as separate columns. Rebuilt from df_min so we don't
+    # depend on df_rest's mutated `duration` column.
+    # ---------------------------------------------------------------------------
+    RAW_CSV = "raw_result.csv"
+
+    # Keep ALL rows including baseline (dam=local, table=remote) and ideal (dam=local,
+    # table=local). Numeric byte-values get converted to GB strings; string labels
+    # ("local", "remote") pass through unchanged so they align with the join keys.
+    df_raw = df_min.copy()
+    def size_to_label(v):
+        try:
+            return to_gb(int(v))
+        except (TypeError, ValueError):
+            return str(v)
+    df_raw["dam_size_gb"]   = df_raw["dam_size"].apply(size_to_label)
+    df_raw["table_size_gb"] = df_raw["table_size"].apply(size_to_label)
+
+    if MIGRATION_CSV:
+        df_mig3 = pd.read_csv(MIGRATION_CSV)
+        df_mig3 = df_mig3.rename(columns={"local_capacity_gb": "table_size_gb"})
+        df_mig3["dam_size_gb"]   = df_mig3["dam_size_gb"].apply(lambda v: f"{float(v):g}")
+        df_mig3["table_size_gb"] = df_mig3["table_size_gb"].apply(lambda v: f"{float(v):g}")
+        df_raw = df_raw.merge(
+            df_mig3[["dam_size_gb", "table_size_gb", "query_id", "migration_duration_ns"]],
+            on=["dam_size_gb", "table_size_gb", "query_id"],
+            how="left",
+        )
+        df_raw["migration_duration_ns"] = df_raw["migration_duration_ns"].fillna(0)
+    else:
+        df_raw["migration_duration_ns"] = 0
+
+    if MIGRATION_SIZE_CSV:
+        # df_ms is already normalized to (dam_size_gb, table_size_gb, query_id, dram_resident_size_gb)
+        # from the earlier best-combo merge block above.
+        df_raw = df_raw.merge(
+            df_ms[["dam_size_gb", "table_size_gb", "query_id", "dram_resident_size_gb"]],
+            on=["dam_size_gb", "table_size_gb", "query_id"],
+            how="left",
+        )
+    else:
+        df_raw["dram_resident_size_gb"] = 0
+    # For baseline (local, remote) and ideal (local, local) rows there is no
+    # matching migration or resident-size entry — those are 0 by definition.
+    df_raw["dram_resident_size_gb"] = df_raw["dram_resident_size_gb"].fillna(0)
+
+    if "total_allocated_bytes_delta_pool3" not in df_raw.columns:
+        df_raw["total_allocated_bytes_delta_pool3"] = 0
+
+    df_raw = df_raw[["query_id", "dam_size_gb", "table_size_gb", "duration",
+                     "migration_duration_ns", "dram_resident_size_gb",
+                     "total_allocated_bytes_delta_pool3"]]
+    df_raw = df_raw.sort_values(["query_id", "dam_size_gb", "table_size_gb"]).reset_index(drop=True)
+    df_raw.to_csv(RAW_CSV, index=False)
+    print(f"Written {RAW_CSV}  ({len(df_raw)} rows)")
