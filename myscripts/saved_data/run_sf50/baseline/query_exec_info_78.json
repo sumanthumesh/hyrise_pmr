@@ -1,5 +1,5 @@
 {
-  "duration": 4300171651,
+  "duration": 4317755399,
   "label": "d53687091200_tf1000000000000_q18",
   "memory_deltas": [
     {
@@ -14,7 +14,7 @@
       "numa_node": 0,
       "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 23208817420
+      "total_allocated_bytes_delta": 23208833860
     }
   ],
   "script_file": "/home/umeshsum/tpch_queries/18.sql",
