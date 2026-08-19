@@ -1,16 +1,18 @@
 {
-  "duration": 9409039973,
+  "duration": 12121148002,
   "label": "d10737418240_tf5368709120_q13",
   "memory_deltas": [
     {
       "allocated_bytes": 0,
       "numa_node": 1,
+      "peak_mem_usage": 0,
       "resource_id": 3,
       "total_allocated_bytes_delta": 0
     },
     {
       "allocated_bytes": 121108470,
       "numa_node": 0,
+      "peak_mem_usage": 0,
       "resource_id": 2,
       "total_allocated_bytes_delta": 16703466210
     }

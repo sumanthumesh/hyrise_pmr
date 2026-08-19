@@ -1,18 +1,20 @@
 {
-  "duration": 809521636,
+  "duration": 829827186,
   "label": "d2684354560_tf805306368_q8",
   "memory_deltas": [
     {
       "allocated_bytes": 0,
       "numa_node": 1,
+      "peak_mem_usage": 0,
       "resource_id": 3,
-      "total_allocated_bytes_delta": 1177789072
+      "total_allocated_bytes_delta": 1135831952
     },
     {
       "allocated_bytes": 1510166,
       "numa_node": 0,
+      "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 8414243879
+      "total_allocated_bytes_delta": 8456200999
     }
   ],
   "script_file": "/home/umeshsum/tpch_queries/8.sql",
