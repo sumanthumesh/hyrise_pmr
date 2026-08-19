@@ -1,0 +1,7 @@
+{
+  "duration": 402964881,
+  "label": "d0_tf0_q17",
+  "memory_deltas": [],
+  "script_file": "/home/umeshsum/tpch_queries/17.sql",
+  "sql": "select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = 'Brand#23'\n\tand p_container = 'MED BOX'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);"
+}
