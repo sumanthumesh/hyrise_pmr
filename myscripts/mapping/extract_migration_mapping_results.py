@@ -49,7 +49,7 @@ def main() -> None:
             mig_ns       = int(m.group(6))
             rows.append({
                 "query_id":             query_id,
-                "dam_size_gb":          dam_bytes,
+                "dam_size_gb":          dam_bytes    / GB,
                 "table_size_gb":        table_bytes  / GB,
                 "migration_size_gb":    mig_bytes    / GB,
                 "migration_duration_ns": mig_ns,
