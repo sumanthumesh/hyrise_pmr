@@ -34,7 +34,16 @@
                                 "columns_right": [],
                                 "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 10/16 column(s)",
                                 "id": 15,
-                                "name": "StoredTable"
+                                "name": "StoredTable",
+                                "table_name": "lineitem",
+                                "used_columns": [
+                                  "l_partkey",
+                                  "l_quantity",
+                                  "l_extendedprice",
+                                  "l_discount",
+                                  "l_shipinstruct",
+                                  "l_shipmode"
+                                ]
                               },
                               "columns": [
                                 "l_shipmode"
@@ -45,12 +54,22 @@
                               "columns_right": [],
                               "description": "[Predicate] l_shipmode = 'AIR REG'",
                               "id": 14,
-                              "name": "Predicate"
+                              "name": "Predicate",
+                              "predicate": {
+                                "column": "l_shipmode",
+                                "kind": "binary",
+                                "op": "=",
+                                "value": "AIR REG"
+                              }
                             },
                             "RightCard": "42860070.0 row(s) est.",
                             "Rightchildren": {
                               "LeftCard": "300005811.0 row(s) est.",
-                              "Leftchildren": {},
+                              "Leftchildren": {
+                                "id": 15,
+                                "name": "StoredTable",
+                                "shared_ref": true
+                              },
                               "columns": [
                                 "l_shipmode"
                               ],
@@ -60,7 +79,13 @@
                               "columns_right": [],
                               "description": "[Predicate] l_shipmode = 'AIR'",
                               "id": 16,
-                              "name": "Predicate"
+                              "name": "Predicate",
+                              "predicate": {
+                                "column": "l_shipmode",
+                                "kind": "binary",
+                                "op": "=",
+                                "value": "AIR"
+                              }
                             },
                             "columns": [],
                             "columns_left": [],
@@ -78,7 +103,13 @@
                           "columns_right": [],
                           "description": "[Predicate] l_shipinstruct = 'DELIVER IN PERSON'",
                           "id": 12,
-                          "name": "Predicate"
+                          "name": "Predicate",
+                          "predicate": {
+                            "column": "l_shipinstruct",
+                            "kind": "binary",
+                            "op": "=",
+                            "value": "DELIVER IN PERSON"
+                          }
                         },
                         "RightCard": "23993.7 row(s) est.",
                         "Rightchildren": {
@@ -97,7 +128,14 @@
                                     "columns_right": [],
                                     "description": "[StoredTable] Name: 'part' pruned: 0/153 chunk(s), 5/9 column(s)",
                                     "id": 22,
-                                    "name": "StoredTable"
+                                    "name": "StoredTable",
+                                    "table_name": "part",
+                                    "used_columns": [
+                                      "p_partkey",
+                                      "p_brand",
+                                      "p_size",
+                                      "p_container"
+                                    ]
                                   },
                                   "columns": [],
                                   "columns_left": [],
@@ -115,7 +153,13 @@
                                 "columns_right": [],
                                 "description": "[Predicate] p_brand = 'Brand#12'",
                                 "id": 20,
-                                "name": "Predicate"
+                                "name": "Predicate",
+                                "predicate": {
+                                  "column": "p_brand",
+                                  "kind": "binary",
+                                  "op": "=",
+                                  "value": "Brand#12"
+                                }
                               },
                               "columns": [
                                 "p_size"
@@ -126,7 +170,14 @@
                               "columns_right": [],
                               "description": "[Predicate] p_size BETWEEN INCLUSIVE 1 AND 5",
                               "id": 19,
-                              "name": "Predicate"
+                              "name": "Predicate",
+                              "predicate": {
+                                "column": "p_size",
+                                "kind": "between",
+                                "lower": "1",
+                                "op": "BETWEEN INCLUSIVE",
+                                "upper": "5"
+                              }
                             },
                             "columns": [
                               "p_container"
@@ -137,7 +188,10 @@
                             "columns_right": [],
                             "description": "[Predicate] (p_container) IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')",
                             "id": 18,
-                            "name": "Predicate"
+                            "name": "Predicate",
+                            "predicate": {
+                              "kind": "complex"
+                            }
                           },
                           "RightCard": "19997.3 row(s) est.",
                           "Rightchildren": {
@@ -148,7 +202,11 @@
                                 "LeftCard": "399907.0 row(s) est.",
                                 "Leftchildren": {
                                   "LeftCard": "10000000.0 row(s) est.",
-                                  "Leftchildren": {},
+                                  "Leftchildren": {
+                                    "id": 21,
+                                    "name": "Validate",
+                                    "shared_ref": true
+                                  },
                                   "columns": [
                                     "p_brand"
                                   ],
@@ -158,7 +216,13 @@
                                   "columns_right": [],
                                   "description": "[Predicate] p_brand = 'Brand#23'",
                                   "id": 26,
-                                  "name": "Predicate"
+                                  "name": "Predicate",
+                                  "predicate": {
+                                    "column": "p_brand",
+                                    "kind": "binary",
+                                    "op": "=",
+                                    "value": "Brand#23"
+                                  }
                                 },
                                 "columns": [
                                   "p_container"
@@ -169,7 +233,10 @@
                                 "columns_right": [],
                                 "description": "[Predicate] (p_container) IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')",
                                 "id": 25,
-                                "name": "Predicate"
+                                "name": "Predicate",
+                                "predicate": {
+                                  "kind": "complex"
+                                }
                               },
                               "columns": [
                                 "p_size"
@@ -180,7 +247,14 @@
                               "columns_right": [],
                               "description": "[Predicate] p_size BETWEEN INCLUSIVE 1 AND 10",
                               "id": 24,
-                              "name": "Predicate"
+                              "name": "Predicate",
+                              "predicate": {
+                                "column": "p_size",
+                                "kind": "between",
+                                "lower": "1",
+                                "op": "BETWEEN INCLUSIVE",
+                                "upper": "10"
+                              }
                             },
                             "RightCard": "11988.6 row(s) est.",
                             "Rightchildren": {
@@ -189,7 +263,11 @@
                                 "LeftCard": "399509.0 row(s) est.",
                                 "Leftchildren": {
                                   "LeftCard": "10000000.0 row(s) est.",
-                                  "Leftchildren": {},
+                                  "Leftchildren": {
+                                    "id": 21,
+                                    "name": "Validate",
+                                    "shared_ref": true
+                                  },
                                   "columns": [
                                     "p_brand"
                                   ],
@@ -199,7 +277,13 @@
                                   "columns_right": [],
                                   "description": "[Predicate] p_brand = 'Brand#34'",
                                   "id": 29,
-                                  "name": "Predicate"
+                                  "name": "Predicate",
+                                  "predicate": {
+                                    "column": "p_brand",
+                                    "kind": "binary",
+                                    "op": "=",
+                                    "value": "Brand#34"
+                                  }
                                 },
                                 "columns": [
                                   "p_container"
@@ -210,7 +294,10 @@
                                 "columns_right": [],
                                 "description": "[Predicate] (p_container) IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')",
                                 "id": 28,
-                                "name": "Predicate"
+                                "name": "Predicate",
+                                "predicate": {
+                                  "kind": "complex"
+                                }
                               },
                               "columns": [
                                 "p_size"
@@ -221,7 +308,14 @@
                               "columns_right": [],
                               "description": "[Predicate] p_size BETWEEN INCLUSIVE 1 AND 15",
                               "id": 27,
-                              "name": "Predicate"
+                              "name": "Predicate",
+                              "predicate": {
+                                "column": "p_size",
+                                "kind": "between",
+                                "lower": "1",
+                                "op": "BETWEEN INCLUSIVE",
+                                "upper": "15"
+                              }
                             },
                             "columns": [],
                             "columns_left": [],
@@ -249,6 +343,13 @@
                         ],
                         "description": "[Join] Mode: Semi [p_partkey = l_partkey]",
                         "id": 11,
+                        "join_mode": "Semi",
+                        "join_predicate": {
+                          "kind": "binary",
+                          "left_column": "p_partkey",
+                          "op": "=",
+                          "right_column": "l_partkey"
+                        },
                         "name": "Join"
                       },
                       "columns": [],
@@ -259,7 +360,11 @@
                       "name": "Validate"
                     },
                     "RightCard": "23993.7 row(s) est.",
-                    "Rightchildren": {},
+                    "Rightchildren": {
+                      "id": 17,
+                      "name": "Union",
+                      "shared_ref": true
+                    },
                     "columns": [
                       "l_partkey",
                       "p_partkey"
@@ -272,6 +377,13 @@
                     ],
                     "description": "[Join] Mode: Inner [p_partkey = l_partkey]",
                     "id": 9,
+                    "join_mode": "Inner",
+                    "join_predicate": {
+                      "kind": "binary",
+                      "left_column": "p_partkey",
+                      "op": "=",
+                      "right_column": "l_partkey"
+                    },
                     "name": "Join"
                   },
                   "columns": [
@@ -283,7 +395,13 @@
                   "columns_right": [],
                   "description": "[Predicate] p_brand = 'Brand#23'",
                   "id": 8,
-                  "name": "Predicate"
+                  "name": "Predicate",
+                  "predicate": {
+                    "column": "p_brand",
+                    "kind": "binary",
+                    "op": "=",
+                    "value": "Brand#23"
+                  }
                 },
                 "columns": [
                   "p_container"
@@ -294,7 +412,10 @@
                 "columns_right": [],
                 "description": "[Predicate] (p_container) IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')",
                 "id": 7,
-                "name": "Predicate"
+                "name": "Predicate",
+                "predicate": {
+                  "kind": "complex"
+                }
               },
               "columns": [
                 "p_size"
@@ -305,7 +426,14 @@
               "columns_right": [],
               "description": "[Predicate] p_size BETWEEN INCLUSIVE 1 AND 10",
               "id": 6,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "column": "p_size",
+                "kind": "between",
+                "lower": "1",
+                "op": "BETWEEN INCLUSIVE",
+                "upper": "10"
+              }
             },
             "columns": [
               "l_quantity"
@@ -316,7 +444,13 @@
             "columns_right": [],
             "description": "[Predicate] l_quantity <= 20",
             "id": 5,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "l_quantity",
+              "kind": "binary",
+              "op": "<=",
+              "value": "20"
+            }
           },
           "columns": [
             "l_quantity"
@@ -327,7 +461,13 @@
           "columns_right": [],
           "description": "[Predicate] l_quantity >= 10",
           "id": 4,
-          "name": "Predicate"
+          "name": "Predicate",
+          "predicate": {
+            "column": "l_quantity",
+            "kind": "binary",
+            "op": ">=",
+            "value": "10"
+          }
         },
         "RightCard": "0.0 row(s) est.",
         "Rightchildren": {
@@ -342,7 +482,11 @@
                   "LeftCard": "0.0 row(s) est.",
                   "Leftchildren": {
                     "LeftCard": "0.0 row(s) est.",
-                    "Leftchildren": {},
+                    "Leftchildren": {
+                      "id": 9,
+                      "name": "Join",
+                      "shared_ref": true
+                    },
                     "columns": [
                       "p_brand"
                     ],
@@ -352,7 +496,13 @@
                     "columns_right": [],
                     "description": "[Predicate] p_brand = 'Brand#34'",
                     "id": 35,
-                    "name": "Predicate"
+                    "name": "Predicate",
+                    "predicate": {
+                      "column": "p_brand",
+                      "kind": "binary",
+                      "op": "=",
+                      "value": "Brand#34"
+                    }
                   },
                   "columns": [
                     "p_container"
@@ -363,7 +513,10 @@
                   "columns_right": [],
                   "description": "[Predicate] (p_container) IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')",
                   "id": 34,
-                  "name": "Predicate"
+                  "name": "Predicate",
+                  "predicate": {
+                    "kind": "complex"
+                  }
                 },
                 "columns": [
                   "p_size"
@@ -374,7 +527,14 @@
                 "columns_right": [],
                 "description": "[Predicate] p_size BETWEEN INCLUSIVE 1 AND 15",
                 "id": 33,
-                "name": "Predicate"
+                "name": "Predicate",
+                "predicate": {
+                  "column": "p_size",
+                  "kind": "between",
+                  "lower": "1",
+                  "op": "BETWEEN INCLUSIVE",
+                  "upper": "15"
+                }
               },
               "columns": [
                 "l_quantity"
@@ -385,7 +545,13 @@
               "columns_right": [],
               "description": "[Predicate] l_quantity <= 30",
               "id": 32,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "column": "l_quantity",
+                "kind": "binary",
+                "op": "<=",
+                "value": "30"
+              }
             },
             "columns": [
               "l_quantity"
@@ -396,7 +562,13 @@
             "columns_right": [],
             "description": "[Predicate] l_quantity >= 20",
             "id": 31,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "l_quantity",
+              "kind": "binary",
+              "op": ">=",
+              "value": "20"
+            }
           },
           "RightCard": "0.0 row(s) est.",
           "Rightchildren": {
@@ -409,7 +581,11 @@
                   "LeftCard": "0.0 row(s) est.",
                   "Leftchildren": {
                     "LeftCard": "0.0 row(s) est.",
-                    "Leftchildren": {},
+                    "Leftchildren": {
+                      "id": 9,
+                      "name": "Join",
+                      "shared_ref": true
+                    },
                     "columns": [
                       "p_container"
                     ],
@@ -419,7 +595,10 @@
                     "columns_right": [],
                     "description": "[Predicate] (p_container) IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')",
                     "id": 40,
-                    "name": "Predicate"
+                    "name": "Predicate",
+                    "predicate": {
+                      "kind": "complex"
+                    }
                   },
                   "columns": [
                     "p_brand"
@@ -430,7 +609,13 @@
                   "columns_right": [],
                   "description": "[Predicate] p_brand = 'Brand#12'",
                   "id": 39,
-                  "name": "Predicate"
+                  "name": "Predicate",
+                  "predicate": {
+                    "column": "p_brand",
+                    "kind": "binary",
+                    "op": "=",
+                    "value": "Brand#12"
+                  }
                 },
                 "columns": [
                   "p_size"
@@ -441,7 +626,14 @@
                 "columns_right": [],
                 "description": "[Predicate] p_size BETWEEN INCLUSIVE 1 AND 5",
                 "id": 38,
-                "name": "Predicate"
+                "name": "Predicate",
+                "predicate": {
+                  "column": "p_size",
+                  "kind": "between",
+                  "lower": "1",
+                  "op": "BETWEEN INCLUSIVE",
+                  "upper": "5"
+                }
               },
               "columns": [
                 "l_quantity"
@@ -452,7 +644,13 @@
               "columns_right": [],
               "description": "[Predicate] l_quantity <= 11",
               "id": 37,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "column": "l_quantity",
+                "kind": "binary",
+                "op": "<=",
+                "value": "11"
+              }
             },
             "columns": [
               "l_quantity"
@@ -463,7 +661,13 @@
             "columns_right": [],
             "description": "[Predicate] l_quantity >= 1",
             "id": 36,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "l_quantity",
+              "kind": "binary",
+              "op": ">=",
+              "value": "1"
+            }
           },
           "columns": [],
           "columns_left": [],
@@ -492,6 +696,9 @@
       "id": 2,
       "name": "Projection"
     },
+    "aggregate_expressions": [
+      "SUM(l_extendedprice * (1 - l_discount))"
+    ],
     "columns": [
       "l_discount",
       "l_extendedprice"
@@ -502,6 +709,7 @@
     ],
     "columns_right": [],
     "description": "[Aggregate] GroupBy: [] Aggregates: [SUM(l_extendedprice * (1 - l_discount))]",
+    "group_by_expressions": [],
     "id": 1,
     "name": "Aggregate"
   },

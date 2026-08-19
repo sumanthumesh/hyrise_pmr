@@ -22,7 +22,13 @@
                     "columns_right": [],
                     "description": "[StoredTable] Name: 'customer' pruned: 0/115 chunk(s), 5/8 column(s)",
                     "id": 9,
-                    "name": "StoredTable"
+                    "name": "StoredTable",
+                    "table_name": "customer",
+                    "used_columns": [
+                      "c_custkey",
+                      "c_phone",
+                      "c_acctbal"
+                    ]
                   },
                   "columns": [],
                   "columns_left": [],
@@ -38,9 +44,15 @@
                   "c_acctbal"
                 ],
                 "columns_right": [],
-                "description": "[Predicate] c_acctbal > SUBQUERY (LQP, 0x7aecd894f750)",
+                "description": "[Predicate] c_acctbal > SUBQUERY (LQP, 0x7d71085b4b50)",
                 "id": 7,
-                "name": "Predicate"
+                "name": "Predicate",
+                "predicate": {
+                  "column": "c_acctbal",
+                  "kind": "binary_subquery",
+                  "op": ">",
+                  "value": "<subquery>"
+                }
               },
               "columns": [
                 "c_phone"
@@ -51,7 +63,10 @@
               "columns_right": [],
               "description": "[Predicate] (SUBSTR(c_phone,1,2)) IN ('13', '31', '23', '29', '30', '18', '17')",
               "id": 6,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "kind": "complex"
+              }
             },
             "RightCard": "75000000.0 row(s) est.",
             "Rightchildren": {
@@ -62,7 +77,11 @@
                 "columns_right": [],
                 "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 8/9 column(s)",
                 "id": 16,
-                "name": "StoredTable"
+                "name": "StoredTable",
+                "table_name": "orders",
+                "used_columns": [
+                  "o_custkey"
+                ]
               },
               "columns": [],
               "columns_left": [],
@@ -83,6 +102,13 @@
             ],
             "description": "[Join] Mode: AntiNullAsFalse [c_custkey = o_custkey]",
             "id": 5,
+            "join_mode": "AntiNullAsFalse",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "c_custkey",
+              "op": "=",
+              "right_column": "o_custkey"
+            },
             "name": "Join"
           },
           "columns": [
@@ -111,6 +137,10 @@
         "id": 3,
         "name": "Alias"
       },
+      "aggregate_expressions": [
+        "COUNT(*)",
+        "SUM(c_acctbal)"
+      ],
       "columns": [
         "INVALID_COLUMN_ID",
         "c_acctbal",
@@ -123,6 +153,9 @@
       ],
       "columns_right": [],
       "description": "[Aggregate] GroupBy: [SUBSTR(c_phone,1,2)] Aggregates: [COUNT(*), SUM(c_acctbal)]",
+      "group_by_expressions": [
+        "SUBSTR(c_phone,1,2)"
+      ],
       "id": 2,
       "name": "Aggregate"
     },

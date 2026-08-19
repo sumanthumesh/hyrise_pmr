@@ -18,7 +18,14 @@
                 "columns_right": [],
                 "description": "[StoredTable] Name: 'partsupp' pruned: 0/611 chunk(s), 1/5 column(s)",
                 "id": 7,
-                "name": "StoredTable"
+                "name": "StoredTable",
+                "table_name": "partsupp",
+                "used_columns": [
+                  "ps_partkey",
+                  "ps_suppkey",
+                  "ps_availqty",
+                  "ps_supplycost"
+                ]
               },
               "RightCard": "20000.0 row(s) est.",
               "Rightchildren": {
@@ -31,7 +38,12 @@
                     "columns_right": [],
                     "description": "[StoredTable] Name: 'supplier' pruned: 0/8 chunk(s), 5/7 column(s)",
                     "id": 10,
-                    "name": "StoredTable"
+                    "name": "StoredTable",
+                    "table_name": "supplier",
+                    "used_columns": [
+                      "s_suppkey",
+                      "s_nationkey"
+                    ]
                   },
                   "RightCard": "1.0 row(s) est.",
                   "Rightchildren": {
@@ -44,7 +56,12 @@
                         "columns_right": [],
                         "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
                         "id": 13,
-                        "name": "StoredTable"
+                        "name": "StoredTable",
+                        "table_name": "nation",
+                        "used_columns": [
+                          "n_nationkey",
+                          "n_name"
+                        ]
                       },
                       "columns": [
                         "n_name"
@@ -55,7 +72,13 @@
                       "columns_right": [],
                       "description": "[Predicate] n_name = 'GERMANY'",
                       "id": 12,
-                      "name": "Predicate"
+                      "name": "Predicate",
+                      "predicate": {
+                        "column": "n_name",
+                        "kind": "binary",
+                        "op": "=",
+                        "value": "GERMANY"
+                      }
                     },
                     "columns": [],
                     "columns_left": [],
@@ -76,6 +99,13 @@
                   ],
                   "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
                   "id": 9,
+                  "join_mode": "Semi",
+                  "join_predicate": {
+                    "kind": "binary",
+                    "left_column": "s_nationkey",
+                    "op": "=",
+                    "right_column": "n_nationkey"
+                  },
                   "name": "Join"
                 },
                 "columns": [],
@@ -97,6 +127,13 @@
               ],
               "description": "[Join] Mode: Semi [ps_suppkey = s_suppkey]",
               "id": 6,
+              "join_mode": "Semi",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "ps_suppkey",
+                "op": "=",
+                "right_column": "s_suppkey"
+              },
               "name": "Join"
             },
             "columns": [],
@@ -121,6 +158,9 @@
           "id": 4,
           "name": "Projection"
         },
+        "aggregate_expressions": [
+          "SUM(ps_supplycost * ps_availqty)"
+        ],
         "columns": [
           "ps_availqty",
           "ps_partkey",
@@ -133,6 +173,9 @@
         ],
         "columns_right": [],
         "description": "[Aggregate] GroupBy: [ps_partkey] Aggregates: [SUM(ps_supplycost * ps_availqty)]",
+        "group_by_expressions": [
+          "ps_partkey"
+        ],
         "id": 3,
         "name": "Aggregate"
       },
@@ -145,9 +188,15 @@
         "ps_supplycost"
       ],
       "columns_right": [],
-      "description": "[Predicate] SUM(ps_supplycost * ps_availqty) > SUBQUERY (LQP, 0x7aecd4018150)",
+      "description": "[Predicate] SUM(ps_supplycost * ps_availqty) > SUBQUERY (LQP, 0x7d710b0beb70)",
       "id": 2,
-      "name": "Predicate"
+      "name": "Predicate",
+      "predicate": {
+        "column": "SUM(ps_supplycost * ps_availqty)",
+        "kind": "binary_subquery",
+        "op": ">",
+        "value": "<subquery>"
+      }
     },
     "columns": [
       "ps_availqty",

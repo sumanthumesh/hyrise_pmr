@@ -14,7 +14,14 @@
             "columns_right": [],
             "description": "[StoredTable] Name: 'supplier' pruned: 0/8 chunk(s), 3/7 column(s)",
             "id": 5,
-            "name": "StoredTable"
+            "name": "StoredTable",
+            "table_name": "supplier",
+            "used_columns": [
+              "s_suppkey",
+              "s_name",
+              "s_address",
+              "s_nationkey"
+            ]
           },
           "RightCard": "0.0 row(s) est.",
           "Rightchildren": {
@@ -31,7 +38,13 @@
                     "columns_right": [],
                     "description": "[StoredTable] Name: 'partsupp' pruned: 0/611 chunk(s), 2/5 column(s)",
                     "id": 10,
-                    "name": "StoredTable"
+                    "name": "StoredTable",
+                    "table_name": "partsupp",
+                    "used_columns": [
+                      "ps_partkey",
+                      "ps_suppkey",
+                      "ps_availqty"
+                    ]
                   },
                   "RightCard": "0.0 row(s) est.",
                   "Rightchildren": {
@@ -46,7 +59,12 @@
                           "columns_right": [],
                           "description": "[StoredTable] Name: 'part' pruned: 0/153 chunk(s), 7/9 column(s)",
                           "id": 14,
-                          "name": "StoredTable"
+                          "name": "StoredTable",
+                          "table_name": "part",
+                          "used_columns": [
+                            "p_partkey",
+                            "p_name"
+                          ]
                         },
                         "columns": [
                           "p_name"
@@ -57,7 +75,14 @@
                         "columns_right": [],
                         "description": "[Predicate] p_name BETWEEN UPPER EXCLUSIVE 'forest' AND 'foresu'",
                         "id": 13,
-                        "name": "Predicate"
+                        "name": "Predicate",
+                        "predicate": {
+                          "column": "p_name",
+                          "kind": "between",
+                          "lower": "forest",
+                          "op": "BETWEEN UPPER EXCLUSIVE",
+                          "upper": "foresu"
+                        }
                       },
                       "columns": [],
                       "columns_left": [],
@@ -89,6 +114,13 @@
                   ],
                   "description": "[Join] Mode: Semi [ps_partkey = p_partkey]",
                   "id": 9,
+                  "join_mode": "Semi",
+                  "join_predicate": {
+                    "kind": "binary",
+                    "left_column": "ps_partkey",
+                    "op": "=",
+                    "right_column": "p_partkey"
+                  },
                   "name": "Join"
                 },
                 "columns": [],
@@ -117,7 +149,14 @@
                             "columns_right": [],
                             "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
                             "id": 21,
-                            "name": "StoredTable"
+                            "name": "StoredTable",
+                            "table_name": "lineitem",
+                            "used_columns": [
+                              "l_partkey",
+                              "l_suppkey",
+                              "l_quantity",
+                              "l_shipdate"
+                            ]
                           },
                           "columns": [
                             "l_shipdate"
@@ -128,10 +167,21 @@
                           "columns_right": [],
                           "description": "[Predicate] l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
                           "id": 20,
-                          "name": "Predicate"
+                          "name": "Predicate",
+                          "predicate": {
+                            "column": "l_shipdate",
+                            "kind": "between",
+                            "lower": "1994-01-01",
+                            "op": "BETWEEN UPPER EXCLUSIVE",
+                            "upper": "1995-01-01"
+                          }
                         },
                         "RightCard": "0.0 row(s) est.",
-                        "Rightchildren": {},
+                        "Rightchildren": {
+                          "id": 8,
+                          "name": "Validate",
+                          "shared_ref": true
+                        },
                         "columns": [
                           "l_partkey",
                           "ps_partkey"
@@ -144,10 +194,21 @@
                         ],
                         "description": "[Join] Mode: Semi [ps_partkey = l_partkey]",
                         "id": 19,
+                        "join_mode": "Semi",
+                        "join_predicate": {
+                          "kind": "binary",
+                          "left_column": "ps_partkey",
+                          "op": "=",
+                          "right_column": "l_partkey"
+                        },
                         "name": "Join"
                       },
                       "RightCard": "0.0 row(s) est.",
-                      "Rightchildren": {},
+                      "Rightchildren": {
+                        "id": 8,
+                        "name": "Validate",
+                        "shared_ref": true
+                      },
                       "columns": [
                         "l_suppkey",
                         "ps_suppkey"
@@ -160,6 +221,13 @@
                       ],
                       "description": "[Join] Mode: Semi [ps_suppkey = l_suppkey]",
                       "id": 18,
+                      "join_mode": "Semi",
+                      "join_predicate": {
+                        "kind": "binary",
+                        "left_column": "ps_suppkey",
+                        "op": "=",
+                        "right_column": "l_suppkey"
+                      },
                       "name": "Join"
                     },
                     "columns": [],
@@ -169,6 +237,9 @@
                     "id": 17,
                     "name": "Validate"
                   },
+                  "aggregate_expressions": [
+                    "SUM(l_quantity)"
+                  ],
                   "columns": [
                     "l_partkey",
                     "l_quantity",
@@ -181,6 +252,10 @@
                   ],
                   "columns_right": [],
                   "description": "[Aggregate] GroupBy: [l_suppkey, l_partkey] Aggregates: [SUM(l_quantity)]",
+                  "group_by_expressions": [
+                    "l_suppkey",
+                    "l_partkey"
+                  ],
                   "id": 16,
                   "name": "Aggregate"
                 },
@@ -219,7 +294,28 @@
               ],
               "description": "[Join] Mode: Semi [ps_suppkey = l_suppkey] [ps_availqty > 0.5 * SUM(l_quantity)] [ps_partkey = l_partkey]",
               "id": 7,
-              "name": "Join"
+              "join_mode": "Semi",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "ps_suppkey",
+                "op": "=",
+                "right_column": "l_suppkey"
+              },
+              "name": "Join",
+              "secondary_join_predicates": [
+                {
+                  "kind": "binary",
+                  "left_column": "ps_availqty",
+                  "op": ">",
+                  "right_column": "0.5 * SUM(l_quantity)"
+                },
+                {
+                  "kind": "binary",
+                  "left_column": "ps_partkey",
+                  "op": "=",
+                  "right_column": "l_partkey"
+                }
+              ]
             },
             "columns": [
               "ps_suppkey"
@@ -244,6 +340,13 @@
           ],
           "description": "[Join] Mode: Semi [s_suppkey = ps_suppkey]",
           "id": 4,
+          "join_mode": "Semi",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "s_suppkey",
+            "op": "=",
+            "right_column": "ps_suppkey"
+          },
           "name": "Join"
         },
         "columns": [],
@@ -266,7 +369,12 @@
               "columns_right": [],
               "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
               "id": 25,
-              "name": "StoredTable"
+              "name": "StoredTable",
+              "table_name": "nation",
+              "used_columns": [
+                "n_nationkey",
+                "n_name"
+              ]
             },
             "columns": [
               "n_name"
@@ -277,10 +385,20 @@
             "columns_right": [],
             "description": "[Predicate] n_name = 'CANADA'",
             "id": 24,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "n_name",
+              "kind": "binary",
+              "op": "=",
+              "value": "CANADA"
+            }
           },
           "RightCard": "0.0 row(s) est.",
-          "Rightchildren": {},
+          "Rightchildren": {
+            "id": 4,
+            "name": "Join",
+            "shared_ref": true
+          },
           "columns": [
             "n_nationkey",
             "s_nationkey"
@@ -293,6 +411,13 @@
           ],
           "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
           "id": 23,
+          "join_mode": "Semi",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "s_nationkey",
+            "op": "=",
+            "right_column": "n_nationkey"
+          },
           "name": "Join"
         },
         "columns": [],
@@ -314,6 +439,13 @@
       ],
       "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
       "id": 2,
+      "join_mode": "Semi",
+      "join_predicate": {
+        "kind": "binary",
+        "left_column": "s_nationkey",
+        "op": "=",
+        "right_column": "n_nationkey"
+      },
       "name": "Join"
     },
     "columns": [

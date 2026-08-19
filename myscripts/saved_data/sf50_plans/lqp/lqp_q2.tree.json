@@ -20,7 +20,13 @@
                   "columns_right": [],
                   "description": "[StoredTable] Name: 'partsupp' pruned: 0/611 chunk(s), 2/5 column(s)",
                   "id": 8,
-                  "name": "StoredTable"
+                  "name": "StoredTable",
+                  "table_name": "partsupp",
+                  "used_columns": [
+                    "ps_partkey",
+                    "ps_suppkey",
+                    "ps_supplycost"
+                  ]
                 },
                 "RightCard": "20022.1 row(s) est.",
                 "Rightchildren": {
@@ -35,7 +41,14 @@
                         "columns_right": [],
                         "description": "[StoredTable] Name: 'part' pruned: 0/153 chunk(s), 5/9 column(s)",
                         "id": 12,
-                        "name": "StoredTable"
+                        "name": "StoredTable",
+                        "table_name": "part",
+                        "used_columns": [
+                          "p_partkey",
+                          "p_mfgr",
+                          "p_type",
+                          "p_size"
+                        ]
                       },
                       "columns": [
                         "p_size"
@@ -46,7 +59,13 @@
                       "columns_right": [],
                       "description": "[Predicate] p_size = 15",
                       "id": 11,
-                      "name": "Predicate"
+                      "name": "Predicate",
+                      "predicate": {
+                        "column": "p_size",
+                        "kind": "binary",
+                        "op": "=",
+                        "value": "15"
+                      }
                     },
                     "columns": [
                       "p_type"
@@ -57,7 +76,13 @@
                     "columns_right": [],
                     "description": "[Predicate] p_type LIKE '%BRASS'",
                     "id": 10,
-                    "name": "Predicate"
+                    "name": "Predicate",
+                    "predicate": {
+                      "column": "p_type",
+                      "kind": "binary",
+                      "op": "LIKE",
+                      "value": "%BRASS"
+                    }
                   },
                   "columns": [],
                   "columns_left": [],
@@ -78,6 +103,13 @@
                 ],
                 "description": "[Join] Mode: Semi [p_partkey = ps_partkey]",
                 "id": 7,
+                "join_mode": "Semi",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "p_partkey",
+                  "op": "=",
+                  "right_column": "ps_partkey"
+                },
                 "name": "Join"
               },
               "RightCard": "100000.0 row(s) est.",
@@ -93,7 +125,17 @@
                       "columns_right": [],
                       "description": "[StoredTable] Name: 'supplier' pruned: 0/8 chunk(s), 0/7 column(s)",
                       "id": 16,
-                      "name": "StoredTable"
+                      "name": "StoredTable",
+                      "table_name": "supplier",
+                      "used_columns": [
+                        "s_suppkey",
+                        "s_name",
+                        "s_address",
+                        "s_nationkey",
+                        "s_phone",
+                        "s_acctbal",
+                        "s_comment"
+                      ]
                     },
                     "RightCard": "5.0 row(s) est.",
                     "Rightchildren": {
@@ -106,7 +148,13 @@
                           "columns_right": [],
                           "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 1/4 column(s)",
                           "id": 19,
-                          "name": "StoredTable"
+                          "name": "StoredTable",
+                          "table_name": "nation",
+                          "used_columns": [
+                            "n_nationkey",
+                            "n_name",
+                            "n_regionkey"
+                          ]
                         },
                         "RightCard": "1.0 row(s) est.",
                         "Rightchildren": {
@@ -119,7 +167,12 @@
                               "columns_right": [],
                               "description": "[StoredTable] Name: 'region' pruned: 0/1 chunk(s), 1/3 column(s)",
                               "id": 22,
-                              "name": "StoredTable"
+                              "name": "StoredTable",
+                              "table_name": "region",
+                              "used_columns": [
+                                "r_regionkey",
+                                "r_name"
+                              ]
                             },
                             "columns": [
                               "r_name"
@@ -130,7 +183,13 @@
                             "columns_right": [],
                             "description": "[Predicate] r_name = 'EUROPE'",
                             "id": 21,
-                            "name": "Predicate"
+                            "name": "Predicate",
+                            "predicate": {
+                              "column": "r_name",
+                              "kind": "binary",
+                              "op": "=",
+                              "value": "EUROPE"
+                            }
                           },
                           "columns": [],
                           "columns_left": [],
@@ -151,6 +210,13 @@
                         ],
                         "description": "[Join] Mode: Semi [n_regionkey = r_regionkey]",
                         "id": 18,
+                        "join_mode": "Semi",
+                        "join_predicate": {
+                          "kind": "binary",
+                          "left_column": "n_regionkey",
+                          "op": "=",
+                          "right_column": "r_regionkey"
+                        },
                         "name": "Join"
                       },
                       "columns": [],
@@ -172,6 +238,13 @@
                     ],
                     "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
                     "id": 15,
+                    "join_mode": "Semi",
+                    "join_predicate": {
+                      "kind": "binary",
+                      "left_column": "s_nationkey",
+                      "op": "=",
+                      "right_column": "n_nationkey"
+                    },
                     "name": "Join"
                   },
                   "columns": [],
@@ -182,7 +255,11 @@
                   "name": "Validate"
                 },
                 "RightCard": "5.0 row(s) est.",
-                "Rightchildren": {},
+                "Rightchildren": {
+                  "id": 17,
+                  "name": "Validate",
+                  "shared_ref": true
+                },
                 "columns": [
                   "n_nationkey",
                   "s_nationkey"
@@ -195,6 +272,13 @@
                 ],
                 "description": "[Join] Mode: Inner [s_nationkey = n_nationkey]",
                 "id": 13,
+                "join_mode": "Inner",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "s_nationkey",
+                  "op": "=",
+                  "right_column": "n_nationkey"
+                },
                 "name": "Join"
               },
               "columns": [
@@ -209,6 +293,13 @@
               ],
               "description": "[Join] Mode: Semi [s_suppkey = ps_suppkey]",
               "id": 6,
+              "join_mode": "Semi",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "s_suppkey",
+                "op": "=",
+                "right_column": "ps_suppkey"
+              },
               "name": "Join"
             },
             "columns": [],
@@ -219,7 +310,11 @@
             "name": "Validate"
           },
           "RightCard": "100000.0 row(s) est.",
-          "Rightchildren": {},
+          "Rightchildren": {
+            "id": 13,
+            "name": "Join",
+            "shared_ref": true
+          },
           "columns": [
             "ps_suppkey",
             "s_suppkey"
@@ -232,10 +327,21 @@
           ],
           "description": "[Join] Mode: Inner [s_suppkey = ps_suppkey]",
           "id": 4,
+          "join_mode": "Inner",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "s_suppkey",
+            "op": "=",
+            "right_column": "ps_suppkey"
+          },
           "name": "Join"
         },
         "RightCard": "20022.1 row(s) est.",
-        "Rightchildren": {},
+        "Rightchildren": {
+          "id": 9,
+          "name": "Validate",
+          "shared_ref": true
+        },
         "columns": [
           "p_partkey",
           "ps_partkey"
@@ -248,6 +354,13 @@
         ],
         "description": "[Join] Mode: Inner [p_partkey = ps_partkey]",
         "id": 3,
+        "join_mode": "Inner",
+        "join_predicate": {
+          "kind": "binary",
+          "left_column": "p_partkey",
+          "op": "=",
+          "right_column": "ps_partkey"
+        },
         "name": "Join"
       },
       "RightCard": "80088.4 row(s) est.",
@@ -265,10 +378,20 @@
                 "columns_right": [],
                 "description": "[StoredTable] Name: 'partsupp' pruned: 0/611 chunk(s), 2/5 column(s)",
                 "id": 27,
-                "name": "StoredTable"
+                "name": "StoredTable",
+                "table_name": "partsupp",
+                "used_columns": [
+                  "ps_partkey",
+                  "ps_suppkey",
+                  "ps_supplycost"
+                ]
               },
               "RightCard": "20022.1 row(s) est.",
-              "Rightchildren": {},
+              "Rightchildren": {
+                "id": 9,
+                "name": "Validate",
+                "shared_ref": true
+              },
               "columns": [
                 "p_partkey",
                 "ps_partkey"
@@ -281,6 +404,13 @@
               ],
               "description": "[Join] Mode: Semi [p_partkey = ps_partkey]",
               "id": 26,
+              "join_mode": "Semi",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "p_partkey",
+                "op": "=",
+                "right_column": "ps_partkey"
+              },
               "name": "Join"
             },
             "RightCard": "100000.0 row(s) est.",
@@ -294,7 +424,17 @@
                   "columns_right": [],
                   "description": "[StoredTable] Name: 'supplier' pruned: 0/8 chunk(s), 0/7 column(s)",
                   "id": 30,
-                  "name": "StoredTable"
+                  "name": "StoredTable",
+                  "table_name": "supplier",
+                  "used_columns": [
+                    "s_suppkey",
+                    "s_name",
+                    "s_address",
+                    "s_nationkey",
+                    "s_phone",
+                    "s_acctbal",
+                    "s_comment"
+                  ]
                 },
                 "RightCard": "5.0 row(s) est.",
                 "Rightchildren": {
@@ -307,7 +447,13 @@
                       "columns_right": [],
                       "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 1/4 column(s)",
                       "id": 33,
-                      "name": "StoredTable"
+                      "name": "StoredTable",
+                      "table_name": "nation",
+                      "used_columns": [
+                        "n_nationkey",
+                        "n_name",
+                        "n_regionkey"
+                      ]
                     },
                     "RightCard": "1.0 row(s) est.",
                     "Rightchildren": {
@@ -320,7 +466,12 @@
                           "columns_right": [],
                           "description": "[StoredTable] Name: 'region' pruned: 0/1 chunk(s), 1/3 column(s)",
                           "id": 36,
-                          "name": "StoredTable"
+                          "name": "StoredTable",
+                          "table_name": "region",
+                          "used_columns": [
+                            "r_regionkey",
+                            "r_name"
+                          ]
                         },
                         "columns": [
                           "r_name"
@@ -331,7 +482,13 @@
                         "columns_right": [],
                         "description": "[Predicate] r_name = 'EUROPE'",
                         "id": 35,
-                        "name": "Predicate"
+                        "name": "Predicate",
+                        "predicate": {
+                          "column": "r_name",
+                          "kind": "binary",
+                          "op": "=",
+                          "value": "EUROPE"
+                        }
                       },
                       "columns": [],
                       "columns_left": [],
@@ -352,6 +509,13 @@
                     ],
                     "description": "[Join] Mode: Semi [n_regionkey = r_regionkey]",
                     "id": 32,
+                    "join_mode": "Semi",
+                    "join_predicate": {
+                      "kind": "binary",
+                      "left_column": "n_regionkey",
+                      "op": "=",
+                      "right_column": "r_regionkey"
+                    },
                     "name": "Join"
                   },
                   "columns": [],
@@ -373,6 +537,13 @@
                 ],
                 "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
                 "id": 29,
+                "join_mode": "Semi",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "s_nationkey",
+                  "op": "=",
+                  "right_column": "n_nationkey"
+                },
                 "name": "Join"
               },
               "columns": [],
@@ -394,6 +565,13 @@
             ],
             "description": "[Join] Mode: Semi [s_suppkey = ps_suppkey]",
             "id": 25,
+            "join_mode": "Semi",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "s_suppkey",
+              "op": "=",
+              "right_column": "ps_suppkey"
+            },
             "name": "Join"
           },
           "columns": [],
@@ -403,6 +581,9 @@
           "id": 24,
           "name": "Validate"
         },
+        "aggregate_expressions": [
+          "MIN(ps_supplycost)"
+        ],
         "columns": [
           "ps_partkey",
           "ps_supplycost"
@@ -413,6 +594,9 @@
         ],
         "columns_right": [],
         "description": "[Aggregate] GroupBy: [ps_partkey] Aggregates: [MIN(ps_supplycost)]",
+        "group_by_expressions": [
+          "ps_partkey"
+        ],
         "id": 23,
         "name": "Aggregate"
       },
@@ -430,7 +614,22 @@
       ],
       "description": "[Join] Mode: Semi [ps_supplycost = MIN(ps_supplycost)] [p_partkey = ps_partkey]",
       "id": 2,
-      "name": "Join"
+      "join_mode": "Semi",
+      "join_predicate": {
+        "kind": "binary",
+        "left_column": "ps_supplycost",
+        "op": "=",
+        "right_column": "MIN(ps_supplycost)"
+      },
+      "name": "Join",
+      "secondary_join_predicates": [
+        {
+          "kind": "binary",
+          "left_column": "p_partkey",
+          "op": "=",
+          "right_column": "ps_partkey"
+        }
+      ]
     },
     "columns": [
       "n_name",

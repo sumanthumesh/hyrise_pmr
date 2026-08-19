@@ -16,7 +16,11 @@
               "columns_right": [],
               "description": "[StoredTable] Name: 'customer' pruned: 0/115 chunk(s), 7/8 column(s)",
               "id": 6,
-              "name": "StoredTable"
+              "name": "StoredTable",
+              "table_name": "customer",
+              "used_columns": [
+                "c_custkey"
+              ]
             },
             "columns": [],
             "columns_left": [],
@@ -36,7 +40,13 @@
                 "columns_right": [],
                 "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 6/9 column(s)",
                 "id": 9,
-                "name": "StoredTable"
+                "name": "StoredTable",
+                "table_name": "orders",
+                "used_columns": [
+                  "o_orderkey",
+                  "o_custkey",
+                  "o_comment"
+                ]
               },
               "columns": [
                 "o_comment"
@@ -47,7 +57,13 @@
               "columns_right": [],
               "description": "[Predicate] o_comment NOT LIKE '%special%requests%'",
               "id": 8,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "column": "o_comment",
+                "kind": "binary",
+                "op": "NOT LIKE",
+                "value": "%special%requests%"
+              }
             },
             "columns": [],
             "columns_left": [],
@@ -68,8 +84,18 @@
           ],
           "description": "[Join] Mode: Left [c_custkey = o_custkey]",
           "id": 4,
+          "join_mode": "Left",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "c_custkey",
+            "op": "=",
+            "right_column": "o_custkey"
+          },
           "name": "Join"
         },
+        "aggregate_expressions": [
+          "COUNT(o_orderkey)"
+        ],
         "columns": [
           "c_custkey",
           "o_orderkey"
@@ -80,9 +106,15 @@
         ],
         "columns_right": [],
         "description": "[Aggregate] GroupBy: [c_custkey] Aggregates: [COUNT(o_orderkey)]",
+        "group_by_expressions": [
+          "c_custkey"
+        ],
         "id": 3,
         "name": "Aggregate"
       },
+      "aggregate_expressions": [
+        "COUNT(*)"
+      ],
       "columns": [
         "INVALID_COLUMN_ID",
         "o_orderkey"
@@ -93,6 +125,9 @@
       ],
       "columns_right": [],
       "description": "[Aggregate] GroupBy: [COUNT(o_orderkey)] Aggregates: [COUNT(*)]",
+      "group_by_expressions": [
+        "COUNT(o_orderkey)"
+      ],
       "id": 2,
       "name": "Aggregate"
     },

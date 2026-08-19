@@ -22,7 +22,14 @@
                     "columns_right": [],
                     "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
                     "id": 9,
-                    "name": "StoredTable"
+                    "name": "StoredTable",
+                    "table_name": "lineitem",
+                    "used_columns": [
+                      "l_orderkey",
+                      "l_extendedprice",
+                      "l_discount",
+                      "l_returnflag"
+                    ]
                   },
                   "columns": [
                     "l_returnflag"
@@ -33,7 +40,13 @@
                   "columns_right": [],
                   "description": "[Predicate] l_returnflag = 'R'",
                   "id": 8,
-                  "name": "Predicate"
+                  "name": "Predicate",
+                  "predicate": {
+                    "column": "l_returnflag",
+                    "kind": "binary",
+                    "op": "=",
+                    "value": "R"
+                  }
                 },
                 "RightCard": "2991057.0 row(s) est.",
                 "Rightchildren": {
@@ -46,7 +59,13 @@
                       "columns_right": [],
                       "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 6/9 column(s)",
                       "id": 12,
-                      "name": "StoredTable"
+                      "name": "StoredTable",
+                      "table_name": "orders",
+                      "used_columns": [
+                        "o_orderkey",
+                        "o_custkey",
+                        "o_orderdate"
+                      ]
                     },
                     "columns": [
                       "o_orderdate"
@@ -57,7 +76,14 @@
                     "columns_right": [],
                     "description": "[Predicate] o_orderdate BETWEEN UPPER EXCLUSIVE '1993-10-01' AND '1994-01-01'",
                     "id": 11,
-                    "name": "Predicate"
+                    "name": "Predicate",
+                    "predicate": {
+                      "column": "o_orderdate",
+                      "kind": "between",
+                      "lower": "1993-10-01",
+                      "op": "BETWEEN UPPER EXCLUSIVE",
+                      "upper": "1994-01-01"
+                    }
                   },
                   "columns": [],
                   "columns_left": [],
@@ -78,6 +104,13 @@
                 ],
                 "description": "[Join] Mode: Semi [l_orderkey = o_orderkey]",
                 "id": 7,
+                "join_mode": "Semi",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "l_orderkey",
+                  "op": "=",
+                  "right_column": "o_orderkey"
+                },
                 "name": "Join"
               },
               "columns": [],
@@ -90,7 +123,11 @@
             "RightCard": "2991057.0 row(s) est.",
             "Rightchildren": {
               "LeftCard": "2991057.0 row(s) est.",
-              "Leftchildren": {},
+              "Leftchildren": {
+                "id": 10,
+                "name": "Validate",
+                "shared_ref": true
+              },
               "RightCard": "7500000.0 row(s) est.",
               "Rightchildren": {
                 "LeftCard": "7500000.0 row(s) est.",
@@ -102,7 +139,17 @@
                     "columns_right": [],
                     "description": "[StoredTable] Name: 'customer' pruned: 0/115 chunk(s), 1/8 column(s)",
                     "id": 16,
-                    "name": "StoredTable"
+                    "name": "StoredTable",
+                    "table_name": "customer",
+                    "used_columns": [
+                      "c_custkey",
+                      "c_name",
+                      "c_address",
+                      "c_nationkey",
+                      "c_phone",
+                      "c_acctbal",
+                      "c_comment"
+                    ]
                   },
                   "columns": [],
                   "columns_left": [],
@@ -120,7 +167,12 @@
                     "columns_right": [],
                     "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
                     "id": 18,
-                    "name": "StoredTable"
+                    "name": "StoredTable",
+                    "table_name": "nation",
+                    "used_columns": [
+                      "n_nationkey",
+                      "n_name"
+                    ]
                   },
                   "columns": [],
                   "columns_left": [],
@@ -141,6 +193,13 @@
                 ],
                 "description": "[Join] Mode: Inner [c_nationkey = n_nationkey]",
                 "id": 14,
+                "join_mode": "Inner",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "c_nationkey",
+                  "op": "=",
+                  "right_column": "n_nationkey"
+                },
                 "name": "Join"
               },
               "columns": [
@@ -155,6 +214,13 @@
               ],
               "description": "[Join] Mode: Inner [c_custkey = o_custkey]",
               "id": 13,
+              "join_mode": "Inner",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "c_custkey",
+                "op": "=",
+                "right_column": "o_custkey"
+              },
               "name": "Join"
             },
             "columns": [
@@ -169,6 +235,13 @@
             ],
             "description": "[Join] Mode: Inner [l_orderkey = o_orderkey]",
             "id": 5,
+            "join_mode": "Inner",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "l_orderkey",
+              "op": "=",
+              "right_column": "o_orderkey"
+            },
             "name": "Join"
           },
           "columns": [
@@ -198,6 +271,15 @@
           "id": 4,
           "name": "Projection"
         },
+        "aggregate_expressions": [
+          "SUM(l_extendedprice * (1 - l_discount))",
+          "ANY(c_comment)",
+          "ANY(c_address)",
+          "ANY(n_name)",
+          "ANY(c_phone)",
+          "ANY(c_acctbal)",
+          "ANY(c_name)"
+        ],
         "columns": [
           "c_acctbal",
           "c_address",
@@ -222,6 +304,9 @@
         ],
         "columns_right": [],
         "description": "[Aggregate] GroupBy: [c_custkey] Aggregates: [SUM(l_extendedprice * (1 - l_discount)), ANY(c_comment), ANY(c_address), ANY(n_name), ANY(c_phone), ANY(c_acctbal), ANY(c_name)]",
+        "group_by_expressions": [
+          "c_custkey"
+        ],
         "id": 3,
         "name": "Aggregate"
       },

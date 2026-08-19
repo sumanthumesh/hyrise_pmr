@@ -24,7 +24,14 @@
                       "columns_right": [],
                       "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
                       "id": 10,
-                      "name": "StoredTable"
+                      "name": "StoredTable",
+                      "table_name": "lineitem",
+                      "used_columns": [
+                        "l_orderkey",
+                        "l_suppkey",
+                        "l_commitdate",
+                        "l_receiptdate"
+                      ]
                     },
                     "RightCard": "20000.0 row(s) est.",
                     "Rightchildren": {
@@ -37,7 +44,13 @@
                           "columns_right": [],
                           "description": "[StoredTable] Name: 'supplier' pruned: 0/8 chunk(s), 4/7 column(s)",
                           "id": 13,
-                          "name": "StoredTable"
+                          "name": "StoredTable",
+                          "table_name": "supplier",
+                          "used_columns": [
+                            "s_suppkey",
+                            "s_name",
+                            "s_nationkey"
+                          ]
                         },
                         "RightCard": "1.0 row(s) est.",
                         "Rightchildren": {
@@ -50,7 +63,12 @@
                               "columns_right": [],
                               "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
                               "id": 16,
-                              "name": "StoredTable"
+                              "name": "StoredTable",
+                              "table_name": "nation",
+                              "used_columns": [
+                                "n_nationkey",
+                                "n_name"
+                              ]
                             },
                             "columns": [
                               "n_name"
@@ -61,7 +79,13 @@
                             "columns_right": [],
                             "description": "[Predicate] n_name = 'SAUDI ARABIA'",
                             "id": 15,
-                            "name": "Predicate"
+                            "name": "Predicate",
+                            "predicate": {
+                              "column": "n_name",
+                              "kind": "binary",
+                              "op": "=",
+                              "value": "SAUDI ARABIA"
+                            }
                           },
                           "columns": [],
                           "columns_left": [],
@@ -82,6 +106,13 @@
                         ],
                         "description": "[Join] Mode: Semi [s_nationkey = n_nationkey]",
                         "id": 12,
+                        "join_mode": "Semi",
+                        "join_predicate": {
+                          "kind": "binary",
+                          "left_column": "s_nationkey",
+                          "op": "=",
+                          "right_column": "n_nationkey"
+                        },
                         "name": "Join"
                       },
                       "columns": [],
@@ -103,6 +134,13 @@
                     ],
                     "description": "[Join] Mode: Semi [s_suppkey = l_suppkey]",
                     "id": 9,
+                    "join_mode": "Semi",
+                    "join_predicate": {
+                      "kind": "binary",
+                      "left_column": "s_suppkey",
+                      "op": "=",
+                      "right_column": "l_suppkey"
+                    },
                     "name": "Join"
                   },
                   "columns": [],
@@ -123,7 +161,12 @@
                       "columns_right": [],
                       "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 7/9 column(s)",
                       "id": 19,
-                      "name": "StoredTable"
+                      "name": "StoredTable",
+                      "table_name": "orders",
+                      "used_columns": [
+                        "o_orderkey",
+                        "o_orderstatus"
+                      ]
                     },
                     "columns": [
                       "o_orderstatus"
@@ -134,7 +177,13 @@
                     "columns_right": [],
                     "description": "[Predicate] o_orderstatus = 'F'",
                     "id": 18,
-                    "name": "Predicate"
+                    "name": "Predicate",
+                    "predicate": {
+                      "column": "o_orderstatus",
+                      "kind": "binary",
+                      "op": "=",
+                      "value": "F"
+                    }
                   },
                   "columns": [],
                   "columns_left": [],
@@ -155,6 +204,13 @@
                 ],
                 "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
                 "id": 7,
+                "join_mode": "Semi",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "o_orderkey",
+                  "op": "=",
+                  "right_column": "l_orderkey"
+                },
                 "name": "Join"
               },
               "columns": [
@@ -168,10 +224,20 @@
               "columns_right": [],
               "description": "[Predicate] l_receiptdate > l_commitdate",
               "id": 6,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "column": "l_receiptdate",
+                "kind": "binary",
+                "op": ">",
+                "value": "l_commitdate"
+              }
             },
             "RightCard": "20000.0 row(s) est.",
-            "Rightchildren": {},
+            "Rightchildren": {
+              "id": 11,
+              "name": "Validate",
+              "shared_ref": true
+            },
             "columns": [
               "l_suppkey",
               "s_suppkey"
@@ -184,6 +250,13 @@
             ],
             "description": "[Join] Mode: Inner [s_suppkey = l_suppkey]",
             "id": 5,
+            "join_mode": "Inner",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "s_suppkey",
+              "op": "=",
+              "right_column": "l_suppkey"
+            },
             "name": "Join"
           },
           "RightCard": "48001876.6 row(s) est.",
@@ -199,10 +272,21 @@
                   "columns_right": [],
                   "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
                   "id": 23,
-                  "name": "StoredTable"
+                  "name": "StoredTable",
+                  "table_name": "lineitem",
+                  "used_columns": [
+                    "l_orderkey",
+                    "l_suppkey",
+                    "l_commitdate",
+                    "l_receiptdate"
+                  ]
                 },
                 "RightCard": "12000232.4 row(s) est.",
-                "Rightchildren": {},
+                "Rightchildren": {
+                  "id": 5,
+                  "name": "Join",
+                  "shared_ref": true
+                },
                 "columns": [
                   "l_orderkey"
                 ],
@@ -214,6 +298,13 @@
                 ],
                 "description": "[Join] Mode: Semi [l_orderkey = l_orderkey]",
                 "id": 22,
+                "join_mode": "Semi",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "l_orderkey",
+                  "op": "=",
+                  "right_column": "l_orderkey"
+                },
                 "name": "Join"
               },
               "columns": [],
@@ -234,7 +325,13 @@
             "columns_right": [],
             "description": "[Predicate] l_receiptdate > l_commitdate",
             "id": 20,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "l_receiptdate",
+              "kind": "binary",
+              "op": ">",
+              "value": "l_commitdate"
+            }
           },
           "columns": [
             "l_orderkey",
@@ -250,7 +347,22 @@
           ],
           "description": "[Join] Mode: AntiNullAsFalse [l_orderkey = l_orderkey] [l_suppkey != l_suppkey]",
           "id": 4,
-          "name": "Join"
+          "join_mode": "AntiNullAsFalse",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "l_orderkey",
+            "op": "=",
+            "right_column": "l_orderkey"
+          },
+          "name": "Join",
+          "secondary_join_predicates": [
+            {
+              "kind": "binary",
+              "left_column": "l_suppkey",
+              "op": "!=",
+              "right_column": "l_suppkey"
+            }
+          ]
         },
         "RightCard": "48001876.6 row(s) est.",
         "Rightchildren": {
@@ -263,10 +375,21 @@
               "columns_right": [],
               "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
               "id": 26,
-              "name": "StoredTable"
+              "name": "StoredTable",
+              "table_name": "lineitem",
+              "used_columns": [
+                "l_orderkey",
+                "l_suppkey",
+                "l_commitdate",
+                "l_receiptdate"
+              ]
             },
             "RightCard": "12000232.4 row(s) est.",
-            "Rightchildren": {},
+            "Rightchildren": {
+              "id": 5,
+              "name": "Join",
+              "shared_ref": true
+            },
             "columns": [
               "l_orderkey"
             ],
@@ -278,6 +401,13 @@
             ],
             "description": "[Join] Mode: Semi [l_orderkey = l_orderkey]",
             "id": 25,
+            "join_mode": "Semi",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "l_orderkey",
+              "op": "=",
+              "right_column": "l_orderkey"
+            },
             "name": "Join"
           },
           "columns": [],
@@ -301,8 +431,26 @@
         ],
         "description": "[Join] Mode: Semi [l_orderkey = l_orderkey] [l_suppkey != l_suppkey]",
         "id": 3,
-        "name": "Join"
+        "join_mode": "Semi",
+        "join_predicate": {
+          "kind": "binary",
+          "left_column": "l_orderkey",
+          "op": "=",
+          "right_column": "l_orderkey"
+        },
+        "name": "Join",
+        "secondary_join_predicates": [
+          {
+            "kind": "binary",
+            "left_column": "l_suppkey",
+            "op": "!=",
+            "right_column": "l_suppkey"
+          }
+        ]
       },
+      "aggregate_expressions": [
+        "COUNT(*)"
+      ],
       "columns": [
         "INVALID_COLUMN_ID",
         "s_name"
@@ -313,6 +461,9 @@
       ],
       "columns_right": [],
       "description": "[Aggregate] GroupBy: [s_name] Aggregates: [COUNT(*)]",
+      "group_by_expressions": [
+        "s_name"
+      ],
       "id": 2,
       "name": "Aggregate"
     },

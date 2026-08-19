@@ -26,7 +26,15 @@
                         "columns_right": [],
                         "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 11/16 column(s)",
                         "id": 11,
-                        "name": "StoredTable"
+                        "name": "StoredTable",
+                        "table_name": "lineitem",
+                        "used_columns": [
+                          "l_orderkey",
+                          "l_shipdate",
+                          "l_commitdate",
+                          "l_receiptdate",
+                          "l_shipmode"
+                        ]
                       },
                       "columns": [
                         "l_receiptdate"
@@ -37,7 +45,14 @@
                       "columns_right": [],
                       "description": "[Predicate] l_receiptdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
                       "id": 10,
-                      "name": "Predicate"
+                      "name": "Predicate",
+                      "predicate": {
+                        "column": "l_receiptdate",
+                        "kind": "between",
+                        "lower": "1994-01-01",
+                        "op": "BETWEEN UPPER EXCLUSIVE",
+                        "upper": "1995-01-01"
+                      }
                     },
                     "columns": [
                       "l_shipmode"
@@ -48,12 +63,22 @@
                     "columns_right": [],
                     "description": "[Predicate] l_shipmode = 'SHIP'",
                     "id": 9,
-                    "name": "Predicate"
+                    "name": "Predicate",
+                    "predicate": {
+                      "column": "l_shipmode",
+                      "kind": "binary",
+                      "op": "=",
+                      "value": "SHIP"
+                    }
                   },
                   "RightCard": "6483973.2 row(s) est.",
                   "Rightchildren": {
                     "LeftCard": "45395392.0 row(s) est.",
-                    "Leftchildren": {},
+                    "Leftchildren": {
+                      "id": 10,
+                      "name": "Predicate",
+                      "shared_ref": true
+                    },
                     "columns": [
                       "l_shipmode"
                     ],
@@ -63,7 +88,13 @@
                     "columns_right": [],
                     "description": "[Predicate] l_shipmode = 'MAIL'",
                     "id": 12,
-                    "name": "Predicate"
+                    "name": "Predicate",
+                    "predicate": {
+                      "column": "l_shipmode",
+                      "kind": "binary",
+                      "op": "=",
+                      "value": "MAIL"
+                    }
                   },
                   "columns": [],
                   "columns_left": [],
@@ -90,7 +121,13 @@
               "columns_right": [],
               "description": "[Predicate] l_receiptdate > l_commitdate",
               "id": 6,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "column": "l_receiptdate",
+                "kind": "binary",
+                "op": ">",
+                "value": "l_commitdate"
+              }
             },
             "columns": [
               "l_commitdate",
@@ -103,7 +140,13 @@
             "columns_right": [],
             "description": "[Predicate] l_commitdate > l_shipdate",
             "id": 5,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "l_commitdate",
+              "kind": "binary",
+              "op": ">",
+              "value": "l_shipdate"
+            }
           },
           "RightCard": "6484691.0 row(s) est.",
           "Rightchildren": {
@@ -116,10 +159,19 @@
                 "columns_right": [],
                 "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 7/9 column(s)",
                 "id": 15,
-                "name": "StoredTable"
+                "name": "StoredTable",
+                "table_name": "orders",
+                "used_columns": [
+                  "o_orderkey",
+                  "o_orderpriority"
+                ]
               },
               "RightCard": "12968664.2 row(s) est.",
-              "Rightchildren": {},
+              "Rightchildren": {
+                "id": 5,
+                "name": "Predicate",
+                "shared_ref": true
+              },
               "columns": [
                 "l_orderkey",
                 "o_orderkey"
@@ -132,6 +184,13 @@
               ],
               "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
               "id": 14,
+              "join_mode": "Semi",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "o_orderkey",
+                "op": "=",
+                "right_column": "l_orderkey"
+              },
               "name": "Join"
             },
             "columns": [],
@@ -153,6 +212,13 @@
           ],
           "description": "[Join] Mode: Inner [o_orderkey = l_orderkey]",
           "id": 4,
+          "join_mode": "Inner",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "o_orderkey",
+            "op": "=",
+            "right_column": "l_orderkey"
+          },
           "name": "Join"
         },
         "columns": [
@@ -168,6 +234,10 @@
         "id": 3,
         "name": "Projection"
       },
+      "aggregate_expressions": [
+        "SUM(CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END)",
+        "SUM(CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END)"
+      ],
       "columns": [
         "l_shipmode",
         "o_orderpriority"
@@ -178,6 +248,9 @@
       ],
       "columns_right": [],
       "description": "[Aggregate] GroupBy: [l_shipmode] Aggregates: [SUM(CASE WHEN o_orderpriority = '1-URGENT' OR o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END), SUM(CASE WHEN o_orderpriority != '1-URGENT' AND o_orderpriority != '2-HIGH' THEN 1 ELSE 0 END)]",
+      "group_by_expressions": [
+        "l_shipmode"
+      ],
       "id": 2,
       "name": "Aggregate"
     },

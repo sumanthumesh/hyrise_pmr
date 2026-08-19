@@ -18,7 +18,14 @@
                 "columns_right": [],
                 "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
                 "id": 7,
-                "name": "StoredTable"
+                "name": "StoredTable",
+                "table_name": "lineitem",
+                "used_columns": [
+                  "l_quantity",
+                  "l_extendedprice",
+                  "l_discount",
+                  "l_shipdate"
+                ]
               },
               "columns": [
                 "l_shipdate"
@@ -29,7 +36,14 @@
               "columns_right": [],
               "description": "[Predicate] l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
               "id": 6,
-              "name": "Predicate"
+              "name": "Predicate",
+              "predicate": {
+                "column": "l_shipdate",
+                "kind": "between",
+                "lower": "1994-01-01",
+                "op": "BETWEEN UPPER EXCLUSIVE",
+                "upper": "1995-01-01"
+              }
             },
             "columns": [
               "l_discount"
@@ -40,7 +54,14 @@
             "columns_right": [],
             "description": "[Predicate] l_discount BETWEEN INCLUSIVE 0.05 AND 0.07",
             "id": 5,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "l_discount",
+              "kind": "between",
+              "lower": "0.05",
+              "op": "BETWEEN INCLUSIVE",
+              "upper": "0.07"
+            }
           },
           "columns": [
             "l_quantity"
@@ -51,7 +72,13 @@
           "columns_right": [],
           "description": "[Predicate] l_quantity < 24",
           "id": 4,
-          "name": "Predicate"
+          "name": "Predicate",
+          "predicate": {
+            "column": "l_quantity",
+            "kind": "binary",
+            "op": "<",
+            "value": "24"
+          }
         },
         "columns": [],
         "columns_left": [],
@@ -73,6 +100,9 @@
       "id": 2,
       "name": "Projection"
     },
+    "aggregate_expressions": [
+      "SUM(l_extendedprice * l_discount)"
+    ],
     "columns": [
       "l_discount",
       "l_extendedprice"
@@ -83,6 +113,7 @@
     ],
     "columns_right": [],
     "description": "[Aggregate] GroupBy: [] Aggregates: [SUM(l_extendedprice * l_discount)]",
+    "group_by_expressions": [],
     "id": 1,
     "name": "Aggregate"
   },

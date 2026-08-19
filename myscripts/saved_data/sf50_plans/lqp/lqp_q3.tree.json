@@ -22,7 +22,14 @@
                     "columns_right": [],
                     "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 12/16 column(s)",
                     "id": 9,
-                    "name": "StoredTable"
+                    "name": "StoredTable",
+                    "table_name": "lineitem",
+                    "used_columns": [
+                      "l_orderkey",
+                      "l_extendedprice",
+                      "l_discount",
+                      "l_shipdate"
+                    ]
                   },
                   "columns": [
                     "l_shipdate"
@@ -33,7 +40,13 @@
                   "columns_right": [],
                   "description": "[Predicate] l_shipdate > '1995-03-15'",
                   "id": 8,
-                  "name": "Predicate"
+                  "name": "Predicate",
+                  "predicate": {
+                    "column": "l_shipdate",
+                    "kind": "binary",
+                    "op": ">",
+                    "value": "1995-03-15"
+                  }
                 },
                 "RightCard": "10940830.1 row(s) est.",
                 "Rightchildren": {
@@ -48,7 +61,14 @@
                         "columns_right": [],
                         "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 5/9 column(s)",
                         "id": 13,
-                        "name": "StoredTable"
+                        "name": "StoredTable",
+                        "table_name": "orders",
+                        "used_columns": [
+                          "o_orderkey",
+                          "o_custkey",
+                          "o_orderdate",
+                          "o_shippriority"
+                        ]
                       },
                       "columns": [
                         "o_orderdate"
@@ -59,7 +79,13 @@
                       "columns_right": [],
                       "description": "[Predicate] o_orderdate < '1995-03-15'",
                       "id": 12,
-                      "name": "Predicate"
+                      "name": "Predicate",
+                      "predicate": {
+                        "column": "o_orderdate",
+                        "kind": "binary",
+                        "op": "<",
+                        "value": "1995-03-15"
+                      }
                     },
                     "RightCard": "1500036.0 row(s) est.",
                     "Rightchildren": {
@@ -72,7 +98,12 @@
                           "columns_right": [],
                           "description": "[StoredTable] Name: 'customer' pruned: 0/115 chunk(s), 6/8 column(s)",
                           "id": 16,
-                          "name": "StoredTable"
+                          "name": "StoredTable",
+                          "table_name": "customer",
+                          "used_columns": [
+                            "c_custkey",
+                            "c_mktsegment"
+                          ]
                         },
                         "columns": [
                           "c_mktsegment"
@@ -83,7 +114,13 @@
                         "columns_right": [],
                         "description": "[Predicate] c_mktsegment = 'BUILDING'",
                         "id": 15,
-                        "name": "Predicate"
+                        "name": "Predicate",
+                        "predicate": {
+                          "column": "c_mktsegment",
+                          "kind": "binary",
+                          "op": "=",
+                          "value": "BUILDING"
+                        }
                       },
                       "columns": [],
                       "columns_left": [],
@@ -104,6 +141,13 @@
                     ],
                     "description": "[Join] Mode: Semi [c_custkey = o_custkey]",
                     "id": 11,
+                    "join_mode": "Semi",
+                    "join_predicate": {
+                      "kind": "binary",
+                      "left_column": "c_custkey",
+                      "op": "=",
+                      "right_column": "o_custkey"
+                    },
                     "name": "Join"
                   },
                   "columns": [],
@@ -125,6 +169,13 @@
                 ],
                 "description": "[Join] Mode: Semi [l_orderkey = o_orderkey]",
                 "id": 7,
+                "join_mode": "Semi",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "l_orderkey",
+                  "op": "=",
+                  "right_column": "o_orderkey"
+                },
                 "name": "Join"
               },
               "columns": [],
@@ -135,7 +186,11 @@
               "name": "Validate"
             },
             "RightCard": "10940830.1 row(s) est.",
-            "Rightchildren": {},
+            "Rightchildren": {
+              "id": 10,
+              "name": "Validate",
+              "shared_ref": true
+            },
             "columns": [
               "l_orderkey",
               "o_orderkey"
@@ -148,6 +203,13 @@
             ],
             "description": "[Join] Mode: Inner [l_orderkey = o_orderkey]",
             "id": 5,
+            "join_mode": "Inner",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "l_orderkey",
+              "op": "=",
+              "right_column": "o_orderkey"
+            },
             "name": "Join"
           },
           "columns": [
@@ -169,6 +231,9 @@
           "id": 4,
           "name": "Projection"
         },
+        "aggregate_expressions": [
+          "SUM(l_extendedprice * (1 - l_discount))"
+        ],
         "columns": [
           "l_discount",
           "l_extendedprice",
@@ -185,6 +250,11 @@
         ],
         "columns_right": [],
         "description": "[Aggregate] GroupBy: [l_orderkey, o_orderdate, o_shippriority] Aggregates: [SUM(l_extendedprice * (1 - l_discount))]",
+        "group_by_expressions": [
+          "l_orderkey",
+          "o_orderdate",
+          "o_shippriority"
+        ],
         "id": 3,
         "name": "Aggregate"
       },

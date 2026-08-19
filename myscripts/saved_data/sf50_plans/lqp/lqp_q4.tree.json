@@ -16,7 +16,13 @@
               "columns_right": [],
               "description": "[StoredTable] Name: 'orders' pruned: 0/1145 chunk(s), 6/9 column(s)",
               "id": 6,
-              "name": "StoredTable"
+              "name": "StoredTable",
+              "table_name": "orders",
+              "used_columns": [
+                "o_orderkey",
+                "o_orderdate",
+                "o_orderpriority"
+              ]
             },
             "columns": [
               "o_orderdate"
@@ -27,7 +33,14 @@
             "columns_right": [],
             "description": "[Predicate] o_orderdate BETWEEN UPPER EXCLUSIVE '1993-07-01' AND '1993-10-01'",
             "id": 5,
-            "name": "Predicate"
+            "name": "Predicate",
+            "predicate": {
+              "column": "o_orderdate",
+              "kind": "between",
+              "lower": "1993-07-01",
+              "op": "BETWEEN UPPER EXCLUSIVE",
+              "upper": "1993-10-01"
+            }
           },
           "columns": [],
           "columns_left": [],
@@ -49,10 +62,20 @@
                 "columns_right": [],
                 "description": "[StoredTable] Name: 'lineitem' pruned: 0/4578 chunk(s), 13/16 column(s)",
                 "id": 10,
-                "name": "StoredTable"
+                "name": "StoredTable",
+                "table_name": "lineitem",
+                "used_columns": [
+                  "l_orderkey",
+                  "l_commitdate",
+                  "l_receiptdate"
+                ]
               },
               "RightCard": "2989678.6 row(s) est.",
-              "Rightchildren": {},
+              "Rightchildren": {
+                "id": 4,
+                "name": "Validate",
+                "shared_ref": true
+              },
               "columns": [
                 "l_orderkey",
                 "o_orderkey"
@@ -65,6 +88,13 @@
               ],
               "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
               "id": 9,
+              "join_mode": "Semi",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "o_orderkey",
+                "op": "=",
+                "right_column": "l_orderkey"
+              },
               "name": "Join"
             },
             "columns": [],
@@ -85,7 +115,13 @@
           "columns_right": [],
           "description": "[Predicate] l_commitdate < l_receiptdate",
           "id": 7,
-          "name": "Predicate"
+          "name": "Predicate",
+          "predicate": {
+            "column": "l_commitdate",
+            "kind": "binary",
+            "op": "<",
+            "value": "l_receiptdate"
+          }
         },
         "columns": [
           "l_orderkey",
@@ -99,8 +135,18 @@
         ],
         "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
         "id": 3,
+        "join_mode": "Semi",
+        "join_predicate": {
+          "kind": "binary",
+          "left_column": "o_orderkey",
+          "op": "=",
+          "right_column": "l_orderkey"
+        },
         "name": "Join"
       },
+      "aggregate_expressions": [
+        "COUNT(*)"
+      ],
       "columns": [
         "INVALID_COLUMN_ID",
         "o_orderpriority"
@@ -111,6 +157,9 @@
       ],
       "columns_right": [],
       "description": "[Aggregate] GroupBy: [o_orderpriority] Aggregates: [COUNT(*)]",
+      "group_by_expressions": [
+        "o_orderpriority"
+      ],
       "id": 2,
       "name": "Aggregate"
     },
