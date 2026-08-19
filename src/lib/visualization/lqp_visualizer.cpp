@@ -20,15 +20,25 @@
 #include <set>
 
 #include "expression/abstract_expression.hpp"
+#include "expression/abstract_predicate_expression.hpp"
+#include "expression/between_expression.hpp"
+#include "expression/binary_predicate_expression.hpp"
+#include "expression/is_null_expression.hpp"
 #include "expression/lqp_column_expression.hpp"
 #include "expression/expression_utils.hpp"
 #include "expression/lqp_subquery_expression.hpp"
+#include "expression/value_expression.hpp"
+#include "hyrise.hpp"
 #include "logical_query_plan/abstract_lqp_node.hpp"
 #include "logical_query_plan/abstract_non_query_node.hpp"
+#include "logical_query_plan/aggregate_node.hpp"
 #include "logical_query_plan/data_dependencies/functional_dependency.hpp"
 #include "logical_query_plan/join_node.hpp"
 #include "logical_query_plan/lqp_utils.hpp"
+#include "logical_query_plan/predicate_node.hpp"
+#include "logical_query_plan/stored_table_node.hpp"
 #include "statistics/cardinality_estimator.hpp"
+#include "storage/table.hpp"
 #include "types.hpp"
 #include "visualization/abstract_visualizer.hpp"
 
@@ -183,20 +193,122 @@ LQPVisualizer::LQPColumnsSplit LQPVisualizer::_collect_columns(
             std::vector<std::string>{right_names.begin(), right_names.end()}};
 }
 
+namespace
+{
+// Helpers duplicated from pqp_visualizer.cpp. If this drifts, hoist both into a shared
+// header (e.g. visualization/plan_json_utils.hpp). Kept local for now to avoid touching
+// PQP's build graph.
+
+std::string variant_to_string(const AllTypeVariant &value)
+{
+    try
+    {
+        auto oss = std::ostringstream{};
+        oss << value;
+        return oss.str();
+    }
+    catch (...)
+    {
+        return std::string{"<unstringifiable>"};
+    }
+}
+
+std::string predicate_condition_string(PredicateCondition condition)
+{
+    auto oss = std::ostringstream{};
+    oss << condition;
+    return oss.str();
+}
+
+// Best-effort stringification of a scalar operand. ValueExpression -> literal; column /
+// arithmetic -> as_column_name(); LQPSubqueryExpression -> "<subquery>" (pointers are
+// meaningless to downstream consumers).
+std::string operand_string(const std::shared_ptr<AbstractExpression> &expression)
+{
+    if (!expression) return std::string{};
+    if (const auto value_expr = std::dynamic_pointer_cast<const ValueExpression>(expression))
+    {
+        return variant_to_string(value_expr->value);
+    }
+    if (std::dynamic_pointer_cast<const LQPSubqueryExpression>(expression))
+    {
+        return std::string{"<subquery>"};
+    }
+    return expression->as_column_name();
+}
+
+// Fills node["predicate"] with {kind, column, op, [value|lower/upper]} for the three
+// scalar predicate flavors. Mirrors emit_structured_predicate() in pqp_visualizer.cpp.
+// If the right-hand side is an LQPSubqueryExpression, kind becomes "binary_subquery".
+void emit_structured_predicate(nlohmann::json &node, const std::shared_ptr<AbstractExpression> &predicate)
+{
+    if (!predicate) return;
+
+    if (const auto binary = std::dynamic_pointer_cast<const BinaryPredicateExpression>(predicate))
+    {
+        const auto rhs_is_subquery =
+            std::dynamic_pointer_cast<const LQPSubqueryExpression>(binary->right_operand()) != nullptr;
+        node["predicate"] = {
+            {"kind", rhs_is_subquery ? "binary_subquery" : "binary"},
+            {"column", binary->left_operand()->as_column_name()},
+            {"op", predicate_condition_string(binary->predicate_condition)},
+            {"value", operand_string(binary->right_operand())},
+        };
+        return;
+    }
+    if (const auto between = std::dynamic_pointer_cast<const BetweenExpression>(predicate))
+    {
+        node["predicate"] = {
+            {"kind", "between"},
+            {"column", between->operand()->as_column_name()},
+            {"op", predicate_condition_string(between->predicate_condition)},
+            {"lower", operand_string(between->lower_bound())},
+            {"upper", operand_string(between->upper_bound())},
+        };
+        return;
+    }
+    if (const auto is_null = std::dynamic_pointer_cast<const IsNullExpression>(predicate))
+    {
+        node["predicate"] = {
+            {"kind", "is_null"},
+            {"column", is_null->operand()->as_column_name()},
+            {"op", predicate_condition_string(is_null->predicate_condition)},
+        };
+        return;
+    }
+    // Anything else (logical AND/OR, expression evaluator, correlated subquery) — record
+    // kind only. Downstream can fall back to the free-text description if it needs more.
+    node["predicate"] = {{"kind", "complex"}};
+}
+
+// Structured join-predicate emission. Join predicates are symmetric (left_col OP
+// right_col) so we use column-labeled fields rather than the scan-style column/value.
+void emit_join_predicate(nlohmann::json &node, const std::shared_ptr<AbstractExpression> &predicate)
+{
+    if (!predicate) return;
+    if (const auto binary = std::dynamic_pointer_cast<const BinaryPredicateExpression>(predicate))
+    {
+        node["join_predicate"] = {
+            {"kind", "binary"},
+            {"left_column", binary->left_operand()->as_column_name()},
+            {"op", predicate_condition_string(binary->predicate_condition)},
+            {"right_column", binary->right_operand()->as_column_name()},
+        };
+    }
+    else
+    {
+        node["join_predicate"] = {{"kind", "complex"}};
+    }
+}
+} // namespace
+
 nlohmann::json LQPVisualizer::_build_hierarchical_subtree(
     const std::shared_ptr<const AbstractLQPNode> &node,
     const CardinalityEstimator &cardinality_estimator,
     std::unordered_set<std::shared_ptr<const AbstractLQPNode>> &visited_nodes)
 {
-    // Diamond-shaped LQPs: shared subtrees are emitted only once.
-    if (visited_nodes.contains(node))
-    {
-        return nlohmann::json::object();
-    }
-    visited_nodes.insert(node);
-
-    // Use the same visit-order id that _build_subtree (PNG pass) assigned, so PNG labels and
-    // JSON ids agree.
+    // Use the same visit-order id that _build_subtree (PNG pass) assigned, so PNG labels
+    // and JSON ids agree.
     const auto id_it = _node_ids.find(node);
     const auto assigned_id =
         (id_it != _node_ids.end()) ? id_it->second : _node_ids.size();
@@ -204,6 +316,20 @@ nlohmann::json LQPVisualizer::_build_hierarchical_subtree(
     {
         _node_ids[node] = assigned_id;
     }
+
+    // Diamond-shaped LQPs: shared subtrees are emitted only once. Prior versions returned
+    // an empty {} placeholder here, which showed up in the JSON as unnamed nodes. Emit a
+    // minimal stub that preserves identity so consumers can join back to the full node
+    // emitted elsewhere in the tree.
+    if (visited_nodes.contains(node))
+    {
+        return nlohmann::json{
+            {"id", assigned_id},
+            {"name", std::string{magic_enum::enum_name(node->type)}},
+            {"shared_ref", true},
+        };
+    }
+    visited_nodes.insert(node);
 
     auto out = nlohmann::json::object();
     out["id"] = assigned_id;
@@ -229,6 +355,102 @@ nlohmann::json LQPVisualizer::_build_hierarchical_subtree(
         const auto right = node->right_input();
         out["Rightchildren"] = _build_hierarchical_subtree(right, cardinality_estimator, visited_nodes);
         out["RightCard"] = card_label(cardinality_estimator.estimate_cardinality(right));
+    }
+
+    // Per-node-type structured detail. Mirrors the fields the PQP visualizer emits so a
+    // downstream heuristic can consume LQP JSONs the same way.
+    switch (node->type)
+    {
+    case LQPNodeType::StoredTable:
+    {
+        // StoredTable's own columns_left/right/columns are empty (it reads nothing
+        // itself). Emit the surviving-column list here so downstream analysis can map
+        // referenced columns back to their originating base table without parsing the
+        // "pruned: X/Y column(s)" free text out of description.
+        const auto stored = std::dynamic_pointer_cast<const StoredTableNode>(node);
+        if (stored)
+        {
+            const auto &table = *Hyrise::get().storage_manager.get_table(stored->table_name);
+            const auto &pruned = stored->pruned_column_ids();
+            auto used = std::vector<std::string>{};
+            used.reserve(table.column_count());
+            auto pruned_it = pruned.begin();
+            for (auto column_id = ColumnID{0}; column_id < table.column_count(); ++column_id)
+            {
+                if (pruned_it != pruned.end() && *pruned_it == column_id)
+                {
+                    ++pruned_it;
+                    continue;
+                }
+                used.push_back(table.column_name(column_id));
+            }
+            out["used_columns"] = used;
+            out["table_name"] = stored->table_name;
+        }
+        break;
+    }
+    case LQPNodeType::Predicate:
+    {
+        const auto pred = std::dynamic_pointer_cast<const PredicateNode>(node);
+        if (pred)
+        {
+            emit_structured_predicate(out, pred->predicate());
+        }
+        break;
+    }
+    case LQPNodeType::Aggregate:
+    {
+        // AggregateNode stores group-by exprs first, then aggregates, both in
+        // node_expressions. aggregate_expressions_begin_idx marks the split point.
+        const auto agg = std::dynamic_pointer_cast<const AggregateNode>(node);
+        if (agg)
+        {
+            auto group_by = std::vector<std::string>{};
+            auto aggregates = std::vector<std::string>{};
+            const auto split = agg->aggregate_expressions_begin_idx;
+            group_by.reserve(split);
+            aggregates.reserve(agg->node_expressions.size() - split);
+            for (size_t i = 0; i < agg->node_expressions.size(); ++i)
+            {
+                const auto &expr = agg->node_expressions[i];
+                (i < split ? group_by : aggregates).push_back(expr->as_column_name());
+            }
+            out["group_by_expressions"] = group_by;
+            out["aggregate_expressions"] = aggregates;
+        }
+        break;
+    }
+    case LQPNodeType::Join:
+    {
+        // No build_side at LQP -- that's picked by the physical translator. Emit
+        // join_mode (Inner/Semi/Anti/Left/Cross/...) which drives memory-shape
+        // expectations, and structured join_predicate(s) for symmetry with Predicate.
+        const auto join = std::dynamic_pointer_cast<const JoinNode>(node);
+        if (join)
+        {
+            out["join_mode"] = std::string{magic_enum::enum_name(join->join_mode)};
+            const auto &preds = join->join_predicates();
+            if (!preds.empty())
+            {
+                emit_join_predicate(out, preds.front());
+                if (preds.size() > 1)
+                {
+                    // Secondary join predicates (rare — inner joins on multi-column keys).
+                    auto secondaries = nlohmann::json::array();
+                    for (auto i = size_t{1}; i < preds.size(); ++i)
+                    {
+                        auto tmp = nlohmann::json::object();
+                        emit_join_predicate(tmp, preds[i]);
+                        secondaries.push_back(tmp["join_predicate"]);
+                    }
+                    out["secondary_join_predicates"] = secondaries;
+                }
+            }
+        }
+        break;
+    }
+    default:
+        break;
     }
 
     return out;
