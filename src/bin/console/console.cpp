@@ -2070,7 +2070,7 @@ int Console::_hshell(const std::string &args)
                 requests.push_back({sm.get_table(m.table_name), m.column_name, m.numa_node});
             }
 
-            migration_engine->run_parallel_migrations(requests);
+            migration_engine->run_parallel_migrations(requests, Hyrise::get().label);
 
             migration_engine->aggregate_migrated_status();
             _migration_queue.clear();

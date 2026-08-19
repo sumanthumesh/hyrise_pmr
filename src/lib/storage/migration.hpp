@@ -58,7 +58,7 @@ class MigrationEngine
     };
 
     // Run migrations for all requests with a shared thread pool and round-robin task interleaving.
-    void run_parallel_migrations(const std::vector<MigrationRequest>& requests);
+    void run_parallel_migrations(const std::vector<MigrationRequest>& requests, const std::string& label = "");
     /**
      * Copy the given chunks' segments of one column into `memory_resource`, in parallel.
      * Returns the (sorted) chunk IDs whose segment did not fit and still need a pool.

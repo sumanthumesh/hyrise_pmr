@@ -266,7 +266,7 @@ void MigrationEngine::delete_column_pool(const std::string &column_name)
     _columns_to_pools_mapping.erase(it);
 }
 
-void MigrationEngine::run_parallel_migrations(const std::vector<MigrationRequest>& requests)
+void MigrationEngine::run_parallel_migrations(const std::vector<MigrationRequest>& requests, const std::string& label)
 {
     if (requests.empty()) return;
 
@@ -414,8 +414,8 @@ void MigrationEngine::run_parallel_migrations(const std::vector<MigrationRequest
             wall_end - wall_start).count();
         const double bw = (static_cast<double>(total_bytes) / static_cast<double>(1ULL << 30))
                           / (static_cast<double>(duration_ns) / 1e9);
-        std::printf("##ParallelMigration: %zu columns, %zu bytes in %ld ns (%.2f GB/s aggregate)\n",
-                    col_infos.size(), total_bytes, duration_ns, bw);
+        std::printf("##ParallelMigration(%s): %zu columns, %zu bytes in %ld ns (%.2f GB/s aggregate)\n",
+                    label.c_str(), col_infos.size(), total_bytes, duration_ns, bw);
     }
 }
 
