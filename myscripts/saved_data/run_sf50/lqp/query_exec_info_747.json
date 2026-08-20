@@ -1,20 +1,22 @@
 {
-  "duration": 1496309012,
-  "label": "d13421772800_tf4026531840_q12",
+  "duration": 4367635597,
+  "label": "d5368709120_tf2147483648_q18",
   "memory_deltas": [
     {
-      "allocated_bytes": 0,
+      "allocated_bytes": 3300736,
       "numa_node": 1,
+      "peak_mem_usage": 0,
       "resource_id": 3,
-      "total_allocated_bytes_delta": 0
+      "total_allocated_bytes_delta": 8763826380
     },
     {
-      "allocated_bytes": 1940512,
+      "allocated_bytes": 4802463632,
       "numa_node": 0,
+      "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 6845090004
+      "total_allocated_bytes_delta": 14445006680
     }
   ],
-  "script_file": "/home/umeshsum/tpch_queries/12.sql",
-  "sql": "select\n\tl_shipmode,\n\tsum(case\n\t\twhen o_orderpriority = '1-URGENT'\n\t\t\tor o_orderpriority = '2-HIGH'\n\t\t\tthen 1\n\t\telse 0\n\tend) as high_line_count,\n\tsum(case\n\t\twhen o_orderpriority <> '1-URGENT'\n\t\t\tand o_orderpriority <> '2-HIGH'\n\t\t\tthen 1\n\t\telse 0\n\tend) as low_line_count\nfrom\n\torders,\n\tlineitem\nwhere\n\to_orderkey = l_orderkey\n\tand l_shipmode in ('MAIL', 'SHIP')\n\tand l_commitdate < l_receiptdate\n\tand l_shipdate < l_commitdate\n\tand l_receiptdate >= date '1994-01-01'\n\tand l_receiptdate < date '1994-01-01' + interval '1' year\ngroup by\n\tl_shipmode\norder by\n\tl_shipmode;"
+  "script_file": "/home/umeshsum/tpch_queries/18.sql",
+  "sql": "select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate;"
 }

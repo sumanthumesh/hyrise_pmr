@@ -1,20 +1,22 @@
 {
-  "duration": 1365247612,
-  "label": "d13421772800_tf2684354560_q4",
+  "duration": 4355906139,
+  "label": "d5368709120_tf1610612736_q18",
   "memory_deltas": [
     {
-      "allocated_bytes": 0,
+      "allocated_bytes": 3300736,
       "numa_node": 1,
+      "peak_mem_usage": 0,
       "resource_id": 3,
-      "total_allocated_bytes_delta": 0
+      "total_allocated_bytes_delta": 8763809508
     },
     {
-      "allocated_bytes": 1104592,
+      "allocated_bytes": 4802463632,
       "numa_node": 0,
+      "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 11750982056
+      "total_allocated_bytes_delta": 14445006680
     }
   ],
-  "script_file": "/home/umeshsum/tpch_queries/4.sql",
-  "sql": "select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date '1993-07-01'\n\tand o_orderdate < date '1993-07-01' + interval '3' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;"
+  "script_file": "/home/umeshsum/tpch_queries/18.sql",
+  "sql": "select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate;"
 }

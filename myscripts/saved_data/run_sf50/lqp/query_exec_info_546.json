@@ -1,20 +1,22 @@
 {
-  "duration": 2321352832,
-  "label": "d13421772800_tf1342177280_q14",
+  "duration": 6694560270,
+  "label": "d2684354560_tf1073741824_q18",
   "memory_deltas": [
     {
-      "allocated_bytes": 0,
+      "allocated_bytes": 3300736,
       "numa_node": 1,
+      "peak_mem_usage": 0,
       "resource_id": 3,
-      "total_allocated_bytes_delta": 0
+      "total_allocated_bytes_delta": 15963812164
     },
     {
-      "allocated_bytes": 760,
+      "allocated_bytes": 4802463632,
       "numa_node": 0,
+      "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 2176131663
+      "total_allocated_bytes_delta": 7245006616
     }
   ],
-  "script_file": "/home/umeshsum/tpch_queries/14.sql",
-  "sql": "select\n\t100.00 * sum(case\n\t\twhen p_type like 'PROMO%'\n\t\t\tthen l_extendedprice * (1 - l_discount)\n\t\telse 0\n\tend) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue\nfrom\n\tlineitem,\n\tpart\nwhere\n\tl_partkey = p_partkey\n\tand l_shipdate >= date '1995-09-01'\n\tand l_shipdate < date '1995-09-01' + interval '1' month;"
+  "script_file": "/home/umeshsum/tpch_queries/18.sql",
+  "sql": "select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate;"
 }
