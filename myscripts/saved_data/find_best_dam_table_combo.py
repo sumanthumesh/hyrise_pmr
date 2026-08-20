@@ -7,17 +7,16 @@ if __name__ == "__main__":
     parser.add_argument("--input", "-i", help="Input CSV file (default: consolidated_data.csv)")
     parser.add_argument("--output", "-o", default="per_query_min_duration.csv", help="Output CSV file for per-query min duration (default: per_query_min_duration.csv)")
     parser.add_argument("--migration", "-m", default=None,
-                        help="Migration duration CSV (columns: dam_size_gb, local_capacity_gb, query_id, migration_duration_ns). "
-                             "When provided, migration cost is added to execution duration before finding the best combo.")
-    parser.add_argument("--migration-size", "-s",  default=None,
-                        help="Migration size CSV (columns: filename, query_id, dram_size_gb, table_size_gb, dram_resident_size_gb). "
-                             "When provided, the best-combo output includes dram_resident_size_gb per (dam_size, table_size, query_id).")
+                        help="Migration CSV (columns: query_id, dam_size_gb, table_size_gb, "
+                             "migration_size_gb, migration_duration_ns). When provided, migration "
+                             "cost is added to execution duration before finding the best combo, "
+                             "AND migration_size_gb is exposed as dram_resident_size_gb in the "
+                             "best-combo and raw outputs.")
     args = parser.parse_args()
 
     INPUT_CSV  = args.input
     OUTPUT_CSV = args.output
     MIGRATION_CSV = args.migration
-    MIGRATION_SIZE_CSV = args.migration_size
 
     # ---------------------------------------------------------------------------
     # Load and reduce to one row per (query_id, dam_size, table_size) by taking
@@ -59,27 +58,35 @@ if __name__ == "__main__":
     df_rest["table_size"] = df_rest["table_size"].astype(int)
 
     # ---------------------------------------------------------------------------
-    # Optionally add migration duration to execution duration.
+    # Compute total_duration = query_execution_duration + migration_duration_ns.
+    # `duration` from the input CSV is the raw query-execution duration (excluding
+    # migration). We keep it un-mutated and add a new `total_duration` column that
+    # includes migration cost. All downstream ranking (best combo, pivot) uses
+    # total_duration; downstream reporting can expose either.
     # Migration CSV uses GB units; consolidated CSV uses bytes.
     # ---------------------------------------------------------------------------
     if MIGRATION_CSV:
+        # Migration CSV columns: query_id, dam_size_gb, table_size_gb,
+        # migration_size_gb, migration_duration_ns (produced by extract_migration_mapping_results.py).
         df_mig = pd.read_csv(MIGRATION_CSV)
         # Convert bytes -> GB to match migration CSV keys
         df_rest["dam_size_gb"]   = df_rest["dam_size"]   / (1 << 30)
         df_rest["table_size_gb"] = df_rest["table_size"] / (1 << 30)
 
         df_rest = df_rest.merge(
-            df_mig[["dam_size_gb", "local_capacity_gb", "query_id", "migration_duration_ns"]],
-            left_on=["dam_size_gb", "table_size_gb", "query_id"],
-            right_on=["dam_size_gb", "local_capacity_gb", "query_id"],
+            df_mig[["dam_size_gb", "table_size_gb", "query_id", "migration_duration_ns"]],
+            on=["dam_size_gb", "table_size_gb", "query_id"],
             how="left"
         )
         missing = df_rest["migration_duration_ns"].isna().sum()
         if missing:
             print(f"WARNING: {missing} (dam_size, table_size, query_id) combos had no matching migration duration — treated as 0.")
         df_rest["migration_duration_ns"] = df_rest["migration_duration_ns"].fillna(0)
-        df_rest["duration"] = df_rest["duration"] + df_rest["migration_duration_ns"]
-        df_rest = df_rest.drop(columns=["dam_size_gb", "table_size_gb", "local_capacity_gb", "migration_duration_ns"])
+        df_rest["total_duration"] = df_rest["duration"] + df_rest["migration_duration_ns"]
+        df_rest = df_rest.drop(columns=["dam_size_gb", "table_size_gb"])
+    else:
+        df_rest["migration_duration_ns"] = 0
+        df_rest["total_duration"] = df_rest["duration"]
 
     # ---------------------------------------------------------------------------
     # Pivot: one row per query_id, columns are (dam_size, table_size) combos
@@ -99,7 +106,7 @@ if __name__ == "__main__":
         lambda r: f"d{to_gb(r.dam_size)}GB_tf{to_gb(r.table_size)}GB", axis=1
     )
 
-    pivot = df_rest.pivot(index="query_id", columns="col", values="duration")[combo_labels]
+    pivot = df_rest.pivot(index="query_id", columns="col", values="total_duration")[combo_labels]
     pivot = pivot.reset_index()
 
     # Attach baseline and ideal columns
@@ -112,44 +119,42 @@ if __name__ == "__main__":
     print(f"Written {OUTPUT_CSV}  ({len(pivot)} rows x {len(pivot.columns)} columns)")
 
     # ---------------------------------------------------------------------------
-    # Second output: best (dam_size, table_size) per query_id
+    # Second output: best (dam_size, table_size) per query_id, ranked by SPEEDUP
+    # (baseline / total_duration). Emitting speedup alongside both duration
+    # components lets downstream see how much each combo actually gained relative to
+    # the tableDAM=0 baseline.
     # ---------------------------------------------------------------------------
     BEST_CSV = "best_combo_per_query.csv"
 
-    best_idx = df_rest.groupby("query_id")["duration"].idxmin()
-    df_best = df_rest.loc[best_idx, ["query_id", "dam_size", "table_size", "duration"]].copy()
+    # Attach baseline to every combo row so we can compute speedup, then pick argmax.
+    df_rest = df_rest.merge(df_baseline, on="query_id", how="left")
+    df_rest["speedup"] = df_rest["baseline"] / df_rest["total_duration"]
 
-    # Retrieve the migration duration for the best combo (0 if migration CSV was not provided).
-    if MIGRATION_CSV:
-        df_mig2 = pd.read_csv(MIGRATION_CSV)
-        df_best["dam_size_gb"]   = df_best["dam_size"] / (1 << 30)
-        df_best["table_size_gb"] = df_best["table_size"] / (1 << 30)
-        df_best = df_best.merge(
-            df_mig2[["dam_size_gb", "local_capacity_gb", "query_id", "migration_duration_ns"]],
-            left_on=["dam_size_gb", "table_size_gb", "query_id"],
-            right_on=["dam_size_gb", "local_capacity_gb", "query_id"],
-            how="left"
-        )
-        df_best["migration_duration_ns"] = df_best["migration_duration_ns"].fillna(0)
-        df_best = df_best.drop(columns=["dam_size_gb", "table_size_gb", "local_capacity_gb"])
-    else:
-        df_best["migration_duration_ns"] = 0
+    best_idx = df_rest.groupby("query_id")["speedup"].idxmax()
+    df_best = df_rest.loc[
+        best_idx,
+        ["query_id", "dam_size", "table_size",
+         "duration", "total_duration", "migration_duration_ns", "speedup"],
+    ].copy()
+    df_best = df_best.rename(columns={"duration": "query_execution_duration"})
+
     df_best["dam_size_gb"]   = df_best["dam_size"].apply(to_gb)
     df_best["table_size_gb"] = df_best["table_size"].apply(to_gb)
-    df_best = df_best.rename(columns={"duration": "best_duration"})
-    df_best = df_best[["query_id", "dam_size_gb", "table_size_gb", "best_duration", "migration_duration_ns"]]
+    df_best = df_best[["query_id", "dam_size_gb", "table_size_gb",
+                       "query_execution_duration", "migration_duration_ns",
+                       "total_duration", "speedup"]]
 
     df_best = df_best.merge(df_baseline, on="query_id", how="left")
     df_best = df_best.merge(df_ideal,    on="query_id", how="left")
 
-    # Optionally attach dram_resident_size_gb from the migration-size CSV.
-    output_columns = ["query_id", "dam_size_gb", "table_size_gb", "baseline", "ideal", "best_duration", "migration_duration_ns"]
-    if MIGRATION_SIZE_CSV:
-        df_ms = pd.read_csv(MIGRATION_SIZE_CSV)
-        # The migration-size CSV uses `dram_size_gb` (spelled with an 'r'); rename to match
-        # the join key used everywhere else in this script.
-        df_ms = df_ms.rename(columns={"dram_size_gb": "dam_size_gb"})
-        # Normalize the join keys to the same string form we already use for size columns.
+    # Optionally attach dram_resident_size_gb from the migration CSV's migration_size_gb
+    # column (same quantity, different name from an earlier producer).
+    output_columns = ["query_id", "dam_size_gb", "table_size_gb", "baseline", "ideal",
+                      "query_execution_duration", "migration_duration_ns",
+                      "total_duration", "speedup"]
+    if MIGRATION_CSV:
+        df_ms = pd.read_csv(MIGRATION_CSV)
+        df_ms = df_ms.rename(columns={"migration_size_gb": "dram_resident_size_gb"})
         df_ms["dam_size_gb"]   = df_ms["dam_size_gb"].apply(lambda v: f"{float(v):g}")
         df_ms["table_size_gb"] = df_ms["table_size_gb"].apply(lambda v: f"{float(v):g}")
         df_best = df_best.merge(
@@ -190,7 +195,6 @@ if __name__ == "__main__":
 
     if MIGRATION_CSV:
         df_mig3 = pd.read_csv(MIGRATION_CSV)
-        df_mig3 = df_mig3.rename(columns={"local_capacity_gb": "table_size_gb"})
         df_mig3["dam_size_gb"]   = df_mig3["dam_size_gb"].apply(lambda v: f"{float(v):g}")
         df_mig3["table_size_gb"] = df_mig3["table_size_gb"].apply(lambda v: f"{float(v):g}")
         df_raw = df_raw.merge(
@@ -202,9 +206,9 @@ if __name__ == "__main__":
     else:
         df_raw["migration_duration_ns"] = 0
 
-    if MIGRATION_SIZE_CSV:
-        # df_ms is already normalized to (dam_size_gb, table_size_gb, query_id, dram_resident_size_gb)
-        # from the earlier best-combo merge block above.
+    if MIGRATION_CSV:
+        # df_ms was normalized to (dam_size_gb, table_size_gb, query_id, dram_resident_size_gb)
+        # in the earlier best-combo block. It carries the migration_size_gb column renamed.
         df_raw = df_raw.merge(
             df_ms[["dam_size_gb", "table_size_gb", "query_id", "dram_resident_size_gb"]],
             on=["dam_size_gb", "table_size_gb", "query_id"],
@@ -219,9 +223,12 @@ if __name__ == "__main__":
     if "total_allocated_bytes_delta_pool3" not in df_raw.columns:
         df_raw["total_allocated_bytes_delta_pool3"] = 0
 
-    df_raw = df_raw[["query_id", "dam_size_gb", "table_size_gb", "duration",
-                     "migration_duration_ns", "dram_resident_size_gb",
-                     "total_allocated_bytes_delta_pool3"]]
+    df_raw["total_duration"] = df_raw["duration"] + df_raw["migration_duration_ns"]
+    df_raw = df_raw.rename(columns={"duration": "query_execution_duration"})
+
+    df_raw = df_raw[["query_id", "dam_size_gb", "table_size_gb",
+                     "query_execution_duration", "migration_duration_ns", "total_duration",
+                     "dram_resident_size_gb", "total_allocated_bytes_delta_pool3"]]
     df_raw = df_raw.sort_values(["query_id", "dam_size_gb", "table_size_gb"]).reset_index(drop=True)
     df_raw.to_csv(RAW_CSV, index=False)
     print(f"Written {RAW_CSV}  ({len(df_raw)} rows)")
