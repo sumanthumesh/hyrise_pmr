@@ -151,6 +151,21 @@ std::vector<ChunkID> MigrationEngine::migrate_chunks(std::shared_ptr<Table> &tab
 
 void MigrationEngine::migrate_column(std::shared_ptr<Table> &table_name, const std::string &column_name, int numa_node_id)
 {
+    // Skip if the column already lives in a dedicated pool on the requested node.
+    // Every pool for a column is allocated with the same numa_node_id in this function,
+    // so checking the front pool is sufficient. First-time migrations are not covered
+    // here (unmigrated columns aren't in _columns_to_pools_mapping) and must proceed.
+    if (const auto it = _columns_to_pools_mapping.find(column_name);
+        it != _columns_to_pools_mapping.end() && !it->second.empty())
+    {
+        const auto current_node = _pool_manager.get_pool(it->second.front())->status().numa_node;
+        if (current_node == numa_node_id)
+        {
+            std::cout<<"Skipped migration of column " << column_name << " to NUMA node " << numa_node_id << "\n";
+            return;
+        }
+    }
+
     ColumnID column_id = table_name->column_id_by_name(column_name);
 
     // Size every segment once, up front. memory_usage(Full) walks each string of a string
