@@ -59,7 +59,6 @@ compile_commands.json
 .cache/
 
 # Myscripts
-myscripts/*all_cols*.sql
 myscripts/tpch_visualize_*.sql
 myscripts/*.bin
 myscripts/saved_data/run_sf*/*.csv
