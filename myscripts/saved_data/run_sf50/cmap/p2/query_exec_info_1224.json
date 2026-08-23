@@ -1,0 +1,22 @@
+{
+  "duration": 78473103,
+  "label": "d2684354560_tf2415919104_q2",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "peak_mem_usage": 0,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 4519220,
+      "numa_node": 0,
+      "peak_mem_usage": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 1114282818
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/2.sql",
+  "sql": "select\n\ts_acctbal,\n\ts_name,\n\tn_name,\n\tp_partkey,\n\tp_mfgr,\n\ts_address,\n\ts_phone,\n\ts_comment\nfrom\n\tpart,\n\tsupplier,\n\tpartsupp,\n\tnation,\n\tregion\nwhere\n\tp_partkey = ps_partkey\n\tand s_suppkey = ps_suppkey\n\tand p_size = 15\n\tand p_type like '%BRASS'\n\tand s_nationkey = n_nationkey\n\tand n_regionkey = r_regionkey\n\tand r_name = 'EUROPE'\n\tand ps_supplycost = (\n\t\tselect\n\t\t\tmin(ps_supplycost)\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation,\n\t\t\tregion\n\t\twhere\n\t\t\tp_partkey = ps_partkey\n\t\t\tand s_suppkey = ps_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_regionkey = r_regionkey\n\t\t\tand r_name = 'EUROPE'\n\t)\norder by\n\ts_acctbal desc,\n\tn_name,\n\ts_name,\n\tp_partkey;"
+}

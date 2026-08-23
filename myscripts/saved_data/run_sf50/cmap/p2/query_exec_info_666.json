@@ -1,0 +1,22 @@
+{
+  "duration": 4283725308,
+  "label": "d13421772800_tf10737418240_q18",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "peak_mem_usage": 0,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 4805764368,
+      "numa_node": 0,
+      "peak_mem_usage": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 23208835012
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/18.sql",
+  "sql": "select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate;"
+}
