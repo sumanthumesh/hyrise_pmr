@@ -71,6 +71,19 @@ MAX_TABLEDAM_FRAC   = 0.5
 MIG_NS_PER_GB       = 3.0e7   # median CRAM->DAM migration cost in ns per GB
 K_NS_PER_ACCESS     = 0.1     # per-access latency saved by pinning a column
 
+# Early-out payback ratio: when --early-out is set, the aggregate predicted
+# benefit across all picked columns must exceed the aggregate migration cost
+# by at least this factor, or the entire tableDAM is dropped (pin nothing).
+# 1.0 is a no-op given the per-column net > 0 filter already in place;
+# 2.0 requires benefit to be at least 2x the migration cost.
+EARLY_OUT_PAYBACK       = 2.0
+
+# Early-out DAM gate: the payback check only fires when DAM is small (marginal
+# regime where the check catches genuinely-bad pins). At larger DAM the check
+# is too conservative and drops pins that actually pay off empirically. Set to
+# math.inf to disable the gate entirely.
+EARLY_OUT_MAX_DAM_GB    = 5.0
+
 
 # ---------------------------------------------------------------------------
 # Plan walking / feature extraction
@@ -287,7 +300,9 @@ def split_dam(plan: dict, col_sizes: dict, dam_gb: float,
 # ---------------------------------------------------------------------------
 def select_columns(plan: dict, col_sizes: dict, tabledam_budget_gb: float,
                    mig_ns_per_gb: float = MIG_NS_PER_GB,
-                   k_ns_per_access: float = K_NS_PER_ACCESS) -> dict:
+                   k_ns_per_access: float = K_NS_PER_ACCESS,
+                   early_out: bool = False,
+                   early_out_payback: float = EARLY_OUT_PAYBACK) -> dict:
     """
     Greedy pick columns whose predicted per-access speedup outweighs migration cost.
 
@@ -296,15 +311,22 @@ def select_columns(plan: dict, col_sizes: dict, tabledam_budget_gb: float,
     Only columns with net_ns > 0 are candidates; among candidates, packed greedily
     by descending net_ns until tabledam_budget_gb runs out.
 
+    If early_out=True, an additional whole-query check runs AFTER greedy packing:
+    the aggregate benefit across the picked columns must exceed the aggregate
+    migration cost by at least early_out_payback. If not, everything is dropped
+    (pin nothing) and the full tableDAM budget rolls back into regDAM.
+
     Returns:
       {
         "actual_tabledam_gb":  float,       # sum of picked column sizes (<= budget)
         "columns_to_pin":      [str, ...],  # ordered by descending net score
         "column_details":      [ {column, size_gb, hotness, benefit_ns, cost_ns, net_ns}, ... ],
+        "early_out_triggered": bool,        # True if the aggregate payback check dropped everything
       }
     """
     if tabledam_budget_gb <= 0:
-        return {"actual_tabledam_gb": 0.0, "columns_to_pin": [], "column_details": []}
+        return {"actual_tabledam_gb": 0.0, "columns_to_pin": [], "column_details": [],
+                "early_out_triggered": False}
 
     operators: list = []
     collect_operators(plan, operators)
@@ -337,24 +359,45 @@ def select_columns(plan: dict, col_sizes: dict, tabledam_budget_gb: float,
         })
         total_gb += sz_gb
 
+    early_triggered = False
+    if early_out and picked_details:
+        total_benefit = sum(d["benefit_ns"] for d in picked_details)
+        total_cost    = sum(d["cost_ns"]    for d in picked_details)
+        if total_cost > 0 and total_benefit < early_out_payback * total_cost:
+            picked_cols = []
+            picked_details = []
+            total_gb = 0.0
+            early_triggered = True
+
     return {
         "actual_tabledam_gb":  total_gb,
         "columns_to_pin":      picked_cols,
         "column_details":      picked_details,
+        "early_out_triggered": early_triggered,
     }
 
 
 def recommend_split(plan: dict, col_sizes: dict, dam_gb: float,
                     cap: bool = False,
+                    early_out: bool = False,
+                    early_out_payback: float = EARLY_OUT_PAYBACK,
+                    early_out_max_dam_gb: float = EARLY_OUT_MAX_DAM_GB,
                     measured_peak_bytes: int | None = None) -> dict:
     """
     Compose H1 (split_dam) + H2 (select_columns). Any budget H2 doesn't consume
     rolls back into regDAM.
+
+    The early-out check only fires when dam_gb <= early_out_max_dam_gb;
+    empirically the payback check is well-calibrated at small DAM but too
+    conservative at large DAM.
     """
     split = split_dam(plan, col_sizes, dam_gb, cap=cap,
                       measured_peak_bytes=measured_peak_bytes)
     budget = split["tabledam_budget_gb"]
-    pick = select_columns(plan, col_sizes, budget)
+    effective_early_out = early_out and dam_gb <= early_out_max_dam_gb
+    pick = select_columns(plan, col_sizes, budget,
+                          early_out=effective_early_out,
+                          early_out_payback=early_out_payback)
     unused = budget - pick["actual_tabledam_gb"]
     return {
         "tabledam_gb":        pick["actual_tabledam_gb"],
@@ -365,6 +408,7 @@ def recommend_split(plan: dict, col_sizes: dict, dam_gb: float,
         "table_bytes_gb":     split["table_bytes_gb"],
         "size_ratio":         split["size_ratio"],
         "cap_active":         split["cap_active"],
+        "early_out_triggered": pick["early_out_triggered"],
         "columns_to_pin":     pick["columns_to_pin"],
         "column_details":     pick["column_details"],
     }
@@ -380,6 +424,10 @@ def main() -> None:
     parser.add_argument("--dam", type=float, required=True, help="Total DAM in GB")
     parser.add_argument("--cap", action="store_true",
                         help="Clip tableDAM to DAM/2 (default: uncapped size-ratio)")
+    parser.add_argument("--early-out", action="store_true",
+                        help=f"After column selection, drop everything if aggregate "
+                             f"benefit / cost < {EARLY_OUT_PAYBACK} (pin nothing). "
+                             f"Only fires when DAM <= {EARLY_OUT_MAX_DAM_GB} GB.")
     parser.add_argument("--measured-peak", type=int, default=None,
                         help="Override plan-derived temp estimate with this measured value (bytes)")
     parser.add_argument("--json", action="store_true",
@@ -395,6 +443,7 @@ def main() -> None:
 
     result = recommend_split(plan, col_sizes, args.dam,
                              cap=args.cap,
+                             early_out=args.early_out,
                              measured_peak_bytes=args.measured_peak)
 
     if args.json:
@@ -415,9 +464,10 @@ def main() -> None:
           f"(cap={'on' if args.cap else 'off'}"
           f"{', clipped' if result['cap_active'] else ''})")
     print(f"H1 tableDAM budget: {result['tabledam_budget_gb']:.3f} GB")
+    eo_note = " [early-out triggered: pin nothing]" if result['early_out_triggered'] else ""
     print(f"H2 tableDAM used  : {result['tabledam_gb']:.3f} GB "
           f"({result['tabledam_gb']/dam*100:.1f} % of DAM)   "
-          f"unused rolled back: {result['tabledam_budget_gb']-result['tabledam_gb']:.3f} GB")
+          f"unused rolled back: {result['tabledam_budget_gb']-result['tabledam_gb']:.3f} GB{eo_note}")
     print(f"regDAM final      : {result['regdam_gb']:.3f} GB")
     print(f"columns to pin    : {len(result['columns_to_pin'])}")
     if result["column_details"]:
