@@ -98,6 +98,10 @@ _JOIN_KEY_RE = re.compile(r"(\w+)\s*=\s*(\w+)")
 # Only storage columns follow the "<table_prefix>_<name>" pattern.
 _STORAGE_COL_RE = re.compile(r"^[a-z]+_")
 
+# Same shape as _STORAGE_COL_RE but for finding refs INSIDE a longer string
+# (e.g. AggregateHash's SUM(l_extendedprice * (1 - l_discount))).
+_STORAGE_COL_FINDALL = re.compile(r"\b[a-z]+_[a-z_]+\b")
+
 
 def parse_card(card_str: Any) -> int:
     """Convert '9,114,648 row(s)/64 chunk(s)' -> 9114648. Returns 0 if malformed."""
@@ -164,6 +168,15 @@ def compute_column_hotness(operators: list, col_sizes: dict) -> dict:
                 for key, card in zip(m.groups(), (op["left_card"], op["right_card"])):
                     if _STORAGE_COL_RE.match(key):
                         access[key] = access.get(key, 0) + card * W_JOIN_KEY
+        elif name == "AggregateHash":
+            # Every storage-column reference in the description (group-by keys and
+            # aggregate-input columns) is read at input cardinality. Previously
+            # unaccounted-for: without this, columns used only as aggregate inputs
+            # got hotness derived solely from GetTable's W_PROJECT count, causing
+            # H2 to reject them at the net_ns filter.
+            for c in set(_STORAGE_COL_FINDALL.findall(op["description"] or "")):
+                if c in col_sizes and _STORAGE_COL_RE.match(c):
+                    access[c] = access.get(c, 0) + op["left_card"] * W_PROJECT
 
     hot = {}
     for column, access_rows in access.items():

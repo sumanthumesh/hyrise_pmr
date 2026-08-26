@@ -104,6 +104,11 @@ _CARD_RE = re.compile(r"([\d,]+(?:\.\d+)?)\s+row")
 # Only storage columns follow the "<table_prefix>_<name>" pattern.
 _STORAGE_COL_RE = re.compile(r"^[a-z]+_")
 
+# Extract storage-column names from inside an aggregate expression string
+# (e.g. "SUM(l_extendedprice * (1 - l_discount))"). Same prefix pattern as
+# _STORAGE_COL_RE but findable mid-string.
+_STORAGE_COL_FINDALL = re.compile(r"\b[a-z]+_[a-z_]+\b")
+
 
 def parse_card(card_str: Any) -> int:
     """Convert '297067150.2 row(s) est.' -> 297067150. Returns 0 if malformed."""
@@ -172,6 +177,15 @@ def compute_column_hotness(operators: list, col_sizes: dict) -> dict:
                 c = jp.get(c_key)
                 if c and _STORAGE_COL_RE.match(c):
                     access[c] = access.get(c, 0) + card * W_JOIN_KEY
+        elif name == "Aggregate":
+            # Every storage-column reference in the group-by keys and aggregate
+            # expressions is read at input cardinality. Previously unaccounted-for:
+            # without this, columns used only as aggregate inputs got hotness
+            # derived solely from StoredTable's W_PROJECT count, causing H2 to
+            # reject them at the net_ns filter.
+            for c in set(_STORAGE_COL_FINDALL.findall(op["description"] or "")):
+                if c in col_sizes and _STORAGE_COL_RE.match(c):
+                    access[c] = access.get(c, 0) + op["left_card"] * W_PROJECT
 
     hot = {}
     for column, access_rows in access.items():
