@@ -1,3 +1,6 @@
-SELECT COUNT(*)
-FROM lineitem
-WHERE l_partkey BETWEEN 1000 AND 100000;
+SELECT 
+    COUNT(*)
+FROM 
+    lineitem
+WHERE 
+    l_partkey BETWEEN 1000 AND 100000;

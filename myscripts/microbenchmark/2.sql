@@ -1,3 +1,6 @@
-SELECT COUNT(*)
-FROM lineitem
-WHERE l_shipdate BETWEEN '1996-01-01' AND '1996-06-30';
+SELECT
+    COUNT(*)
+FROM 
+    lineitem
+WHERE 
+    l_shipdate BETWEEN '1996-01-01' AND '1996-06-30';
