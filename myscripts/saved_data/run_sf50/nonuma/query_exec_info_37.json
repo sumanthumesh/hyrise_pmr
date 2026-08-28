@@ -1,0 +1,7 @@
+{
+  "duration": 15959037887,
+  "label": "d0_tf0_q13",
+  "memory_deltas": [],
+  "script_file": "/home/umeshsum/tpch_queries/13.sql",
+  "sql": "select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like '%special%requests%'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;"
+}
