@@ -2,7 +2,7 @@ setting print off
 setting binary_caching on
 setting workers 16
 generate_tpch 50
-script /data1/sumanthu/hyrise_pmr/myscripts/move_all_cols_to_remote.sql
+script /home/umeshsum/hyrise_pmr/myscripts/move_all_cols_to_remote.sql
 setting label d10737418240_tf6442450944_q10
 setting print_migration_stats off
 move2cxl orders o_custkey 1
