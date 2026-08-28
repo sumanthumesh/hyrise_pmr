@@ -1,0 +1,22 @@
+{
+  "duration": 41200204036,
+  "label": "d0_tf0_q6",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "peak_mem_usage": 0,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 148128,
+      "numa_node": 0,
+      "peak_mem_usage": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 14404487508
+    }
+  ],
+  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/6.sql",
+  "sql": "SELECT \n    l_orderkey, l_extendedprice\nFROM \n    lineitem\nORDER BY \n    l_extendedprice DESC\nLIMIT 100;"
+}

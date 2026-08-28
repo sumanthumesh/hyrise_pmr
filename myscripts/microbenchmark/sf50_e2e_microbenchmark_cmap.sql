@@ -193,8 +193,4 @@ hsh clear_pipeline
 hsh reset_exec_pools
 hsh mem_usage
 script /home/umeshsum/hyrise_pmr/myscripts/microbenchmark/6.sql
-hsh clear_plan_caches
-hsh clear_pipeline
-hsh reset_exec_pools
-hsh mem_usage
 quit

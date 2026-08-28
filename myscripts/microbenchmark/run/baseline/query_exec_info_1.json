@@ -1,0 +1,22 @@
+{
+  "duration": 73120185,
+  "label": "d0_tf0_q1",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "peak_mem_usage": 0,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 432,
+      "numa_node": 0,
+      "peak_mem_usage": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 90083760
+    }
+  ],
+  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/1.sql",
+  "sql": "SELECT \n    COUNT(*)\nFROM \n    lineitem\nWHERE \n    l_partkey BETWEEN 1000 AND 100000;"
+}
