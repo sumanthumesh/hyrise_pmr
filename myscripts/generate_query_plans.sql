@@ -1,7 +1,7 @@
 setting print off
 setting workers 16
 setting binary_caching on
-generate_tpch 10
+generate_tpch 100
 setting workers 8
 script /data1/sumanthu/tpch_queries/1.sql
 visualize lqp
