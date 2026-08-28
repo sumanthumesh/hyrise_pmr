@@ -1,0 +1,22 @@
+{
+  "duration": 282249013,
+  "label": "d26843545600_tf21474836480_q11",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "peak_mem_usage": 0,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 48370280,
+      "numa_node": 0,
+      "peak_mem_usage": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 2635734448
+    }
+  ],
+  "script_file": "/home/umeshsum/tpch_queries/11.sql",
+  "sql": "select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = 'GERMANY'\ngroup by\n\tps_partkey having\n\t\tsum(ps_supplycost * ps_availqty) > (\n\t\t\tselect\n\t\t\t\tsum(ps_supplycost * ps_availqty) * 0.0001000000\n\t\t\tfrom\n\t\t\t\tpartsupp,\n\t\t\t\tsupplier,\n\t\t\t\tnation\n\t\t\twhere\n\t\t\t\tps_suppkey = s_suppkey\n\t\t\t\tand s_nationkey = n_nationkey\n\t\t\t\tand n_name = 'GERMANY'\n\t\t)\norder by\n\tvalue desc;"
+}
