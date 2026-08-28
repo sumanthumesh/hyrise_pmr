@@ -1,0 +1,7 @@
+{
+  "duration": 355589276,
+  "label": "d0_tf0_q6",
+  "memory_deltas": [],
+  "script_file": "/home/umeshsum/tpch_queries/6.sql",
+  "sql": "select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date '1994-01-01'\n\tand l_shipdate < date '1994-01-01' + interval '1' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;"
+}
