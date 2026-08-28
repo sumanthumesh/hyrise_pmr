@@ -130,7 +130,7 @@ if __name__ == "__main__":
     df_rest = df_rest.merge(df_baseline, on="query_id", how="left")
     df_rest["speedup"] = df_rest["baseline"] / df_rest["total_duration"]
 
-    best_idx = df_rest.groupby("query_id")["speedup"].idxmax()
+    best_idx = df_rest.groupby(["query_id", "dam_size"])["speedup"].idxmax()
     df_best = df_rest.loc[
         best_idx,
         ["query_id", "dam_size", "table_size",
