@@ -1,0 +1,286 @@
+{
+  "LeftCard": "600037902.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "600037902.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "600037902.0 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "600037902.0 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "600037902.0 row(s) est.",
+          "Leftchildren": {
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[StoredTable] Name: 'lineitem' pruned: 0/9156 chunk(s), 14/16 column(s)",
+            "id": 5,
+            "name": "StoredTable",
+            "table_name": "lineitem",
+            "used_columns": [
+              "l_orderkey",
+              "l_quantity"
+            ]
+          },
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "[Validate]",
+          "id": 4,
+          "name": "Validate"
+        },
+        "RightCard": "150000000.0 row(s) est.",
+        "Rightchildren": {
+          "LeftCard": "150000000.0 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "150000000.0 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "150000000.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'orders' pruned: 0/2289 chunk(s), 5/9 column(s)",
+                "id": 9,
+                "name": "StoredTable",
+                "table_name": "orders",
+                "used_columns": [
+                  "o_orderkey",
+                  "o_custkey",
+                  "o_totalprice",
+                  "o_orderdate"
+                ]
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[Validate]",
+              "id": 8,
+              "name": "Validate"
+            },
+            "RightCard": "600037902.0 row(s) est.",
+            "Rightchildren": {
+              "LeftCard": "600037902.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "600037902.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "600037902.0 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "600037902.0 row(s) est.",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[StoredTable] Name: 'lineitem' pruned: 0/9156 chunk(s), 14/16 column(s)",
+                      "id": 14,
+                      "name": "StoredTable",
+                      "table_name": "lineitem",
+                      "used_columns": [
+                        "l_orderkey",
+                        "l_quantity"
+                      ]
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 13,
+                    "name": "Validate"
+                  },
+                  "aggregate_expressions": [
+                    "SUM(l_quantity)"
+                  ],
+                  "columns": [
+                    "l_orderkey",
+                    "l_quantity"
+                  ],
+                  "columns_left": [
+                    "l_orderkey",
+                    "l_quantity"
+                  ],
+                  "columns_right": [],
+                  "description": "[Aggregate] GroupBy: [l_orderkey] Aggregates: [SUM(l_quantity)]",
+                  "group_by_expressions": [
+                    "l_orderkey"
+                  ],
+                  "id": 12,
+                  "name": "Aggregate"
+                },
+                "columns": [
+                  "l_quantity"
+                ],
+                "columns_left": [
+                  "l_quantity"
+                ],
+                "columns_right": [],
+                "description": "[Predicate] SUM(l_quantity) > 300",
+                "id": 11,
+                "name": "Predicate",
+                "predicate": {
+                  "column": "SUM(l_quantity)",
+                  "kind": "binary",
+                  "op": ">",
+                  "value": "300"
+                }
+              },
+              "columns": [
+                "l_orderkey"
+              ],
+              "columns_left": [
+                "l_orderkey"
+              ],
+              "columns_right": [],
+              "description": "[Projection] l_orderkey",
+              "id": 10,
+              "name": "Projection"
+            },
+            "columns": [
+              "l_orderkey",
+              "o_orderkey"
+            ],
+            "columns_left": [
+              "o_orderkey"
+            ],
+            "columns_right": [
+              "l_orderkey"
+            ],
+            "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
+            "id": 7,
+            "join_mode": "Semi",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "o_orderkey",
+              "op": "=",
+              "right_column": "l_orderkey"
+            },
+            "name": "Join"
+          },
+          "RightCard": "15000000.0 row(s) est.",
+          "Rightchildren": {
+            "LeftCard": "15000000.0 row(s) est.",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[StoredTable] Name: 'customer' pruned: 0/229 chunk(s), 6/8 column(s)",
+              "id": 16,
+              "name": "StoredTable",
+              "table_name": "customer",
+              "used_columns": [
+                "c_custkey",
+                "c_name"
+              ]
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 15,
+            "name": "Validate"
+          },
+          "columns": [
+            "c_custkey",
+            "o_custkey"
+          ],
+          "columns_left": [
+            "o_custkey"
+          ],
+          "columns_right": [
+            "c_custkey"
+          ],
+          "description": "[Join] Mode: Inner [c_custkey = o_custkey]",
+          "id": 6,
+          "join_mode": "Inner",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "c_custkey",
+            "op": "=",
+            "right_column": "o_custkey"
+          },
+          "name": "Join"
+        },
+        "columns": [
+          "l_orderkey",
+          "o_orderkey"
+        ],
+        "columns_left": [
+          "l_orderkey"
+        ],
+        "columns_right": [
+          "o_orderkey"
+        ],
+        "description": "[Join] Mode: Inner [o_orderkey = l_orderkey]",
+        "id": 3,
+        "join_mode": "Inner",
+        "join_predicate": {
+          "kind": "binary",
+          "left_column": "o_orderkey",
+          "op": "=",
+          "right_column": "l_orderkey"
+        },
+        "name": "Join"
+      },
+      "aggregate_expressions": [
+        "SUM(l_quantity)",
+        "ANY(c_name)",
+        "ANY(o_orderdate)",
+        "ANY(o_totalprice)"
+      ],
+      "columns": [
+        "c_custkey",
+        "c_name",
+        "l_quantity",
+        "o_orderdate",
+        "o_orderkey",
+        "o_totalprice"
+      ],
+      "columns_left": [
+        "c_custkey",
+        "c_name",
+        "l_quantity",
+        "o_orderdate",
+        "o_orderkey",
+        "o_totalprice"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [c_custkey, o_orderkey] Aggregates: [SUM(l_quantity), ANY(c_name), ANY(o_orderdate), ANY(o_totalprice)]",
+      "group_by_expressions": [
+        "c_custkey",
+        "o_orderkey"
+      ],
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "o_orderdate",
+      "o_totalprice"
+    ],
+    "columns_left": [
+      "o_orderdate",
+      "o_totalprice"
+    ],
+    "columns_right": [],
+    "description": "[Sort] o_totalprice (DescendingNullsFirst), o_orderdate (AscendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "c_custkey",
+    "c_name",
+    "l_quantity",
+    "o_orderdate",
+    "o_orderkey",
+    "o_totalprice"
+  ],
+  "columns_left": [
+    "c_custkey",
+    "c_name",
+    "l_quantity",
+    "o_orderdate",
+    "o_orderkey",
+    "o_totalprice"
+  ],
+  "columns_right": [],
+  "description": "[Projection] c_name, c_custkey, o_orderkey, o_orderdate, o_totalprice, SUM(l_quantity)",
+  "id": 0,
+  "name": "Projection"
+}

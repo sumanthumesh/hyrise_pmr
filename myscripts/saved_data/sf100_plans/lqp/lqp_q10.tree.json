@@ -1,0 +1,379 @@
+{
+  "LeftCard": "5981875.0 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "5981875.0 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "5981875.0 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "5981875.0 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "5981875.0 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "5981875.0 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "5981875.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "5981875.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "148067261.0 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "600037902.0 row(s) est.",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[StoredTable] Name: 'lineitem' pruned: 0/9156 chunk(s), 12/16 column(s)",
+                      "id": 10,
+                      "name": "StoredTable",
+                      "table_name": "lineitem",
+                      "used_columns": [
+                        "l_orderkey",
+                        "l_extendedprice",
+                        "l_discount",
+                        "l_returnflag"
+                      ]
+                    },
+                    "columns": [
+                      "l_returnflag"
+                    ],
+                    "columns_left": [
+                      "l_returnflag"
+                    ],
+                    "columns_right": [],
+                    "description": "[Predicate] l_returnflag = 'R'",
+                    "id": 9,
+                    "name": "Predicate",
+                    "predicate": {
+                      "column": "l_returnflag",
+                      "kind": "binary",
+                      "op": "=",
+                      "value": "R"
+                    }
+                  },
+                  "RightCard": "5981875.0 row(s) est.",
+                  "Rightchildren": {
+                    "LeftCard": "5981875.0 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "150000000.0 row(s) est.",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[StoredTable] Name: 'orders' pruned: 0/2289 chunk(s), 6/9 column(s)",
+                        "id": 13,
+                        "name": "StoredTable",
+                        "table_name": "orders",
+                        "used_columns": [
+                          "o_orderkey",
+                          "o_custkey",
+                          "o_orderdate"
+                        ]
+                      },
+                      "columns": [
+                        "o_orderdate"
+                      ],
+                      "columns_left": [
+                        "o_orderdate"
+                      ],
+                      "columns_right": [],
+                      "description": "[Predicate] o_orderdate BETWEEN UPPER EXCLUSIVE '1993-10-01' AND '1994-01-01'",
+                      "id": 12,
+                      "name": "Predicate",
+                      "predicate": {
+                        "column": "o_orderdate",
+                        "kind": "between",
+                        "lower": "1993-10-01",
+                        "op": "BETWEEN UPPER EXCLUSIVE",
+                        "upper": "1994-01-01"
+                      }
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 11,
+                    "name": "Validate"
+                  },
+                  "columns": [
+                    "l_orderkey",
+                    "o_orderkey"
+                  ],
+                  "columns_left": [
+                    "l_orderkey"
+                  ],
+                  "columns_right": [
+                    "o_orderkey"
+                  ],
+                  "description": "[Join] Mode: Semi [l_orderkey = o_orderkey]",
+                  "id": 8,
+                  "join_mode": "Semi",
+                  "join_predicate": {
+                    "kind": "binary",
+                    "left_column": "l_orderkey",
+                    "op": "=",
+                    "right_column": "o_orderkey"
+                  },
+                  "name": "Join"
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[Validate]",
+                "id": 7,
+                "name": "Validate"
+              },
+              "RightCard": "5981875.0 row(s) est.",
+              "Rightchildren": {
+                "id": 11,
+                "name": "Validate",
+                "shared_ref": true
+              },
+              "columns": [
+                "l_orderkey",
+                "o_orderkey"
+              ],
+              "columns_left": [
+                "l_orderkey"
+              ],
+              "columns_right": [
+                "o_orderkey"
+              ],
+              "description": "[Join] Mode: Inner [l_orderkey = o_orderkey]",
+              "id": 6,
+              "join_mode": "Inner",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "l_orderkey",
+                "op": "=",
+                "right_column": "o_orderkey"
+              },
+              "name": "Join"
+            },
+            "RightCard": "15000000.0 row(s) est.",
+            "Rightchildren": {
+              "LeftCard": "15000000.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "15000000.0 row(s) est.",
+                "Leftchildren": {
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[StoredTable] Name: 'customer' pruned: 0/229 chunk(s), 1/8 column(s)",
+                  "id": 16,
+                  "name": "StoredTable",
+                  "table_name": "customer",
+                  "used_columns": [
+                    "c_custkey",
+                    "c_name",
+                    "c_address",
+                    "c_nationkey",
+                    "c_phone",
+                    "c_acctbal",
+                    "c_comment"
+                  ]
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[Validate]",
+                "id": 15,
+                "name": "Validate"
+              },
+              "RightCard": "25.0 row(s) est.",
+              "Rightchildren": {
+                "LeftCard": "25.0 row(s) est.",
+                "Leftchildren": {
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
+                  "id": 18,
+                  "name": "StoredTable",
+                  "table_name": "nation",
+                  "used_columns": [
+                    "n_nationkey",
+                    "n_name"
+                  ]
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[Validate]",
+                "id": 17,
+                "name": "Validate"
+              },
+              "columns": [
+                "c_nationkey",
+                "n_nationkey"
+              ],
+              "columns_left": [
+                "c_nationkey"
+              ],
+              "columns_right": [
+                "n_nationkey"
+              ],
+              "description": "[Join] Mode: Inner [c_nationkey = n_nationkey]",
+              "id": 14,
+              "join_mode": "Inner",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "c_nationkey",
+                "op": "=",
+                "right_column": "n_nationkey"
+              },
+              "name": "Join"
+            },
+            "columns": [
+              "c_custkey",
+              "o_custkey"
+            ],
+            "columns_left": [
+              "o_custkey"
+            ],
+            "columns_right": [
+              "c_custkey"
+            ],
+            "description": "[Join] Mode: Inner [c_custkey = o_custkey]",
+            "id": 5,
+            "join_mode": "Inner",
+            "join_predicate": {
+              "kind": "binary",
+              "left_column": "c_custkey",
+              "op": "=",
+              "right_column": "o_custkey"
+            },
+            "name": "Join"
+          },
+          "columns": [
+            "c_acctbal",
+            "c_address",
+            "c_comment",
+            "c_custkey",
+            "c_name",
+            "c_phone",
+            "l_discount",
+            "l_extendedprice",
+            "n_name"
+          ],
+          "columns_left": [
+            "c_acctbal",
+            "c_address",
+            "c_comment",
+            "c_custkey",
+            "c_name",
+            "c_phone",
+            "l_discount",
+            "l_extendedprice",
+            "n_name"
+          ],
+          "columns_right": [],
+          "description": "[Projection] l_extendedprice * (1 - l_discount), c_custkey, c_name, c_acctbal, c_phone, n_name, c_address, c_comment",
+          "id": 4,
+          "name": "Projection"
+        },
+        "aggregate_expressions": [
+          "SUM(l_extendedprice * (1 - l_discount))",
+          "ANY(c_comment)",
+          "ANY(c_address)",
+          "ANY(n_name)",
+          "ANY(c_phone)",
+          "ANY(c_acctbal)",
+          "ANY(c_name)"
+        ],
+        "columns": [
+          "c_acctbal",
+          "c_address",
+          "c_comment",
+          "c_custkey",
+          "c_name",
+          "c_phone",
+          "l_discount",
+          "l_extendedprice",
+          "n_name"
+        ],
+        "columns_left": [
+          "c_acctbal",
+          "c_address",
+          "c_comment",
+          "c_custkey",
+          "c_name",
+          "c_phone",
+          "l_discount",
+          "l_extendedprice",
+          "n_name"
+        ],
+        "columns_right": [],
+        "description": "[Aggregate] GroupBy: [c_custkey] Aggregates: [SUM(l_extendedprice * (1 - l_discount)), ANY(c_comment), ANY(c_address), ANY(n_name), ANY(c_phone), ANY(c_acctbal), ANY(c_name)]",
+        "group_by_expressions": [
+          "c_custkey"
+        ],
+        "id": 3,
+        "name": "Aggregate"
+      },
+      "columns": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice"
+      ],
+      "columns_right": [],
+      "description": "[Sort] SUM(l_extendedprice * (1 - l_discount)) (DescendingNullsFirst)",
+      "id": 2,
+      "name": "Sort"
+    },
+    "columns": [
+      "c_acctbal",
+      "c_address",
+      "c_comment",
+      "c_custkey",
+      "c_name",
+      "c_phone",
+      "l_discount",
+      "l_extendedprice",
+      "n_name"
+    ],
+    "columns_left": [
+      "c_acctbal",
+      "c_address",
+      "c_comment",
+      "c_custkey",
+      "c_name",
+      "c_phone",
+      "l_discount",
+      "l_extendedprice",
+      "n_name"
+    ],
+    "columns_right": [],
+    "description": "[Projection] c_custkey, c_name, SUM(l_extendedprice * (1 - l_discount)), c_acctbal, n_name, c_address, c_phone, c_comment",
+    "id": 1,
+    "name": "Projection"
+  },
+  "columns": [
+    "c_acctbal",
+    "c_address",
+    "c_comment",
+    "c_custkey",
+    "c_name",
+    "c_phone",
+    "l_discount",
+    "l_extendedprice",
+    "n_name"
+  ],
+  "columns_left": [
+    "c_acctbal",
+    "c_address",
+    "c_comment",
+    "c_custkey",
+    "c_name",
+    "c_phone",
+    "l_discount",
+    "l_extendedprice",
+    "n_name"
+  ],
+  "columns_right": [],
+  "description": "[Alias] c_custkey, c_name, SUM(l_extendedprice * (1 - l_discount)) AS revenue, c_acctbal, n_name, c_address, c_phone, c_comment",
+  "id": 0,
+  "name": "Alias"
+}

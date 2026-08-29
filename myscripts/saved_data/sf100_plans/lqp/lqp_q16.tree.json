@@ -1,0 +1,571 @@
+{
+  "LeftCard": "11265.2 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "11265.2 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "11265.2 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "11265.2 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "11265.2 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "11265.2 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "80000000.0 row(s) est.",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[StoredTable] Name: 'partsupp' pruned: 0/1221 chunk(s), 3/5 column(s)",
+                "id": 7,
+                "name": "StoredTable",
+                "table_name": "partsupp",
+                "used_columns": [
+                  "ps_partkey",
+                  "ps_suppkey"
+                ]
+              },
+              "RightCard": "46904.4 row(s) est.",
+              "Rightchildren": {
+                "LeftCard": "22491.2 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "384869.3 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "384869.3 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "3201671.0 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "2801526.0 row(s) est.",
+                        "Leftchildren": {
+                          "LeftCard": "2400784.0 row(s) est.",
+                          "Leftchildren": {
+                            "LeftCard": "2001258.0 row(s) est.",
+                            "Leftchildren": {
+                              "LeftCard": "1602198.0 row(s) est.",
+                              "Leftchildren": {
+                                "LeftCard": "1201221.0 row(s) est.",
+                                "Leftchildren": {
+                                  "LeftCard": "800877.0 row(s) est.",
+                                  "Leftchildren": {
+                                    "LeftCard": "400905.0 row(s) est.",
+                                    "Leftchildren": {
+                                      "LeftCard": "20000000.0 row(s) est.",
+                                      "Leftchildren": {
+                                        "columns": [],
+                                        "columns_left": [],
+                                        "columns_right": [],
+                                        "description": "[StoredTable] Name: 'part' pruned: 0/306 chunk(s), 5/9 column(s)",
+                                        "id": 20,
+                                        "name": "StoredTable",
+                                        "table_name": "part",
+                                        "used_columns": [
+                                          "p_partkey",
+                                          "p_brand",
+                                          "p_type",
+                                          "p_size"
+                                        ]
+                                      },
+                                      "columns": [
+                                        "p_size"
+                                      ],
+                                      "columns_left": [
+                                        "p_size"
+                                      ],
+                                      "columns_right": [],
+                                      "description": "[Predicate] p_size = 9",
+                                      "id": 19,
+                                      "name": "Predicate",
+                                      "predicate": {
+                                        "column": "p_size",
+                                        "kind": "binary",
+                                        "op": "=",
+                                        "value": "9"
+                                      }
+                                    },
+                                    "RightCard": "399972.0 row(s) est.",
+                                    "Rightchildren": {
+                                      "LeftCard": "20000000.0 row(s) est.",
+                                      "Leftchildren": {
+                                        "id": 20,
+                                        "name": "StoredTable",
+                                        "shared_ref": true
+                                      },
+                                      "columns": [
+                                        "p_size"
+                                      ],
+                                      "columns_left": [
+                                        "p_size"
+                                      ],
+                                      "columns_right": [],
+                                      "description": "[Predicate] p_size = 36",
+                                      "id": 21,
+                                      "name": "Predicate",
+                                      "predicate": {
+                                        "column": "p_size",
+                                        "kind": "binary",
+                                        "op": "=",
+                                        "value": "36"
+                                      }
+                                    },
+                                    "columns": [],
+                                    "columns_left": [],
+                                    "columns_right": [],
+                                    "description": "[UnionNode] Mode: All",
+                                    "id": 18,
+                                    "name": "Union"
+                                  },
+                                  "RightCard": "400344.0 row(s) est.",
+                                  "Rightchildren": {
+                                    "LeftCard": "20000000.0 row(s) est.",
+                                    "Leftchildren": {
+                                      "id": 20,
+                                      "name": "StoredTable",
+                                      "shared_ref": true
+                                    },
+                                    "columns": [
+                                      "p_size"
+                                    ],
+                                    "columns_left": [
+                                      "p_size"
+                                    ],
+                                    "columns_right": [],
+                                    "description": "[Predicate] p_size = 3",
+                                    "id": 22,
+                                    "name": "Predicate",
+                                    "predicate": {
+                                      "column": "p_size",
+                                      "kind": "binary",
+                                      "op": "=",
+                                      "value": "3"
+                                    }
+                                  },
+                                  "columns": [],
+                                  "columns_left": [],
+                                  "columns_right": [],
+                                  "description": "[UnionNode] Mode: All",
+                                  "id": 17,
+                                  "name": "Union"
+                                },
+                                "RightCard": "400977.0 row(s) est.",
+                                "Rightchildren": {
+                                  "LeftCard": "20000000.0 row(s) est.",
+                                  "Leftchildren": {
+                                    "id": 20,
+                                    "name": "StoredTable",
+                                    "shared_ref": true
+                                  },
+                                  "columns": [
+                                    "p_size"
+                                  ],
+                                  "columns_left": [
+                                    "p_size"
+                                  ],
+                                  "columns_right": [],
+                                  "description": "[Predicate] p_size = 19",
+                                  "id": 23,
+                                  "name": "Predicate",
+                                  "predicate": {
+                                    "column": "p_size",
+                                    "kind": "binary",
+                                    "op": "=",
+                                    "value": "19"
+                                  }
+                                },
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "[UnionNode] Mode: All",
+                                "id": 16,
+                                "name": "Union"
+                              },
+                              "RightCard": "399060.0 row(s) est.",
+                              "Rightchildren": {
+                                "LeftCard": "20000000.0 row(s) est.",
+                                "Leftchildren": {
+                                  "id": 20,
+                                  "name": "StoredTable",
+                                  "shared_ref": true
+                                },
+                                "columns": [
+                                  "p_size"
+                                ],
+                                "columns_left": [
+                                  "p_size"
+                                ],
+                                "columns_right": [],
+                                "description": "[Predicate] p_size = 45",
+                                "id": 24,
+                                "name": "Predicate",
+                                "predicate": {
+                                  "column": "p_size",
+                                  "kind": "binary",
+                                  "op": "=",
+                                  "value": "45"
+                                }
+                              },
+                              "columns": [],
+                              "columns_left": [],
+                              "columns_right": [],
+                              "description": "[UnionNode] Mode: All",
+                              "id": 15,
+                              "name": "Union"
+                            },
+                            "RightCard": "399526.0 row(s) est.",
+                            "Rightchildren": {
+                              "LeftCard": "20000000.0 row(s) est.",
+                              "Leftchildren": {
+                                "id": 20,
+                                "name": "StoredTable",
+                                "shared_ref": true
+                              },
+                              "columns": [
+                                "p_size"
+                              ],
+                              "columns_left": [
+                                "p_size"
+                              ],
+                              "columns_right": [],
+                              "description": "[Predicate] p_size = 14",
+                              "id": 25,
+                              "name": "Predicate",
+                              "predicate": {
+                                "column": "p_size",
+                                "kind": "binary",
+                                "op": "=",
+                                "value": "14"
+                              }
+                            },
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "[UnionNode] Mode: All",
+                            "id": 14,
+                            "name": "Union"
+                          },
+                          "RightCard": "400742.0 row(s) est.",
+                          "Rightchildren": {
+                            "LeftCard": "20000000.0 row(s) est.",
+                            "Leftchildren": {
+                              "id": 20,
+                              "name": "StoredTable",
+                              "shared_ref": true
+                            },
+                            "columns": [
+                              "p_size"
+                            ],
+                            "columns_left": [
+                              "p_size"
+                            ],
+                            "columns_right": [],
+                            "description": "[Predicate] p_size = 23",
+                            "id": 26,
+                            "name": "Predicate",
+                            "predicate": {
+                              "column": "p_size",
+                              "kind": "binary",
+                              "op": "=",
+                              "value": "23"
+                            }
+                          },
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "[UnionNode] Mode: All",
+                          "id": 13,
+                          "name": "Union"
+                        },
+                        "RightCard": "400145.0 row(s) est.",
+                        "Rightchildren": {
+                          "LeftCard": "20000000.0 row(s) est.",
+                          "Leftchildren": {
+                            "id": 20,
+                            "name": "StoredTable",
+                            "shared_ref": true
+                          },
+                          "columns": [
+                            "p_size"
+                          ],
+                          "columns_left": [
+                            "p_size"
+                          ],
+                          "columns_right": [],
+                          "description": "[Predicate] p_size = 49",
+                          "id": 27,
+                          "name": "Predicate",
+                          "predicate": {
+                            "column": "p_size",
+                            "kind": "binary",
+                            "op": "=",
+                            "value": "49"
+                          }
+                        },
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[UnionNode] Mode: All",
+                        "id": 12,
+                        "name": "Union"
+                      },
+                      "columns": [
+                        "p_brand"
+                      ],
+                      "columns_left": [
+                        "p_brand"
+                      ],
+                      "columns_right": [],
+                      "description": "[Predicate] p_brand != 'Brand#45'",
+                      "id": 11,
+                      "name": "Predicate",
+                      "predicate": {
+                        "column": "p_brand",
+                        "kind": "binary",
+                        "op": "!=",
+                        "value": "Brand#45"
+                      }
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 10,
+                    "name": "Validate"
+                  },
+                  "columns": [
+                    "p_type"
+                  ],
+                  "columns_left": [
+                    "p_type"
+                  ],
+                  "columns_right": [],
+                  "description": "[Predicate] p_type < 'MEDIUM POLISHED'",
+                  "id": 9,
+                  "name": "Predicate",
+                  "predicate": {
+                    "column": "p_type",
+                    "kind": "binary",
+                    "op": "<",
+                    "value": "MEDIUM POLISHED"
+                  }
+                },
+                "RightCard": "24413.1 row(s) est.",
+                "Rightchildren": {
+                  "LeftCard": "384869.3 row(s) est.",
+                  "Leftchildren": {
+                    "id": 10,
+                    "name": "Validate",
+                    "shared_ref": true
+                  },
+                  "columns": [
+                    "p_type"
+                  ],
+                  "columns_left": [
+                    "p_type"
+                  ],
+                  "columns_right": [],
+                  "description": "[Predicate] p_type >= 'MEDIUM POLISHEE'",
+                  "id": 28,
+                  "name": "Predicate",
+                  "predicate": {
+                    "column": "p_type",
+                    "kind": "binary",
+                    "op": ">=",
+                    "value": "MEDIUM POLISHEE"
+                  }
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "[UnionNode] Mode: All",
+                "id": 8,
+                "name": "Union"
+              },
+              "columns": [
+                "p_partkey",
+                "ps_partkey"
+              ],
+              "columns_left": [
+                "ps_partkey"
+              ],
+              "columns_right": [
+                "p_partkey"
+              ],
+              "description": "[Join] Mode: Semi [p_partkey = ps_partkey]",
+              "id": 6,
+              "join_mode": "Semi",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "p_partkey",
+                "op": "=",
+                "right_column": "ps_partkey"
+              },
+              "name": "Join"
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "[Validate]",
+            "id": 5,
+            "name": "Validate"
+          },
+          "RightCard": "100000.0 row(s) est.",
+          "Rightchildren": {
+            "LeftCard": "100000.0 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "100000.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "1000000.0 row(s) est.",
+                "Leftchildren": {
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[StoredTable] Name: 'supplier' pruned: 0/16 chunk(s), 5/7 column(s)",
+                  "id": 32,
+                  "name": "StoredTable",
+                  "table_name": "supplier",
+                  "used_columns": [
+                    "s_suppkey",
+                    "s_comment"
+                  ]
+                },
+                "columns": [
+                  "s_comment"
+                ],
+                "columns_left": [
+                  "s_comment"
+                ],
+                "columns_right": [],
+                "description": "[Predicate] s_comment LIKE '%Customer%Complaints%'",
+                "id": 31,
+                "name": "Predicate",
+                "predicate": {
+                  "column": "s_comment",
+                  "kind": "binary",
+                  "op": "LIKE",
+                  "value": "%Customer%Complaints%"
+                }
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "[Validate]",
+              "id": 30,
+              "name": "Validate"
+            },
+            "columns": [
+              "s_suppkey"
+            ],
+            "columns_left": [
+              "s_suppkey"
+            ],
+            "columns_right": [],
+            "description": "[Projection] s_suppkey",
+            "id": 29,
+            "name": "Projection"
+          },
+          "columns": [
+            "ps_suppkey",
+            "s_suppkey"
+          ],
+          "columns_left": [
+            "ps_suppkey"
+          ],
+          "columns_right": [
+            "s_suppkey"
+          ],
+          "description": "[Join] Mode: AntiNullAsTrue [ps_suppkey = s_suppkey]",
+          "id": 4,
+          "join_mode": "AntiNullAsTrue",
+          "join_predicate": {
+            "kind": "binary",
+            "left_column": "ps_suppkey",
+            "op": "=",
+            "right_column": "s_suppkey"
+          },
+          "name": "Join"
+        },
+        "RightCard": "46904.4 row(s) est.",
+        "Rightchildren": {
+          "id": 8,
+          "name": "Union",
+          "shared_ref": true
+        },
+        "columns": [
+          "p_partkey",
+          "ps_partkey"
+        ],
+        "columns_left": [
+          "ps_partkey"
+        ],
+        "columns_right": [
+          "p_partkey"
+        ],
+        "description": "[Join] Mode: Inner [p_partkey = ps_partkey]",
+        "id": 3,
+        "join_mode": "Inner",
+        "join_predicate": {
+          "kind": "binary",
+          "left_column": "p_partkey",
+          "op": "=",
+          "right_column": "ps_partkey"
+        },
+        "name": "Join"
+      },
+      "aggregate_expressions": [
+        "COUNT(DISTINCT ps_suppkey)"
+      ],
+      "columns": [
+        "p_brand",
+        "p_size",
+        "p_type",
+        "ps_suppkey"
+      ],
+      "columns_left": [
+        "p_brand",
+        "p_size",
+        "p_type",
+        "ps_suppkey"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [p_brand, p_type, p_size] Aggregates: [COUNT(DISTINCT ps_suppkey)]",
+      "group_by_expressions": [
+        "p_brand",
+        "p_type",
+        "p_size"
+      ],
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "p_brand",
+      "p_size",
+      "p_type",
+      "ps_suppkey"
+    ],
+    "columns_left": [
+      "p_brand",
+      "p_size",
+      "p_type",
+      "ps_suppkey"
+    ],
+    "columns_right": [],
+    "description": "[Sort] COUNT(DISTINCT ps_suppkey) (DescendingNullsFirst), p_brand (AscendingNullsFirst), p_type (AscendingNullsFirst), p_size (AscendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "p_brand",
+    "p_size",
+    "p_type",
+    "ps_suppkey"
+  ],
+  "columns_left": [
+    "p_brand",
+    "p_size",
+    "p_type",
+    "ps_suppkey"
+  ],
+  "columns_right": [],
+  "description": "[Alias] p_brand, p_type, p_size, COUNT(DISTINCT ps_suppkey) AS supplier_cnt",
+  "id": 0,
+  "name": "Alias"
+}
