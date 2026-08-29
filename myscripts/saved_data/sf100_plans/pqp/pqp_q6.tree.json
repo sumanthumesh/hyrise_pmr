@@ -1,0 +1,117 @@
+{
+  "LeftCard": "1 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "7,613,677 row(s)/9,156 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "7,613,677 row(s)/9,156 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "7,613,677 row(s)/9,156 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "16,545,938 row(s)/9,156 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "91,030,658 row(s)/9,156 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "600,037,902 row(s)/9,156 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (lineitem) pruned: 0/9156 chunk(s), 12/16 column(s)",
+                "id": 0,
+                "name": "GetTable",
+                "table_name": "lineitem",
+                "used_columns": [
+                  "l_quantity",
+                  "l_extendedprice",
+                  "l_discount",
+                  "l_shipdate"
+                ],
+                "walltime_ns": 29754969
+              },
+              "Ops": "TableScan",
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnBetween l_shipdate BETWEEN UPPER EXCLUSIVE '1994-01-01' AND '1995-01-01'",
+              "id": 1,
+              "is_reference_input": -1,
+              "name": "TableScan",
+              "predicate": {
+                "column": "l_shipdate",
+                "kind": "between",
+                "lower": "1994-01-01",
+                "op": "BETWEEN UPPER EXCLUSIVE",
+                "upper": "1995-01-01"
+              },
+              "walltime_ns": 300786030
+            },
+            "Ops": "TableScan",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnBetween l_discount BETWEEN INCLUSIVE 0.05 AND 0.07",
+            "id": 2,
+            "is_reference_input": -1,
+            "name": "TableScan",
+            "predicate": {
+              "column": "l_discount",
+              "kind": "between",
+              "lower": "0.05",
+              "op": "BETWEEN INCLUSIVE",
+              "upper": "0.07"
+            },
+            "walltime_ns": 121012027
+          },
+          "Ops": "TableScan",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "TableScan Impl: ColumnVsValue l_quantity < 24",
+          "id": 3,
+          "is_reference_input": -1,
+          "name": "TableScan",
+          "predicate": {
+            "column": "l_quantity",
+            "kind": "binary",
+            "op": "<",
+            "value": "24"
+          },
+          "walltime_ns": 65144683
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "Validate",
+        "id": 4,
+        "name": "Validate",
+        "walltime_ns": 22492670
+      },
+      "Ops": "projection",
+      "columns": [],
+      "columns_left": [],
+      "columns_right": [],
+      "description": "Projection",
+      "id": 5,
+      "name": "Projection",
+      "walltime_ns": 106122813
+    },
+    "aggregate_expressions": [
+      "SUM(l_extendedprice * l_discount)"
+    ],
+    "columns": [],
+    "columns_left": [],
+    "columns_right": [],
+    "description": "AggregateHash GroupBy {} SUM(l_extendedprice * l_discount)",
+    "groupby_column_ids": [],
+    "id": 6,
+    "name": "AggregateHash",
+    "walltime_ns": 28175575
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [revenue]",
+  "id": 7,
+  "name": "Alias",
+  "walltime_ns": 7040
+}

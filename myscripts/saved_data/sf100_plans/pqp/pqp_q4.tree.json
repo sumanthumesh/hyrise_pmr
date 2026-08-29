@@ -1,0 +1,152 @@
+{
+  "LeftCard": "5 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "5 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "5,257,429 row(s)/32 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "5,733,776 row(s)/2,289 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "5,733,776 row(s)/2,289 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "150,000,000 row(s)/2,289 chunk(s)",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "GetTable (orders) pruned: 0/2289 chunk(s), 6/9 column(s)",
+              "id": 0,
+              "name": "GetTable",
+              "table_name": "orders",
+              "used_columns": [
+                "o_orderkey",
+                "o_orderdate",
+                "o_orderpriority"
+              ],
+              "walltime_ns": 132154451
+            },
+            "Ops": "TableScan",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnBetween o_orderdate BETWEEN UPPER EXCLUSIVE '1993-07-01' AND '1993-10-01'",
+            "id": 1,
+            "is_reference_input": -1,
+            "name": "TableScan",
+            "predicate": {
+              "column": "o_orderdate",
+              "kind": "between",
+              "lower": "1993-07-01",
+              "op": "BETWEEN UPPER EXCLUSIVE",
+              "upper": "1993-10-01"
+            },
+            "walltime_ns": 537573874
+          },
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "Validate",
+          "id": 2,
+          "name": "Validate",
+          "walltime_ns": 4477116
+        },
+        "RightCard": "14,498,066 row(s)/16 chunk(s)",
+        "Rightchildren": {
+          "LeftCard": "22,935,368 row(s)/16 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "22,935,368 row(s)/16 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "600,037,902 row(s)/9,156 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (lineitem) pruned: 0/9156 chunk(s), 13/16 column(s)",
+                "id": 3,
+                "name": "GetTable",
+                "table_name": "lineitem",
+                "used_columns": [
+                  "l_orderkey",
+                  "l_commitdate",
+                  "l_receiptdate"
+                ],
+                "walltime_ns": 114325715
+              },
+              "RightCard": "5,733,776 row(s)/2,289 chunk(s)",
+              "Rightchildren": {
+                "id": 2,
+                "name": "Validate",
+                "shared_ref": true
+              },
+              "build_side": "right",
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "JoinHash (Semi Reduction) l_orderkey = o_orderkey",
+              "id": 4,
+              "name": "JoinHash",
+              "walltime_ns": 3342758399
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 5,
+            "name": "Validate",
+            "walltime_ns": 27559791
+          },
+          "Ops": "TableScan",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "TableScan Impl: ColumnVsColumn l_commitdate < l_receiptdate",
+          "id": 6,
+          "is_reference_input": -1,
+          "name": "TableScan",
+          "predicate": {
+            "column": "l_commitdate",
+            "kind": "binary",
+            "op": "<",
+            "value": "l_receiptdate"
+          },
+          "walltime_ns": 1015125741
+        },
+        "build_side": "right",
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "JoinHash (Semi) o_orderkey = l_orderkey",
+        "id": 7,
+        "name": "JoinHash",
+        "walltime_ns": 711007389
+      },
+      "aggregate_expressions": [
+        "COUNT(*)"
+      ],
+      "columns": [],
+      "columns_left": [],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {o_orderpriority} COUNT(*)",
+      "groupby_column_ids": [
+        2
+      ],
+      "id": 8,
+      "name": "AggregateHash",
+      "walltime_ns": 903303161
+    },
+    "columns": [],
+    "columns_left": [],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 9,
+    "name": "Sort",
+    "walltime_ns": 46709
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [o_orderpriority, order_count]",
+  "id": 10,
+  "name": "Alias",
+  "walltime_ns": 2830
+}

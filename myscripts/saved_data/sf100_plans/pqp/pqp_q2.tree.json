@@ -1,0 +1,390 @@
+{
+  "LeftCard": "47,107 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "47,107 row(s)/52 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "63,825 row(s)/102 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "63,825 row(s)/16 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "63,825 row(s)/2 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "63,825 row(s)/2 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "318,364 row(s)/528 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "80,000,000 row(s)/1,221 chunk(s)",
+                "Leftchildren": {
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "GetTable (partsupp) pruned: 0/1221 chunk(s), 2/5 column(s)",
+                  "id": 0,
+                  "name": "GetTable",
+                  "table_name": "partsupp",
+                  "used_columns": [
+                    "ps_partkey",
+                    "ps_suppkey",
+                    "ps_supplycost"
+                  ],
+                  "walltime_ns": 14106192
+                },
+                "RightCard": "79,591 row(s)/306 chunk(s)",
+                "Rightchildren": {
+                  "LeftCard": "79,591 row(s)/306 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "399,557 row(s)/306 chunk(s)",
+                    "Leftchildren": {
+                      "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "GetTable (part) pruned: 0/306 chunk(s), 5/9 column(s)",
+                        "id": 1,
+                        "name": "GetTable",
+                        "table_name": "part",
+                        "used_columns": [
+                          "p_partkey",
+                          "p_mfgr",
+                          "p_type",
+                          "p_size"
+                        ],
+                        "walltime_ns": 1770743
+                      },
+                      "Ops": "TableScan",
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "TableScan Impl: ColumnVsValue p_size = 15",
+                      "id": 2,
+                      "is_reference_input": -1,
+                      "name": "TableScan",
+                      "predicate": {
+                        "column": "p_size",
+                        "kind": "binary",
+                        "op": "=",
+                        "value": "15"
+                      },
+                      "walltime_ns": 293135343
+                    },
+                    "Ops": "TableScan",
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "TableScan Impl: ColumnLike p_type LIKE '%BRASS'",
+                    "id": 3,
+                    "is_reference_input": -1,
+                    "name": "TableScan",
+                    "predicate": {
+                      "column": "p_type",
+                      "kind": "binary",
+                      "op": "LIKE",
+                      "value": "%BRASS"
+                    },
+                    "walltime_ns": 2832473
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "Validate",
+                  "id": 4,
+                  "name": "Validate",
+                  "walltime_ns": 582554
+                },
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "JoinHash (Semi Reduction) ps_partkey = p_partkey",
+                "id": 5,
+                "name": "JoinHash",
+                "walltime_ns": 95619298
+              },
+              "RightCard": "200,535 row(s)/16 chunk(s)",
+              "Rightchildren": {
+                "LeftCard": "200,535 row(s)/16 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "200,535 row(s)/16 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "1,000,000 row(s)/16 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (supplier) pruned: 0/16 chunk(s), 0/7 column(s)",
+                      "id": 6,
+                      "name": "GetTable",
+                      "table_name": "supplier",
+                      "used_columns": [
+                        "s_suppkey",
+                        "s_name",
+                        "s_address",
+                        "s_nationkey",
+                        "s_phone",
+                        "s_acctbal",
+                        "s_comment"
+                      ],
+                      "walltime_ns": 787433
+                    },
+                    "RightCard": "5 row(s)/1 chunk(s)",
+                    "Rightchildren": {
+                      "LeftCard": "5 row(s)/1 chunk(s)",
+                      "Leftchildren": {
+                        "LeftCard": "25 row(s)/1 chunk(s)",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "GetTable (nation) pruned: 0/1 chunk(s), 1/4 column(s)",
+                          "id": 7,
+                          "name": "GetTable",
+                          "table_name": "nation",
+                          "used_columns": [
+                            "n_nationkey",
+                            "n_name",
+                            "n_regionkey"
+                          ],
+                          "walltime_ns": 63950
+                        },
+                        "RightCard": "1 row(s)/1 chunk(s)",
+                        "Rightchildren": {
+                          "LeftCard": "1 row(s)/1 chunk(s)",
+                          "Leftchildren": {
+                            "LeftCard": "5 row(s)/1 chunk(s)",
+                            "Leftchildren": {
+                              "columns": [],
+                              "columns_left": [],
+                              "columns_right": [],
+                              "description": "GetTable (region) pruned: 0/1 chunk(s), 1/3 column(s)",
+                              "id": 8,
+                              "name": "GetTable",
+                              "table_name": "region",
+                              "used_columns": [
+                                "r_regionkey",
+                                "r_name"
+                              ],
+                              "walltime_ns": 46260
+                            },
+                            "Ops": "TableScan",
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "TableScan Impl: ColumnVsValue r_name = 'EUROPE'",
+                            "id": 9,
+                            "is_reference_input": -1,
+                            "name": "TableScan",
+                            "predicate": {
+                              "column": "r_name",
+                              "kind": "binary",
+                              "op": "=",
+                              "value": "EUROPE"
+                            },
+                            "walltime_ns": 222737
+                          },
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "Validate",
+                          "id": 10,
+                          "name": "Validate",
+                          "walltime_ns": 7870
+                        },
+                        "build_side": "right",
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "JoinHash (Semi) n_regionkey = r_regionkey",
+                        "id": 11,
+                        "name": "JoinHash",
+                        "walltime_ns": 1005750
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "Validate",
+                      "id": 12,
+                      "name": "Validate",
+                      "walltime_ns": 18460
+                    },
+                    "build_side": "right",
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "JoinHash (Semi Reduction) s_nationkey = n_nationkey",
+                    "id": 13,
+                    "name": "JoinHash",
+                    "walltime_ns": 6290049
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "Validate",
+                  "id": 14,
+                  "name": "Validate",
+                  "walltime_ns": 157758
+                },
+                "RightCard": "5 row(s)/1 chunk(s)",
+                "Rightchildren": {
+                  "id": 12,
+                  "name": "Validate",
+                  "shared_ref": true
+                },
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "JoinHash (Inner) s_nationkey = n_nationkey",
+                "id": 15,
+                "name": "JoinHash",
+                "walltime_ns": 3481136
+              },
+              "build_side": "right",
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "JoinHash (Semi Reduction) ps_suppkey = s_suppkey",
+              "id": 16,
+              "name": "JoinHash",
+              "walltime_ns": 41678264
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 17,
+            "name": "Validate",
+            "walltime_ns": 804702
+          },
+          "RightCard": "200,535 row(s)/16 chunk(s)",
+          "Rightchildren": {
+            "id": 15,
+            "name": "JoinHash",
+            "shared_ref": true
+          },
+          "build_side": "left",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "JoinHash (Inner) ps_suppkey = s_suppkey",
+          "id": 18,
+          "name": "JoinHash",
+          "walltime_ns": 11143911
+        },
+        "RightCard": "79,591 row(s)/306 chunk(s)",
+        "Rightchildren": {
+          "id": 4,
+          "name": "Validate",
+          "shared_ref": true
+        },
+        "build_side": "left",
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "JoinHash (Inner) ps_partkey = p_partkey",
+        "id": 19,
+        "name": "JoinHash",
+        "walltime_ns": 15938204
+      },
+      "RightCard": "47,107 row(s)/1 chunk(s)",
+      "Rightchildren": {
+        "LeftCard": "63,825 row(s)/2 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "63,825 row(s)/2 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "318,364 row(s)/528 chunk(s)",
+            "Leftchildren": {
+              "id": 5,
+              "name": "JoinHash",
+              "shared_ref": true
+            },
+            "RightCard": "200,535 row(s)/16 chunk(s)",
+            "Rightchildren": {
+              "LeftCard": "200,535 row(s)/16 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "1,000,000 row(s)/16 chunk(s)",
+                "Leftchildren": {
+                  "id": 6,
+                  "name": "GetTable",
+                  "shared_ref": true
+                },
+                "RightCard": "5 row(s)/1 chunk(s)",
+                "Rightchildren": {
+                  "id": 12,
+                  "name": "Validate",
+                  "shared_ref": true
+                },
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "JoinHash (Semi) s_nationkey = n_nationkey",
+                "id": 20,
+                "name": "JoinHash",
+                "walltime_ns": 4599855
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "Validate",
+              "id": 21,
+              "name": "Validate",
+              "walltime_ns": 217728
+            },
+            "build_side": "right",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "JoinHash (Semi) ps_suppkey = s_suppkey",
+            "id": 22,
+            "name": "JoinHash",
+            "walltime_ns": 69587972
+          },
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "Validate",
+          "id": 23,
+          "name": "Validate",
+          "walltime_ns": 949000
+        },
+        "aggregate_expressions": [
+          "MIN(ps_supplycost)"
+        ],
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "AggregateHash GroupBy {ps_partkey} MIN(ps_supplycost)",
+        "groupby_column_ids": [
+          0
+        ],
+        "id": 24,
+        "name": "AggregateHash",
+        "walltime_ns": 76023549
+      },
+      "build_side": "right",
+      "columns": [],
+      "columns_left": [],
+      "columns_right": [],
+      "description": "JoinHash (Semi) ps_supplycost = MIN(ps_supplycost) AND p_partkey = ps_partkey",
+      "id": 25,
+      "name": "JoinHash",
+      "walltime_ns": 17280282
+    },
+    "columns": [],
+    "columns_left": [],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 26,
+    "name": "Sort",
+    "walltime_ns": 62015706
+  },
+  "Ops": "projection",
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Projection",
+  "id": 27,
+  "name": "Projection",
+  "walltime_ns": 17420
+}

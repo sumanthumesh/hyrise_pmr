@@ -1,0 +1,130 @@
+{
+  "LeftCard": "45 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "45 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "15,000,000 row(s)/229 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "153,382,546 row(s)/256 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "15,000,000 row(s)/229 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "15,000,000 row(s)/229 chunk(s)",
+            "Leftchildren": {
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "GetTable (customer) pruned: 0/229 chunk(s), 7/8 column(s)",
+              "id": 0,
+              "name": "GetTable",
+              "table_name": "customer",
+              "used_columns": [
+                "c_custkey"
+              ],
+              "walltime_ns": 14821894
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 1,
+            "name": "Validate",
+            "walltime_ns": 487755
+          },
+          "RightCard": "148,382,363 row(s)/2,289 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "148,382,363 row(s)/2,289 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "150,000,000 row(s)/2,289 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (orders) pruned: 0/2289 chunk(s), 6/9 column(s)",
+                "id": 2,
+                "name": "GetTable",
+                "table_name": "orders",
+                "used_columns": [
+                  "o_orderkey",
+                  "o_custkey",
+                  "o_comment"
+                ],
+                "walltime_ns": 1369797
+              },
+              "Ops": "TableScan",
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "TableScan Impl: ColumnLike o_comment NOT LIKE '%special%requests%'",
+              "id": 3,
+              "is_reference_input": -1,
+              "name": "TableScan",
+              "predicate": {
+                "column": "o_comment",
+                "kind": "binary",
+                "op": "NOT LIKE",
+                "value": "%special%requests%"
+              },
+              "walltime_ns": 1980728377
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 4,
+            "name": "Validate",
+            "walltime_ns": 30622149
+          },
+          "build_side": "right",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "JoinHash (Left) c_custkey = o_custkey",
+          "id": 5,
+          "name": "JoinHash",
+          "walltime_ns": 8982295411
+        },
+        "aggregate_expressions": [
+          "COUNT(o_orderkey)"
+        ],
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "AggregateHash GroupBy {c_custkey} COUNT(o_orderkey)",
+        "groupby_column_ids": [
+          0
+        ],
+        "id": 6,
+        "name": "AggregateHash",
+        "walltime_ns": 11733184565
+      },
+      "aggregate_expressions": [
+        "COUNT(*)"
+      ],
+      "columns": [],
+      "columns_left": [],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {COUNT(o_orderkey)} COUNT(*)",
+      "groupby_column_ids": [
+        1
+      ],
+      "id": 7,
+      "name": "AggregateHash",
+      "walltime_ns": 276800787
+    },
+    "columns": [],
+    "columns_left": [],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 8,
+    "name": "Sort",
+    "walltime_ns": 65259
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [c_count, custdist]",
+  "id": 9,
+  "name": "Alias",
+  "walltime_ns": 2720
+}

@@ -1,0 +1,508 @@
+{
+  "LeftCard": "27,840 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "27,840 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "11,881,344 row(s)/32 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "11,881,344 row(s)/32 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "11,886,996 row(s)/32 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "11,886,996 row(s)/32 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "80,000,000 row(s)/1,221 chunk(s)",
+              "Leftchildren": {
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "GetTable (partsupp) pruned: 0/1221 chunk(s), 3/5 column(s)",
+                "id": 0,
+                "name": "GetTable",
+                "table_name": "partsupp",
+                "used_columns": [
+                  "ps_partkey",
+                  "ps_suppkey"
+                ],
+                "walltime_ns": 6515336
+              },
+              "RightCard": "2,971,749 row(s)/4,896 chunk(s)",
+              "Rightchildren": {
+                "LeftCard": "1,434,665 row(s)/2,448 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "3,073,978 row(s)/2,448 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "3,073,978 row(s)/2,448 chunk(s)",
+                    "Leftchildren": {
+                      "LeftCard": "3,201,671 row(s)/2,448 chunk(s)",
+                      "Leftchildren": {
+                        "LeftCard": "2,801,526 row(s)/2,142 chunk(s)",
+                        "Leftchildren": {
+                          "LeftCard": "2,400,784 row(s)/1,836 chunk(s)",
+                          "Leftchildren": {
+                            "LeftCard": "2,001,258 row(s)/1,530 chunk(s)",
+                            "Leftchildren": {
+                              "LeftCard": "1,602,198 row(s)/1,224 chunk(s)",
+                              "Leftchildren": {
+                                "LeftCard": "1,201,221 row(s)/918 chunk(s)",
+                                "Leftchildren": {
+                                  "LeftCard": "800,877 row(s)/612 chunk(s)",
+                                  "Leftchildren": {
+                                    "LeftCard": "400,905 row(s)/306 chunk(s)",
+                                    "Leftchildren": {
+                                      "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                                      "Leftchildren": {
+                                        "columns": [],
+                                        "columns_left": [],
+                                        "columns_right": [],
+                                        "description": "GetTable (part) pruned: 0/306 chunk(s), 5/9 column(s)",
+                                        "id": 1,
+                                        "name": "GetTable",
+                                        "table_name": "part",
+                                        "used_columns": [
+                                          "p_partkey",
+                                          "p_brand",
+                                          "p_type",
+                                          "p_size"
+                                        ],
+                                        "walltime_ns": 689514
+                                      },
+                                      "Ops": "TableScan",
+                                      "columns": [],
+                                      "columns_left": [],
+                                      "columns_right": [],
+                                      "description": "TableScan Impl: ColumnVsValue p_size = 9",
+                                      "id": 2,
+                                      "is_reference_input": -1,
+                                      "name": "TableScan",
+                                      "predicate": {
+                                        "column": "p_size",
+                                        "kind": "binary",
+                                        "op": "=",
+                                        "value": "9"
+                                      },
+                                      "walltime_ns": 20060782
+                                    },
+                                    "RightCard": "399,972 row(s)/306 chunk(s)",
+                                    "Rightchildren": {
+                                      "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                                      "Leftchildren": {
+                                        "id": 1,
+                                        "name": "GetTable",
+                                        "shared_ref": true
+                                      },
+                                      "Ops": "TableScan",
+                                      "columns": [],
+                                      "columns_left": [],
+                                      "columns_right": [],
+                                      "description": "TableScan Impl: ColumnVsValue p_size = 36",
+                                      "id": 3,
+                                      "is_reference_input": -1,
+                                      "name": "TableScan",
+                                      "predicate": {
+                                        "column": "p_size",
+                                        "kind": "binary",
+                                        "op": "=",
+                                        "value": "36"
+                                      },
+                                      "walltime_ns": 16478838
+                                    },
+                                    "columns": [],
+                                    "columns_left": [],
+                                    "columns_right": [],
+                                    "description": "UnionAll",
+                                    "id": 4,
+                                    "name": "UnionAll",
+                                    "walltime_ns": 256217
+                                  },
+                                  "RightCard": "400,344 row(s)/306 chunk(s)",
+                                  "Rightchildren": {
+                                    "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                                    "Leftchildren": {
+                                      "id": 1,
+                                      "name": "GetTable",
+                                      "shared_ref": true
+                                    },
+                                    "Ops": "TableScan",
+                                    "columns": [],
+                                    "columns_left": [],
+                                    "columns_right": [],
+                                    "description": "TableScan Impl: ColumnVsValue p_size = 3",
+                                    "id": 5,
+                                    "is_reference_input": -1,
+                                    "name": "TableScan",
+                                    "predicate": {
+                                      "column": "p_size",
+                                      "kind": "binary",
+                                      "op": "=",
+                                      "value": "3"
+                                    },
+                                    "walltime_ns": 15679635
+                                  },
+                                  "columns": [],
+                                  "columns_left": [],
+                                  "columns_right": [],
+                                  "description": "UnionAll",
+                                  "id": 6,
+                                  "name": "UnionAll",
+                                  "walltime_ns": 271557
+                                },
+                                "RightCard": "400,977 row(s)/306 chunk(s)",
+                                "Rightchildren": {
+                                  "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                                  "Leftchildren": {
+                                    "id": 1,
+                                    "name": "GetTable",
+                                    "shared_ref": true
+                                  },
+                                  "Ops": "TableScan",
+                                  "columns": [],
+                                  "columns_left": [],
+                                  "columns_right": [],
+                                  "description": "TableScan Impl: ColumnVsValue p_size = 19",
+                                  "id": 7,
+                                  "is_reference_input": -1,
+                                  "name": "TableScan",
+                                  "predicate": {
+                                    "column": "p_size",
+                                    "kind": "binary",
+                                    "op": "=",
+                                    "value": "19"
+                                  },
+                                  "walltime_ns": 15942114
+                                },
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "UnionAll",
+                                "id": 8,
+                                "name": "UnionAll",
+                                "walltime_ns": 268927
+                              },
+                              "RightCard": "399,060 row(s)/306 chunk(s)",
+                              "Rightchildren": {
+                                "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                                "Leftchildren": {
+                                  "id": 1,
+                                  "name": "GetTable",
+                                  "shared_ref": true
+                                },
+                                "Ops": "TableScan",
+                                "columns": [],
+                                "columns_left": [],
+                                "columns_right": [],
+                                "description": "TableScan Impl: ColumnVsValue p_size = 45",
+                                "id": 9,
+                                "is_reference_input": -1,
+                                "name": "TableScan",
+                                "predicate": {
+                                  "column": "p_size",
+                                  "kind": "binary",
+                                  "op": "=",
+                                  "value": "45"
+                                },
+                                "walltime_ns": 16704645
+                              },
+                              "columns": [],
+                              "columns_left": [],
+                              "columns_right": [],
+                              "description": "UnionAll",
+                              "id": 10,
+                              "name": "UnionAll",
+                              "walltime_ns": 444196
+                            },
+                            "RightCard": "399,526 row(s)/306 chunk(s)",
+                            "Rightchildren": {
+                              "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                              "Leftchildren": {
+                                "id": 1,
+                                "name": "GetTable",
+                                "shared_ref": true
+                              },
+                              "Ops": "TableScan",
+                              "columns": [],
+                              "columns_left": [],
+                              "columns_right": [],
+                              "description": "TableScan Impl: ColumnVsValue p_size = 14",
+                              "id": 11,
+                              "is_reference_input": -1,
+                              "name": "TableScan",
+                              "predicate": {
+                                "column": "p_size",
+                                "kind": "binary",
+                                "op": "=",
+                                "value": "14"
+                              },
+                              "walltime_ns": 14930333
+                            },
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "UnionAll",
+                            "id": 12,
+                            "name": "UnionAll",
+                            "walltime_ns": 406636
+                          },
+                          "RightCard": "400,742 row(s)/306 chunk(s)",
+                          "Rightchildren": {
+                            "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                            "Leftchildren": {
+                              "id": 1,
+                              "name": "GetTable",
+                              "shared_ref": true
+                            },
+                            "Ops": "TableScan",
+                            "columns": [],
+                            "columns_left": [],
+                            "columns_right": [],
+                            "description": "TableScan Impl: ColumnVsValue p_size = 23",
+                            "id": 13,
+                            "is_reference_input": -1,
+                            "name": "TableScan",
+                            "predicate": {
+                              "column": "p_size",
+                              "kind": "binary",
+                              "op": "=",
+                              "value": "23"
+                            },
+                            "walltime_ns": 21439809
+                          },
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "UnionAll",
+                          "id": 14,
+                          "name": "UnionAll",
+                          "walltime_ns": 1095769
+                        },
+                        "RightCard": "400,145 row(s)/306 chunk(s)",
+                        "Rightchildren": {
+                          "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                          "Leftchildren": {
+                            "id": 1,
+                            "name": "GetTable",
+                            "shared_ref": true
+                          },
+                          "Ops": "TableScan",
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "TableScan Impl: ColumnVsValue p_size = 49",
+                          "id": 15,
+                          "is_reference_input": -1,
+                          "name": "TableScan",
+                          "predicate": {
+                            "column": "p_size",
+                            "kind": "binary",
+                            "op": "=",
+                            "value": "49"
+                          },
+                          "walltime_ns": 44919518
+                        },
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "UnionAll",
+                        "id": 16,
+                        "name": "UnionAll",
+                        "walltime_ns": 1077739
+                      },
+                      "Ops": "TableScan",
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "TableScan Impl: ColumnVsValue p_brand != 'Brand#45'",
+                      "id": 17,
+                      "is_reference_input": -1,
+                      "name": "TableScan",
+                      "predicate": {
+                        "column": "p_brand",
+                        "kind": "binary",
+                        "op": "!=",
+                        "value": "Brand#45"
+                      },
+                      "walltime_ns": 11071121
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 18,
+                    "name": "Validate",
+                    "walltime_ns": 5414056
+                  },
+                  "Ops": "TableScan",
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ColumnVsValue p_type < 'MEDIUM POLISHED'",
+                  "id": 19,
+                  "is_reference_input": -1,
+                  "name": "TableScan",
+                  "predicate": {
+                    "column": "p_type",
+                    "kind": "binary",
+                    "op": "<",
+                    "value": "MEDIUM POLISHED"
+                  },
+                  "walltime_ns": 17052402
+                },
+                "RightCard": "1,537,084 row(s)/2,448 chunk(s)",
+                "Rightchildren": {
+                  "LeftCard": "3,073,978 row(s)/2,448 chunk(s)",
+                  "Leftchildren": {
+                    "id": 18,
+                    "name": "Validate",
+                    "shared_ref": true
+                  },
+                  "Ops": "TableScan",
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "TableScan Impl: ColumnVsValue p_type >= 'MEDIUM POLISHEE'",
+                  "id": 20,
+                  "is_reference_input": -1,
+                  "name": "TableScan",
+                  "predicate": {
+                    "column": "p_type",
+                    "kind": "binary",
+                    "op": ">=",
+                    "value": "MEDIUM POLISHEE"
+                  },
+                  "walltime_ns": 18215011
+                },
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "UnionAll",
+                "id": 21,
+                "name": "UnionAll",
+                "walltime_ns": 2594714
+              },
+              "build_side": "right",
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "JoinHash (Semi Reduction) ps_partkey = p_partkey",
+              "id": 22,
+              "name": "JoinHash",
+              "walltime_ns": 540799027
+            },
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Validate",
+            "id": 23,
+            "name": "Validate",
+            "walltime_ns": 15984593
+          },
+          "RightCard": "479 row(s)/16 chunk(s)",
+          "Rightchildren": {
+            "LeftCard": "479 row(s)/16 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "479 row(s)/16 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "1,000,000 row(s)/16 chunk(s)",
+                "Leftchildren": {
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "GetTable (supplier) pruned: 0/16 chunk(s), 5/7 column(s)",
+                  "id": 24,
+                  "name": "GetTable",
+                  "table_name": "supplier",
+                  "used_columns": [
+                    "s_suppkey",
+                    "s_comment"
+                  ],
+                  "walltime_ns": 240688
+                },
+                "Ops": "TableScan",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "TableScan Impl: ColumnLike s_comment LIKE '%Customer%Complaints%'",
+                "id": 25,
+                "is_reference_input": -1,
+                "name": "TableScan",
+                "predicate": {
+                  "column": "s_comment",
+                  "kind": "binary",
+                  "op": "LIKE",
+                  "value": "%Customer%Complaints%"
+                },
+                "walltime_ns": 14402568
+              },
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "Validate",
+              "id": 26,
+              "name": "Validate",
+              "walltime_ns": 49680
+            },
+            "Ops": "projection",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "Projection",
+            "id": 27,
+            "name": "Projection",
+            "walltime_ns": 17460
+          },
+          "build_side": "right",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "JoinHash (AntiNullAsTrue) ps_suppkey = s_suppkey",
+          "id": 28,
+          "name": "JoinHash",
+          "walltime_ns": 188917401
+        },
+        "RightCard": "2,971,749 row(s)/4,896 chunk(s)",
+        "Rightchildren": {
+          "id": 21,
+          "name": "UnionAll",
+          "shared_ref": true
+        },
+        "build_side": "right",
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "JoinHash (Inner) ps_partkey = p_partkey",
+        "id": 29,
+        "name": "JoinHash",
+        "walltime_ns": 416507351
+      },
+      "aggregate_expressions": [
+        "COUNT(DISTINCT ps_suppkey)"
+      ],
+      "columns": [],
+      "columns_left": [],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {p_brand, p_type, p_size} COUNT(DISTINCT ps_suppkey)",
+      "groupby_column_ids": [
+        3,
+        4,
+        5
+      ],
+      "id": 30,
+      "name": "AggregateHash",
+      "walltime_ns": 4718751672
+    },
+    "columns": [],
+    "columns_left": [],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 31,
+    "name": "Sort",
+    "walltime_ns": 58081929
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [p_brand, p_type, p_size, supplier_cnt]",
+  "id": 32,
+  "name": "Alias",
+  "walltime_ns": 5410
+}
