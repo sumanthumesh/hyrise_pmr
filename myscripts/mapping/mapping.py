@@ -75,7 +75,7 @@ if __name__ == "__main__":
     placment_output_file = args.output_file
     with open(placment_output_file, 'w') as f:
         json.dump({
-            "placement": [list(mem) for mem in placement],
+            "placement": [sorted(mem) for mem in placement],
             "total_sizes": total_sizes,
         }, f, indent=4)
 
