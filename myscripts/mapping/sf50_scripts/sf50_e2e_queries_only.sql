@@ -21,9 +21,7 @@ script /home/umeshsum/tpch_queries/11.sql
 script /home/umeshsum/tpch_queries/11.sql
 script /home/umeshsum/tpch_queries/11.sql
 script /home/umeshsum/tpch_queries/11.sql
-script /home/umeshsum/tpch_queries/11.sql
 setting label d0_tf0_q12
-script /home/umeshsum/tpch_queries/12.sql
 script /home/umeshsum/tpch_queries/12.sql
 script /home/umeshsum/tpch_queries/12.sql
 script /home/umeshsum/tpch_queries/12.sql
