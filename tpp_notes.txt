@@ -1,0 +1,76 @@
+TPP (Transparent Page Placement) Notes — ndsl-cxl-4
+=====================================================
+Kernel: 7.1.5-cxlnet
+NUMA:   Node 0 = 128GB DRAM (48 CPUs), Node 1 = 387GB CXL (no CPUs)
+        Distance: 0→1 = 50, 1→0 = 255
+
+
+KNOBS TO ENABLE TPP
+-------------------
+
+1. kernel.numa_balancing
+   Default / current (post-reboot): 1
+   Values:
+     0 = disabled (use this during Hyrise data loading to avoid crashes)
+     1 = traditional NUMA balancing only
+     2 = memory tiering mode — enables CXL→DRAM promotion of hot pages
+     3 = traditional + tiering (both)
+   Set:   sudo sysctl -w kernel.numa_balancing=2
+   Check: cat /proc/sys/kernel/numa_balancing
+
+2. mm.numa.demotion_enabled
+   Default / current (post-reboot): false
+   Purpose: allows kswapd to demote cold DRAM pages to CXL when DRAM is
+            under pressure. Without this, promotion (CXL→DRAM) happens
+            but cold pages are never pushed back out.
+   Set:   sudo sh -c 'echo true > /sys/kernel/mm/numa/demotion_enabled'
+   Check: cat /sys/kernel/mm/numa/demotion_enabled
+
+3. kernel.numa_balancing_promote_rate_limit_MBps  (optional tuning)
+   Default / current: 65536
+   Purpose: caps the bandwidth used for hot-page promotion (CXL→DRAM).
+            65536 MB/s is effectively unlimited on this hardware
+            (~18 GB/s practical CXL peak), so no change needed unless
+            you want to throttle promotion for fairness.
+   Set:   sudo sysctl -w kernel.numa_balancing_promote_rate_limit_MBps=<value>
+   Check: cat /proc/sys/kernel/numa_balancing_promote_rate_limit_MBps
+
+
+MONITORING COUNTERS
+-------------------
+Watch whether TPP is doing anything:
+
+  watch -n2 grep -E 'pgpromote|pgdemote|numa_hint|numa_pages_migrated' /proc/vmstat
+
+Key counters:
+  pgpromote_success   — pages moved CXL→DRAM (hot promotion)
+  pgdemote_kswapd     — pages moved DRAM→CXL (cold demotion by kswapd)
+  numa_hint_faults    — NUMA scanner activity (how hard balancer is working)
+  numa_pages_migrated — total pages migrated by NUMA balancer
+
+Monitor per-NUMA memory of a running process:
+  watch -n2 numastat -p hyriseConsole
+
+
+IMPORTANT CAVEAT FOR THIS SYSTEM
+---------------------------------
+Even with numa_balancing=1 (the default) and demotion_enabled=false,
+kswapd was observed demoting ~2.3M pages to CXL over time (pgdemote_kswapd).
+When Hyrise's ValueSegment<pmr_string> data landed on CXL via these demotions,
+the DictionaryEncoder iterator crashed inside libc while copying strings.
+
+Root cause: likely a bug in the 7.1.5-cxlnet kernel's CXL memory access
+path under load. Accessing demoted pmr_string buffers from CXL segfaults.
+
+Workaround: disable NUMA balancing before running Hyrise data loading:
+  sudo sysctl -w kernel.numa_balancing=0
+  # run experiment
+  sudo sysctl -w kernel.numa_balancing=2   # re-enable for TPP experiments
+
+The crash was fixed by a reboot (which zeroed pgdemote_kswapd). The issue
+will eventually return without the workaround as kswapd accumulates demotions.
+
+Make permanent (survives reboot) — for experiments that need balancing OFF:
+  echo "kernel.numa_balancing=0" | sudo tee /etc/sysctl.d/99-disable-numa-balancing.conf
+
+Remove that file to restore the default (1) on next reboot.
