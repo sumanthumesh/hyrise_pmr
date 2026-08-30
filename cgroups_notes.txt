@@ -1,0 +1,18 @@
+# 1. Create cgroup with no limit
+sudo mkdir -p /sys/fs/cgroup/hyrise
+echo "max" | sudo tee /sys/fs/cgroup/hyrise/memory.max
+echo "max" | sudo tee /sys/fs/cgroup/hyrise/memory.swap.max
+
+# 2. Move your current shell into the cgroup, then launch hyrise from it
+echo $$ | sudo tee /sys/fs/cgroup/hyrise/cgroup.procs
+./hyriseConsole ...   # all allocations are now charged to the cgroup
+
+# 3. After loading is done, apply the 25 GB limit
+echo $((25 * 1024**3)) | sudo tee /sys/fs/cgroup/hyrise/memory.max
+# Kernel will now reclaim/swap the ~103 GB excess
+
+# 4. Use this command to monitor DRAM and SWAP usage
+watch -n1 "cat /sys/fs/cgroup/hyrise/memory.current && cat /sys/fs/cgroup/hyrise/memory.swap.current"
+
+# 5. Use this command to monitor numa usage
+watch -n1 numastat -p hyriseConsole
