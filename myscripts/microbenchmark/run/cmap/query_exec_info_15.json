@@ -1,5 +1,5 @@
 {
-  "duration": 2708055012,
+  "duration": 2096162182,
   "label": "d0_tf0_q4",
   "memory_deltas": [
     {
@@ -10,13 +10,13 @@
       "total_allocated_bytes_delta": 0
     },
     {
-      "allocated_bytes": 432,
+      "allocated_bytes": 1268,
       "numa_node": 0,
       "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 19866545824
+      "total_allocated_bytes_delta": 4809528888
     }
   ],
-  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/4.sql",
-  "sql": "SELECT \n    COUNT(*)\nFROM \n    lineitem JOIN orders\n      ON l_orderkey = o_orderkey\nWHERE \n    o_orderpriority = '1-URGENT';"
+  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/queries2/4.sql",
+  "sql": "-- A4  type axis: STRING predicate column (l_shipinstruct, 0.302 GB)\n-- Fixed spine: 2 of 4 categories = ~50% selectivity, identical aggregate.\nSELECT\n    COUNT(*), SUM(l_quantity), SUM(l_extendedprice)\nFROM\n    lineitem\nWHERE\n    l_shipinstruct IN ('DELIVER IN PERSON', 'COLLECT COD');"
 }

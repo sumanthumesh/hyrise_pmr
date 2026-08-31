@@ -1,0 +1,22 @@
+{
+  "duration": 4525054297,
+  "label": "d0_tf0_q7",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "peak_mem_usage": 0,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 1232,
+      "numa_node": 0,
+      "peak_mem_usage": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 14256373864
+    }
+  ],
+  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/queries2/7.sql",
+  "sql": "-- B4  operator axis: + HASH JOIN against orders\n-- Same lineitem filter and aggregate as 3.sql, plus a probe-side join.\n-- orders is filtered to ~20% so the build side stays smaller than the probe.\nSELECT\n    COUNT(*), SUM(l_quantity), SUM(l_extendedprice)\nFROM\n    lineitem JOIN orders\n      ON l_orderkey = o_orderkey\nWHERE\n    l_shipdate BETWEEN '1992-01-01' AND '1995-06-30'\n    AND o_orderpriority = '1-URGENT';"
+}
