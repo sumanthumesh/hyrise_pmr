@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import csv
 import json
 from typing import Dict, List, Optional, Set, Tuple
 from solver_core import solve_column_placement
@@ -13,6 +14,38 @@ def parse_hotness_file(hotness_file_path):
     for deltas in hotness_raw["column_access_deltas"]:
         hotness[deltas["column_name"]] = deltas["access_delta"]
     return hotness
+
+def parse_row_count_file(row_count_file_path):
+    """CSV of `Table,Count` -> {table: rows}."""
+    rows: Dict[str, int] = {}
+    with open(row_count_file_path, newline="") as f:
+        for record in csv.DictReader(f):
+            rows[record["Table"].strip()] = int(record["Count"])
+    return rows
+
+
+def weight_by_row_bytes(hotness, col_sizes, table_rows):
+    """Scale each column's access count by its average bytes per row.
+
+    The solver's objective is sum(hotness * latency), so `hotness` has to stand
+    for the traffic a placement moves, not the number of row accesses: one
+    access to a 6-byte column moves six times the bytes of one access to a
+    1-byte column. Deriving the width as size/rows also captures encoding --
+    a dictionary-encoded key column is correctly treated as narrow.
+    """
+    weighted: Dict[str, float] = {}
+    for col, access in hotness.items():
+        table = table_from_column.get(col)
+        if table is None:
+            sys.exit(f"Error: no table known for column '{col}'")
+        if table not in table_rows:
+            sys.exit(f"Error: row count file has no entry for table '{table}'")
+        n_rows = table_rows[table]
+        if n_rows <= 0:
+            sys.exit(f"Error: row count for table '{table}' must be positive")
+        weighted[col] = access * (col_sizes[col] / n_rows)
+    return weighted
+
 
 def parse_size_file(size_file_path):
     col_sizes:Dict[str,int] = {}
@@ -28,6 +61,10 @@ if __name__ == "__main__":
 
     parser.add_argument("-p","--hotness-file", required=True, help="Path to the hotness json file")
     parser.add_argument("-s","--size-file", required=True, help="Path to the size json file")
+    parser.add_argument("-r","--row-count-file", default=None,
+                        help="Path to a CSV of Table,Count. When given, each column's "
+                             "access count is weighted by its average bytes per row, so "
+                             "the solver optimises bytes moved rather than row accesses.")
     parser.add_argument("-c","--mem-capacities", required=True, help="comma-separated list of memory capacities (use 'None' for unbounded)")
     parser.add_argument("-l","--mem-latencies", required=True, help="comma-separated list of memory latencies (must match the number of capacities)")
     parser.add_argument("-o","--output-file", required=True, help="Path to the output json file")
@@ -51,8 +88,17 @@ if __name__ == "__main__":
             print(f"Columns missing in size file: {missing_in_size}")
         sys.exit(1)
 
+    # Weight accesses by column width when row counts are available.
+    if args.row_count_file:
+        table_rows = parse_row_count_file(args.row_count_file)
+        hotness = weight_by_row_bytes(hotness, col_sizes, table_rows)
+    else:
+        print("Warning: no --row-count-file; optimising raw access counts, which "
+              "treats a 1-byte column and a 6-byte column as equally valuable.",
+              file=sys.stderr)
+
     # Combine into a single dictionary of columns with (hotness, size)
-    columns:Dict[str,Tuple[int, int]] = {col:(hotness[col], col_sizes[col]) for col in hotness.keys()}
+    columns:Dict[str,Tuple[float, int]] = {col:(hotness[col], col_sizes[col]) for col in hotness.keys()}
 
     #Parse the memory capacities and latencies
     mem_capacities = [None if cap.strip().lower() == "none" else int(cap.strip()) for cap in args.mem_capacities.split(",")]
