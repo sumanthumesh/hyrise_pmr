@@ -1,0 +1,488 @@
+{
+  "LeftCard": "95991217.8 row(s) est.",
+  "Leftchildren": {
+    "LeftCard": "95991217.8 row(s) est.",
+    "Leftchildren": {
+      "LeftCard": "95991217.8 row(s) est.",
+      "Leftchildren": {
+        "LeftCard": "95991217.8 row(s) est.",
+        "Leftchildren": {
+          "LeftCard": "95991217.8 row(s) est.",
+          "Leftchildren": {
+            "LeftCard": "96004727.2 row(s) est.",
+            "Leftchildren": {
+              "LeftCard": "8000000.0 row(s) est.",
+              "Leftchildren": {
+                "LeftCard": "80000000.0 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "80000000.0 row(s) est.",
+                  "Leftchildren": {
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[StoredTable] Name: 'partsupp' pruned: 0/1221 chunk(s), 2/5 column(s)",
+                    "id": 9,
+                    "name": "StoredTable",
+                    "table_name": "partsupp",
+                    "used_columns": [
+                      "ps_partkey",
+                      "ps_suppkey",
+                      "ps_supplycost"
+                    ]
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[Validate]",
+                  "id": 8,
+                  "name": "Validate"
+                },
+                "RightCard": "24001181.8 row(s) est.",
+                "Rightchildren": {
+                  "LeftCard": "24001181.8 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "240011818.0 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "600037902.0 row(s) est.",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[StoredTable] Name: 'lineitem' pruned: 0/9156 chunk(s), 10/16 column(s)",
+                        "id": 13,
+                        "name": "StoredTable",
+                        "table_name": "lineitem",
+                        "used_columns": [
+                          "l_orderkey",
+                          "l_partkey",
+                          "l_suppkey",
+                          "l_quantity",
+                          "l_extendedprice",
+                          "l_discount"
+                        ]
+                      },
+                      "columns": [
+                        "l_quantity"
+                      ],
+                      "columns_left": [
+                        "l_quantity"
+                      ],
+                      "columns_right": [],
+                      "description": "[Predicate] l_quantity > 30",
+                      "id": 12,
+                      "name": "Predicate",
+                      "predicate": {
+                        "column": "l_quantity",
+                        "kind": "binary",
+                        "op": ">",
+                        "value": "30"
+                      }
+                    },
+                    "RightCard": "2000000.0 row(s) est.",
+                    "Rightchildren": {
+                      "LeftCard": "2000000.0 row(s) est.",
+                      "Leftchildren": {
+                        "LeftCard": "20000000.0 row(s) est.",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "[StoredTable] Name: 'part' pruned: 0/306 chunk(s), 7/9 column(s)",
+                          "id": 16,
+                          "name": "StoredTable",
+                          "table_name": "part",
+                          "used_columns": [
+                            "p_partkey",
+                            "p_name"
+                          ]
+                        },
+                        "columns": [
+                          "p_name"
+                        ],
+                        "columns_left": [
+                          "p_name"
+                        ],
+                        "columns_right": [],
+                        "description": "[Predicate] p_name LIKE '%green%'",
+                        "id": 15,
+                        "name": "Predicate",
+                        "predicate": {
+                          "column": "p_name",
+                          "kind": "binary",
+                          "op": "LIKE",
+                          "value": "%green%"
+                        }
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[Validate]",
+                      "id": 14,
+                      "name": "Validate"
+                    },
+                    "columns": [
+                      "l_partkey",
+                      "p_partkey"
+                    ],
+                    "columns_left": [
+                      "l_partkey"
+                    ],
+                    "columns_right": [
+                      "p_partkey"
+                    ],
+                    "description": "[Join] Mode: Semi [p_partkey = l_partkey]",
+                    "id": 11,
+                    "join_mode": "Semi",
+                    "join_predicate": {
+                      "kind": "binary",
+                      "left_column": "p_partkey",
+                      "op": "=",
+                      "right_column": "l_partkey"
+                    },
+                    "name": "Join"
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "[Validate]",
+                  "id": 10,
+                  "name": "Validate"
+                },
+                "columns": [
+                  "l_partkey",
+                  "ps_partkey"
+                ],
+                "columns_left": [
+                  "ps_partkey"
+                ],
+                "columns_right": [
+                  "l_partkey"
+                ],
+                "description": "[Join] Mode: Semi [ps_partkey = l_partkey]",
+                "id": 7,
+                "join_mode": "Semi",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "ps_partkey",
+                  "op": "=",
+                  "right_column": "l_partkey"
+                },
+                "name": "Join"
+              },
+              "RightCard": "24001181.8 row(s) est.",
+              "Rightchildren": {
+                "LeftCard": "24001181.8 row(s) est.",
+                "Leftchildren": {
+                  "LeftCard": "24001181.8 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "24001181.8 row(s) est.",
+                    "Leftchildren": {
+                      "LeftCard": "150000000.0 row(s) est.",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "[StoredTable] Name: 'orders' pruned: 0/2289 chunk(s), 7/9 column(s)",
+                        "id": 21,
+                        "name": "StoredTable",
+                        "table_name": "orders",
+                        "used_columns": [
+                          "o_orderkey",
+                          "o_orderdate"
+                        ]
+                      },
+                      "RightCard": "24001181.8 row(s) est.",
+                      "Rightchildren": {
+                        "id": 10,
+                        "name": "Validate",
+                        "shared_ref": true
+                      },
+                      "columns": [
+                        "l_orderkey",
+                        "o_orderkey"
+                      ],
+                      "columns_left": [
+                        "o_orderkey"
+                      ],
+                      "columns_right": [
+                        "l_orderkey"
+                      ],
+                      "description": "[Join] Mode: Semi [o_orderkey = l_orderkey]",
+                      "id": 20,
+                      "join_mode": "Semi",
+                      "join_predicate": {
+                        "kind": "binary",
+                        "left_column": "o_orderkey",
+                        "op": "=",
+                        "right_column": "l_orderkey"
+                      },
+                      "name": "Join"
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 19,
+                    "name": "Validate"
+                  },
+                  "RightCard": "24001181.8 row(s) est.",
+                  "Rightchildren": {
+                    "id": 10,
+                    "name": "Validate",
+                    "shared_ref": true
+                  },
+                  "columns": [
+                    "l_orderkey",
+                    "o_orderkey"
+                  ],
+                  "columns_left": [
+                    "o_orderkey"
+                  ],
+                  "columns_right": [
+                    "l_orderkey"
+                  ],
+                  "description": "[Join] Mode: Inner [o_orderkey = l_orderkey]",
+                  "id": 18,
+                  "join_mode": "Inner",
+                  "join_predicate": {
+                    "kind": "binary",
+                    "left_column": "o_orderkey",
+                    "op": "=",
+                    "right_column": "l_orderkey"
+                  },
+                  "name": "Join"
+                },
+                "RightCard": "1000000.0 row(s) est.",
+                "Rightchildren": {
+                  "LeftCard": "1000000.0 row(s) est.",
+                  "Leftchildren": {
+                    "LeftCard": "1000000.0 row(s) est.",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[StoredTable] Name: 'supplier' pruned: 0/16 chunk(s), 5/7 column(s)",
+                      "id": 24,
+                      "name": "StoredTable",
+                      "table_name": "supplier",
+                      "used_columns": [
+                        "s_suppkey",
+                        "s_nationkey"
+                      ]
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 23,
+                    "name": "Validate"
+                  },
+                  "RightCard": "25.0 row(s) est.",
+                  "Rightchildren": {
+                    "LeftCard": "25.0 row(s) est.",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "[StoredTable] Name: 'nation' pruned: 0/1 chunk(s), 2/4 column(s)",
+                      "id": 26,
+                      "name": "StoredTable",
+                      "table_name": "nation",
+                      "used_columns": [
+                        "n_nationkey",
+                        "n_name"
+                      ]
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "[Validate]",
+                    "id": 25,
+                    "name": "Validate"
+                  },
+                  "columns": [
+                    "n_nationkey",
+                    "s_nationkey"
+                  ],
+                  "columns_left": [
+                    "s_nationkey"
+                  ],
+                  "columns_right": [
+                    "n_nationkey"
+                  ],
+                  "description": "[Join] Mode: Inner [s_nationkey = n_nationkey]",
+                  "id": 22,
+                  "join_mode": "Inner",
+                  "join_predicate": {
+                    "kind": "binary",
+                    "left_column": "s_nationkey",
+                    "op": "=",
+                    "right_column": "n_nationkey"
+                  },
+                  "name": "Join"
+                },
+                "columns": [
+                  "l_suppkey",
+                  "s_suppkey"
+                ],
+                "columns_left": [
+                  "l_suppkey"
+                ],
+                "columns_right": [
+                  "s_suppkey"
+                ],
+                "description": "[Join] Mode: Inner [s_suppkey = l_suppkey]",
+                "id": 17,
+                "join_mode": "Inner",
+                "join_predicate": {
+                  "kind": "binary",
+                  "left_column": "s_suppkey",
+                  "op": "=",
+                  "right_column": "l_suppkey"
+                },
+                "name": "Join"
+              },
+              "columns": [
+                "l_partkey",
+                "ps_partkey"
+              ],
+              "columns_left": [
+                "ps_partkey"
+              ],
+              "columns_right": [
+                "l_partkey"
+              ],
+              "description": "[Join] Mode: Inner [ps_partkey = l_partkey]",
+              "id": 6,
+              "join_mode": "Inner",
+              "join_predicate": {
+                "kind": "binary",
+                "left_column": "ps_partkey",
+                "op": "=",
+                "right_column": "l_partkey"
+              },
+              "name": "Join"
+            },
+            "columns": [
+              "l_suppkey",
+              "ps_suppkey"
+            ],
+            "columns_left": [
+              "l_suppkey",
+              "ps_suppkey"
+            ],
+            "columns_right": [],
+            "description": "[Predicate] ps_suppkey = l_suppkey",
+            "id": 5,
+            "name": "Predicate",
+            "predicate": {
+              "column": "ps_suppkey",
+              "kind": "binary",
+              "op": "=",
+              "value": "l_suppkey"
+            }
+          },
+          "columns": [
+            "l_discount",
+            "l_extendedprice",
+            "l_quantity",
+            "n_name",
+            "o_orderdate",
+            "ps_supplycost"
+          ],
+          "columns_left": [
+            "l_discount",
+            "l_extendedprice",
+            "l_quantity",
+            "n_name",
+            "o_orderdate",
+            "ps_supplycost"
+          ],
+          "columns_right": [],
+          "description": "[Projection] n_name, EXTRACT(YEAR FROM o_orderdate), l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity",
+          "id": 4,
+          "name": "Projection"
+        },
+        "columns": [
+          "l_discount",
+          "l_extendedprice",
+          "l_quantity",
+          "n_name",
+          "o_orderdate",
+          "ps_supplycost"
+        ],
+        "columns_left": [
+          "l_discount",
+          "l_extendedprice",
+          "l_quantity",
+          "n_name",
+          "o_orderdate",
+          "ps_supplycost"
+        ],
+        "columns_right": [],
+        "description": "[Alias] n_name AS nation, EXTRACT(YEAR FROM o_orderdate) AS o_year, l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity AS amount",
+        "id": 3,
+        "name": "Alias"
+      },
+      "aggregate_expressions": [
+        "SUM(l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity)"
+      ],
+      "columns": [
+        "l_discount",
+        "l_extendedprice",
+        "l_quantity",
+        "n_name",
+        "o_orderdate",
+        "ps_supplycost"
+      ],
+      "columns_left": [
+        "l_discount",
+        "l_extendedprice",
+        "l_quantity",
+        "n_name",
+        "o_orderdate",
+        "ps_supplycost"
+      ],
+      "columns_right": [],
+      "description": "[Aggregate] GroupBy: [n_name, EXTRACT(YEAR FROM o_orderdate)] Aggregates: [SUM(l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity)]",
+      "group_by_expressions": [
+        "n_name",
+        "EXTRACT(YEAR FROM o_orderdate)"
+      ],
+      "id": 2,
+      "name": "Aggregate"
+    },
+    "columns": [
+      "n_name",
+      "o_orderdate"
+    ],
+    "columns_left": [
+      "n_name",
+      "o_orderdate"
+    ],
+    "columns_right": [],
+    "description": "[Sort] n_name (AscendingNullsFirst), EXTRACT(YEAR FROM o_orderdate) (DescendingNullsFirst)",
+    "id": 1,
+    "name": "Sort"
+  },
+  "columns": [
+    "l_discount",
+    "l_extendedprice",
+    "l_quantity",
+    "n_name",
+    "o_orderdate",
+    "ps_supplycost"
+  ],
+  "columns_left": [
+    "l_discount",
+    "l_extendedprice",
+    "l_quantity",
+    "n_name",
+    "o_orderdate",
+    "ps_supplycost"
+  ],
+  "columns_right": [],
+  "description": "[Alias] n_name AS nation, EXTRACT(YEAR FROM o_orderdate) AS o_year, SUM(l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity) AS sum_profit",
+  "id": 0,
+  "name": "Alias"
+}

@@ -1,0 +1,338 @@
+{
+  "LeftCard": "100 row(s)/1 chunk(s)",
+  "Leftchildren": {
+    "LeftCard": "100 row(s)/1 chunk(s)",
+    "Leftchildren": {
+      "LeftCard": "17,771,689 row(s)/32 chunk(s)",
+      "Leftchildren": {
+        "LeftCard": "17,771,689 row(s)/32 chunk(s)",
+        "Leftchildren": {
+          "LeftCard": "17,771,689 row(s)/32 chunk(s)",
+          "Leftchildren": {
+            "LeftCard": "71,086,756 row(s)/32 chunk(s)",
+            "Leftchildren": {
+              "LeftCard": "4,351,928 row(s)/256 chunk(s)",
+              "Leftchildren": {
+                "LeftCard": "80,000,000 row(s)/1,221 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "80,000,000 row(s)/1,221 chunk(s)",
+                  "Leftchildren": {
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "GetTable (partsupp) pruned: 0/1221 chunk(s), 2/5 column(s)",
+                    "id": 0,
+                    "name": "GetTable",
+                    "table_name": "partsupp",
+                    "used_columns": [
+                      "ps_partkey",
+                      "ps_suppkey",
+                      "ps_supplycost"
+                    ],
+                    "walltime_ns": 1625513
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "Validate",
+                  "id": 1,
+                  "name": "Validate",
+                  "walltime_ns": 52356179
+                },
+                "RightCard": "32,636,547 row(s)/8 chunk(s)",
+                "Rightchildren": {
+                  "LeftCard": "32,636,547 row(s)/8 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "600,037,902 row(s)/9,156 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (lineitem) pruned: 0/9156 chunk(s), 10/16 column(s)",
+                      "id": 2,
+                      "name": "GetTable",
+                      "table_name": "lineitem",
+                      "used_columns": [
+                        "l_orderkey",
+                        "l_partkey",
+                        "l_suppkey",
+                        "l_quantity",
+                        "l_extendedprice",
+                        "l_discount"
+                      ],
+                      "walltime_ns": 62067379
+                    },
+                    "RightCard": "1,087,982 row(s)/306 chunk(s)",
+                    "Rightchildren": {
+                      "LeftCard": "1,087,982 row(s)/306 chunk(s)",
+                      "Leftchildren": {
+                        "LeftCard": "20,000,000 row(s)/306 chunk(s)",
+                        "Leftchildren": {
+                          "columns": [],
+                          "columns_left": [],
+                          "columns_right": [],
+                          "description": "GetTable (part) pruned: 0/306 chunk(s), 7/9 column(s)",
+                          "id": 3,
+                          "name": "GetTable",
+                          "table_name": "part",
+                          "used_columns": [
+                            "p_partkey",
+                            "p_name"
+                          ],
+                          "walltime_ns": 1969420
+                        },
+                        "Ops": "TableScan",
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "TableScan Impl: ColumnLike p_name LIKE '%green%'",
+                        "id": 4,
+                        "is_reference_input": -1,
+                        "name": "TableScan",
+                        "predicate": {
+                          "column": "p_name",
+                          "kind": "binary",
+                          "op": "LIKE",
+                          "value": "%green%"
+                        },
+                        "walltime_ns": 147060261
+                      },
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "Validate",
+                      "id": 5,
+                      "name": "Validate",
+                      "walltime_ns": 404346
+                    },
+                    "build_side": "right",
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "JoinHash (Semi) l_partkey = p_partkey",
+                    "id": 6,
+                    "name": "JoinHash",
+                    "walltime_ns": 2890689623
+                  },
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "Validate",
+                  "id": 7,
+                  "name": "Validate",
+                  "walltime_ns": 36198796
+                },
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "JoinHash (Semi Reduction) ps_partkey = l_partkey",
+                "id": 8,
+                "name": "JoinHash",
+                "walltime_ns": 3100155430
+              },
+              "RightCard": "17,771,689 row(s)/8 chunk(s)",
+              "Rightchildren": {
+                "LeftCard": "17,771,689 row(s)/64 chunk(s)",
+                "Leftchildren": {
+                  "LeftCard": "81,677,302 row(s)/2,289 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "81,677,302 row(s)/2,289 chunk(s)",
+                    "Leftchildren": {
+                      "LeftCard": "150,000,000 row(s)/2,289 chunk(s)",
+                      "Leftchildren": {
+                        "columns": [],
+                        "columns_left": [],
+                        "columns_right": [],
+                        "description": "GetTable (orders) pruned: 0/2289 chunk(s), 7/9 column(s)",
+                        "id": 9,
+                        "name": "GetTable",
+                        "table_name": "orders",
+                        "used_columns": [
+                          "o_orderkey",
+                          "o_orderdate"
+                        ],
+                        "walltime_ns": 5285835
+                      },
+                      "Ops": "TableScan",
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "TableScan Impl: ColumnVsValue o_orderdate >= '1995-01-01'",
+                      "id": 10,
+                      "is_reference_input": -1,
+                      "name": "TableScan",
+                      "predicate": {
+                        "column": "o_orderdate",
+                        "kind": "binary",
+                        "op": ">=",
+                        "value": "1995-01-01"
+                      },
+                      "walltime_ns": 182430786
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 11,
+                    "name": "Validate",
+                    "walltime_ns": 7110807
+                  },
+                  "RightCard": "32,636,547 row(s)/8 chunk(s)",
+                  "Rightchildren": {
+                    "id": 7,
+                    "name": "Validate",
+                    "shared_ref": true
+                  },
+                  "build_side": "right",
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "JoinHash (Inner) o_orderkey = l_orderkey",
+                  "id": 12,
+                  "name": "JoinHash",
+                  "walltime_ns": 3373492808
+                },
+                "RightCard": "1,000,000 row(s)/16 chunk(s)",
+                "Rightchildren": {
+                  "LeftCard": "1,000,000 row(s)/16 chunk(s)",
+                  "Leftchildren": {
+                    "LeftCard": "1,000,000 row(s)/16 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (supplier) pruned: 0/16 chunk(s), 5/7 column(s)",
+                      "id": 13,
+                      "name": "GetTable",
+                      "table_name": "supplier",
+                      "used_columns": [
+                        "s_suppkey",
+                        "s_nationkey"
+                      ],
+                      "walltime_ns": 2917630
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 14,
+                    "name": "Validate",
+                    "walltime_ns": 3991858
+                  },
+                  "RightCard": "25 row(s)/1 chunk(s)",
+                  "Rightchildren": {
+                    "LeftCard": "25 row(s)/1 chunk(s)",
+                    "Leftchildren": {
+                      "columns": [],
+                      "columns_left": [],
+                      "columns_right": [],
+                      "description": "GetTable (nation) pruned: 0/1 chunk(s), 2/4 column(s)",
+                      "id": 15,
+                      "name": "GetTable",
+                      "table_name": "nation",
+                      "used_columns": [
+                        "n_nationkey",
+                        "n_name"
+                      ],
+                      "walltime_ns": 46419
+                    },
+                    "columns": [],
+                    "columns_left": [],
+                    "columns_right": [],
+                    "description": "Validate",
+                    "id": 16,
+                    "name": "Validate",
+                    "walltime_ns": 2810061
+                  },
+                  "build_side": "right",
+                  "columns": [],
+                  "columns_left": [],
+                  "columns_right": [],
+                  "description": "JoinHash (Inner) s_nationkey = n_nationkey",
+                  "id": 17,
+                  "name": "JoinHash",
+                  "walltime_ns": 24822284
+                },
+                "build_side": "right",
+                "columns": [],
+                "columns_left": [],
+                "columns_right": [],
+                "description": "JoinHash (Inner) l_suppkey = s_suppkey",
+                "id": 18,
+                "name": "JoinHash",
+                "walltime_ns": 1261512225
+              },
+              "build_side": "left",
+              "columns": [],
+              "columns_left": [],
+              "columns_right": [],
+              "description": "JoinHash (Inner) ps_partkey = l_partkey",
+              "id": 19,
+              "name": "JoinHash",
+              "walltime_ns": 2267001203
+            },
+            "Ops": "TableScan",
+            "columns": [],
+            "columns_left": [],
+            "columns_right": [],
+            "description": "TableScan Impl: ColumnVsColumn ps_suppkey = l_suppkey",
+            "id": 20,
+            "is_reference_input": -1,
+            "name": "TableScan",
+            "predicate": {
+              "column": "ps_suppkey",
+              "kind": "binary",
+              "op": "=",
+              "value": "l_suppkey"
+            },
+            "walltime_ns": 3781650374
+          },
+          "Ops": "projection",
+          "columns": [],
+          "columns_left": [],
+          "columns_right": [],
+          "description": "Projection",
+          "id": 21,
+          "name": "Projection",
+          "walltime_ns": 4119473886
+        },
+        "columns": [],
+        "columns_left": [],
+        "columns_right": [],
+        "description": "Alias [nation, o_year, amount]",
+        "id": 22,
+        "name": "Alias",
+        "walltime_ns": 54529
+      },
+      "aggregate_expressions": [
+        "SUM(l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity)"
+      ],
+      "columns": [],
+      "columns_left": [],
+      "columns_right": [],
+      "description": "AggregateHash GroupBy {n_name, EXTRACT(YEAR FROM o_orderdate)} SUM(l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity)",
+      "groupby_column_ids": [
+        0,
+        1
+      ],
+      "id": 23,
+      "name": "AggregateHash",
+      "walltime_ns": 813876457
+    },
+    "columns": [],
+    "columns_left": [],
+    "columns_right": [],
+    "description": "Sort",
+    "id": 24,
+    "name": "Sort",
+    "walltime_ns": 58820
+  },
+  "columns": [],
+  "columns_left": [],
+  "columns_right": [],
+  "description": "Alias [nation, o_year, sum_profit]",
+  "id": 25,
+  "name": "Alias",
+  "walltime_ns": 3440
+}
