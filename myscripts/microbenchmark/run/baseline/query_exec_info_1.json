@@ -1,5 +1,5 @@
 {
-  "duration": 73120185,
+  "duration": 2321539289,
   "label": "d0_tf0_q1",
   "memory_deltas": [
     {
@@ -10,13 +10,13 @@
       "total_allocated_bytes_delta": 0
     },
     {
-      "allocated_bytes": 432,
+      "allocated_bytes": 1232,
       "numa_node": 0,
       "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 90083760
+      "total_allocated_bytes_delta": 2404370400
     }
   ],
-  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/1.sql",
-  "sql": "SELECT \n    COUNT(*)\nFROM \n    lineitem\nWHERE \n    l_partkey BETWEEN 1000 AND 100000;"
+  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/queries2/1.sql",
+  "sql": "-- A1  type axis: INTEGER predicate column (l_partkey, 1.796 GB)\n-- Fixed spine: ~50% selectivity, identical 2-column aggregate.\nSELECT\n    COUNT(*), SUM(l_quantity), SUM(l_extendedprice)\nFROM\n    lineitem\nWHERE\n    l_partkey BETWEEN 1 AND 5000000;"
 }

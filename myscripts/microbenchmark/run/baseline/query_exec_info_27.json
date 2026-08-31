@@ -1,5 +1,5 @@
 {
-  "duration": 769495384,
+  "duration": 14701308716,
   "label": "d0_tf0_q6",
   "memory_deltas": [
     {
@@ -10,13 +10,13 @@
       "total_allocated_bytes_delta": 0
     },
     {
-      "allocated_bytes": 4576,
+      "allocated_bytes": 16304144,
       "numa_node": 0,
       "peak_mem_usage": 0,
       "resource_id": 2,
-      "total_allocated_bytes_delta": 288588484
+      "total_allocated_bytes_delta": 3670901760
     }
   ],
-  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/6.sql",
-  "sql": "SELECT \n    l_orderkey, l_extendedprice\nFROM \n    lineitem\nORDER BY \n    l_extendedprice DESC\nLIMIT 100;"
+  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/queries2/6.sql",
+  "sql": "-- B3  operator axis: + HIGH-CARDINALITY GROUP BY (~500K groups at SF50)\n-- Same filter and aggregate as 3.sql. The hash table no longer fits in cache,\n-- so this is the random-access-bound counterpart of 5.sql.\nSELECT\n    l_suppkey,\n    COUNT(*), SUM(l_quantity), SUM(l_extendedprice)\nFROM\n    lineitem\nWHERE\n    l_shipdate BETWEEN '1992-01-01' AND '1995-06-30'\nGROUP BY\n    l_suppkey;"
 }

@@ -1,0 +1,22 @@
+{
+  "duration": 30904957045,
+  "label": "d0_tf0_q8",
+  "memory_deltas": [
+    {
+      "allocated_bytes": 0,
+      "numa_node": 1,
+      "peak_mem_usage": 0,
+      "resource_id": 3,
+      "total_allocated_bytes_delta": 0
+    },
+    {
+      "allocated_bytes": 221376,
+      "numa_node": 0,
+      "peak_mem_usage": 0,
+      "resource_id": 2,
+      "total_allocated_bytes_delta": 10896910444
+    }
+  ],
+  "script_file": "/home/umeshsum/hyrise_pmr/myscripts/microbenchmark/queries2/8.sql",
+  "sql": "-- B5  operator axis: + SORT (top-N)\n-- Same filter as 3.sql; replaces the aggregate with an ordered top-N so the\n-- transient sort buffers, not the base columns, dominate the footprint.\nSELECT\n    l_orderkey, l_extendedprice\nFROM\n    lineitem\nWHERE\n    l_shipdate BETWEEN '1992-01-01' AND '1995-06-30'\nORDER BY\n    l_extendedprice DESC\nLIMIT 100;"
+}
