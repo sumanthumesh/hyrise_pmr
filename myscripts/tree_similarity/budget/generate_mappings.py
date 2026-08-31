@@ -18,7 +18,7 @@ import csv
 import os
 import sys
 
-HYRISE_ROOT = "/data1/sumanthu/hyrise_pmr"
+HYRISE_ROOT = "/home/umeshsum/hyrise_pmr"
 MAPPING_SCRIPT = f"{HYRISE_ROOT}/myscripts/mapping/mapping.py"
 
 
@@ -96,7 +96,7 @@ def main():
         # map_d26843545600_* files rather than mixing units with the -c value.
         dam_bytes = int(round(args.dam * (1 << 30)))
         out = os.path.abspath(os.path.join(
-            args.out_dir, f"map_d{dam_bytes}_f{capacity_bytes}_q{query_id}.json"))
+            args.out_dir, f"map_d{dam_bytes}_f{int(table_size/args.dam*100)}_q{query_id}.json"))
         print(f"python {MAPPING_SCRIPT}"
               f" -p {hotness_dir}/hotness_{query_id}.json"
               f" -s {HYRISE_ROOT}/myscripts/saved_data/column_sizes_sf{args.scale_factor}.dat"
