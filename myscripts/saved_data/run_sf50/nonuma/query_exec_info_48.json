@@ -1,7 +1,7 @@
 {
-  "duration": 1028975205,
-  "label": "d0_tf0_q14",
+  "duration": 13545802336,
+  "label": "d0_tf0_q13",
   "memory_deltas": [],
-  "script_file": "/home/umeshsum/tpch_queries/14.sql",
-  "sql": "select\n\t100.00 * sum(case\n\t\twhen p_type like 'PROMO%'\n\t\t\tthen l_extendedprice * (1 - l_discount)\n\t\telse 0\n\tend) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue\nfrom\n\tlineitem,\n\tpart\nwhere\n\tl_partkey = p_partkey\n\tand l_shipdate >= date '1995-09-01'\n\tand l_shipdate < date '1995-09-01' + interval '1' month;"
+  "script_file": "/home/umeshsum/tpch_queries/13.sql",
+  "sql": "select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like '%special%requests%'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;"
 }

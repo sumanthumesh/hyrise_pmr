@@ -1,7 +1,7 @@
 {
-  "duration": 448464341,
-  "label": "d0_tf0_q17",
+  "duration": 990547052,
+  "label": "d0_tf0_q14",
   "memory_deltas": [],
-  "script_file": "/home/umeshsum/tpch_queries/17.sql",
-  "sql": "select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = 'Brand#23'\n\tand p_container = 'MED BOX'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);"
+  "script_file": "/home/umeshsum/tpch_queries/14.sql",
+  "sql": "select\n\t100.00 * sum(case\n\t\twhen p_type like 'PROMO%'\n\t\t\tthen l_extendedprice * (1 - l_discount)\n\t\telse 0\n\tend) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue\nfrom\n\tlineitem,\n\tpart\nwhere\n\tl_partkey = p_partkey\n\tand l_shipdate >= date '1995-09-01'\n\tand l_shipdate < date '1995-09-01' + interval '1' month;"
 }

@@ -1,7 +1,7 @@
 {
-  "duration": 3715180255,
-  "label": "d0_tf0_q5",
+  "duration": 3535392239,
+  "label": "d0_tf0_q3",
   "memory_deltas": [],
-  "script_file": "/home/umeshsum/tpch_queries/5.sql",
-  "sql": "select\n\tn_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tsupplier,\n\tnation,\n\tregion\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand l_suppkey = s_suppkey\n\tand c_nationkey = s_nationkey\n\tand s_nationkey = n_nationkey\n\tand n_regionkey = r_regionkey\n\tand r_name = 'ASIA'\n\tand o_orderdate >= date '1994-01-01'\n\tand o_orderdate < date '1994-01-01' + interval '1' year\ngroup by\n\tn_name\norder by\n\trevenue desc;"
+  "script_file": "/home/umeshsum/tpch_queries/3.sql",
+  "sql": "select\n\tl_orderkey,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\to_orderdate,\n\to_shippriority\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\tc_mktsegment = 'BUILDING'\n\tand c_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate < date '1995-03-15'\n\tand l_shipdate > date '1995-03-15'\ngroup by\n\tl_orderkey,\n\to_orderdate,\n\to_shippriority\norder by\n\trevenue desc,\n\to_orderdate;"
 }

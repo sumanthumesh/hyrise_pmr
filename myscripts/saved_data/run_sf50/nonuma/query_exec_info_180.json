@@ -1,7 +1,7 @@
 {
-  "duration": 314590215,
-  "label": "d0_tf0_q6",
+  "duration": 3212963402,
+  "label": "d0_tf0_q4",
   "memory_deltas": [],
-  "script_file": "/home/umeshsum/tpch_queries/6.sql",
-  "sql": "select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date '1994-01-01'\n\tand l_shipdate < date '1994-01-01' + interval '1' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;"
+  "script_file": "/home/umeshsum/tpch_queries/4.sql",
+  "sql": "select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date '1993-07-01'\n\tand o_orderdate < date '1993-07-01' + interval '3' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;"
 }
